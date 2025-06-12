@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace MoBot.Core.Models.Message
 {
 	public class PrivateMsg
 	{
-		[JsonPropertyName("user_id")]
+		[JsonProperty("user_id")]
 		public long UserID { get; }
 
 		public List<MessageSegment> MessageSegment = new List<MessageSegment>();

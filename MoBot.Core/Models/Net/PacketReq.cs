@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,13 +10,13 @@ namespace MoBot.Core.Models.Net
 {
 	public abstract class PacketReq
 	{
-		[JsonPropertyName("action")]
+		[JsonProperty("action")]
 		public abstract string Action { get; }
 
-		[JsonPropertyName("params")]
+		[JsonProperty("params")]
 		public abstract object Params { get; }
 
-		[JsonPropertyName("echo")]
+		[JsonProperty("echo")]
 		public abstract string Echo { get; }
 	}
 }

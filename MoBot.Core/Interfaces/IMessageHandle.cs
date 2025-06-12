@@ -9,7 +9,7 @@ namespace MoBot.Core.Interfaces
 {
 	public interface IMessageHandle
 	{
-		Task<bool> CanHandleAsync();
+		Task<bool> CanHandleAsync(JObject message);
 		Task HandleAsync(JObject message);
 	}
 }

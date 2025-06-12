@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Core", "MoBot.Core\Mo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Handle", "MoBot.Handle\MoBot.Handle.csproj", "{A6E01905-FEB3-4035-9F89-54995A036B82}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BilibiliLive", "BilibiliLive\BilibiliLive.csproj", "{D5EA2799-87DB-4542-A78C-B64BAE34D28E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Shared", "MoBot.Shared\MoBot.Shared.csproj", "{A602A662-8939-4C27-B030-87AB209B078A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{A6E01905-FEB3-4035-9F89-54995A036B82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6E01905-FEB3-4035-9F89-54995A036B82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6E01905-FEB3-4035-9F89-54995A036B82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5EA2799-87DB-4542-A78C-B64BAE34D28E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5EA2799-87DB-4542-A78C-B64BAE34D28E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5EA2799-87DB-4542-A78C-B64BAE34D28E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5EA2799-87DB-4542-A78C-B64BAE34D28E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A602A662-8939-4C27-B030-87AB209B078A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A602A662-8939-4C27-B030-87AB209B078A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A602A662-8939-4C27-B030-87AB209B078A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A602A662-8939-4C27-B030-87AB209B078A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

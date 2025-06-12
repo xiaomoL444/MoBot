@@ -5,7 +5,10 @@ using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Handle;
 using MoBot.Handle.Net;
+using MoBot.Shared;
 using Serilog;
+using System.Runtime;
+using System.Text.Json;
 
 
 Log.Logger = new LoggerConfiguration()
@@ -14,14 +17,11 @@ Log.Logger = new LoggerConfiguration()
 	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
 	.CreateLogger();
 
+
+
 try
 {
 	var host = Host.CreateDefaultBuilder()
-		.UseSerilog()
-		.ConfigureHostConfiguration(builder =>
-		{
-			builder.AddJsonFile("appsettings.json");
-		})
 		.ConfigureServices((builder, server) =>
 		{
 			//Bot客户端

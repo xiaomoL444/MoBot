@@ -11,16 +11,13 @@ namespace MoBot.Handle
 {
 	public class MoBotClient
 	{
-		private readonly ILogger<MoBotClient> _logger;
 		private readonly IBotSocketClient _socketClient;
 		private readonly IEnumerable<IMessageHandle> _messageHandle;
 		public MoBotClient(
-			ILogger<MoBotClient> logger,
 			IBotSocketClient socketClient,
 			IEnumerable<IMessageHandle> messageHandle
 			)
 		{
-			_logger = logger;
 			_socketClient = socketClient;
 			_messageHandle = messageHandle;
 		}
@@ -38,12 +35,15 @@ namespace MoBot.Handle
 				JObject json = JObject.Parse(message);
 				foreach (var handler in _messageHandle)
 				{
-					await handler.HandleAsync(json);
+					if (handler.CanHandleAsync(json).Result)
+					{
+						await handler.HandleAsync(json);
+					}
 				}
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError($"消息序列化错误 {ex}");
+				Serilog.Log.Warning($"消息序列化错误 {ex}");
 			}
 		}
 	}

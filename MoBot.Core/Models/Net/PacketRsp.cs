@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,22 +10,22 @@ namespace MoBot.Core.Models.Net
 {
 	public class PacketRsp
 	{
-		[JsonPropertyName("status")]
+		[JsonProperty("status")]
 		public string Status { get; set; } = "";
 
-		[JsonPropertyName("retcode")]
+		[JsonProperty("retcode")]
 		public int Retcode { get; set; } = 0;
 
-		[JsonPropertyName("data")]
+		[JsonProperty("data")]
 		public object? Data { get; set; }
 
-		[JsonPropertyName("message")]
+		[JsonProperty("message")]
 		public string Message { get; set; } = "";
 
-		[JsonPropertyName("wording")]
+		[JsonProperty("wording")]
 		public string Wording { get; set; } = "";
 
-		[JsonPropertyName("echo")]
+		[JsonProperty("echo")]
 		public string Echo { get; set; } = "";
 	}
 }

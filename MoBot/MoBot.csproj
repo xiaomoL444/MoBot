@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
+    <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

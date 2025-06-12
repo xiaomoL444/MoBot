@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,10 +10,10 @@ namespace MoBot.Core.Models.Message
 {
 	public class MessageSegment
 	{
-		[JsonPropertyName("type")]
+		[JsonProperty("type")]
 		public string Type { get; set; } = "type";
 
-		[JsonPropertyName("data")]
+		[JsonProperty("data")]
 		public object? Data { get; set; } = null;
 	}
 }
