@@ -1,6 +1,41 @@
-﻿using WebSocketSharp;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MoBot.Core.Interfaces;
+using MoBot.Handle;
+using MoBot.Handle.Net;
+using Serilog;
 
-var ws = new WebSocket("ws://192.168.5.2:8489");
-ws.OnMessage += (s, e) => { Console.WriteLine(e.Data); };
-ws.Connect();
-while (true) { }
+
+Log.Logger = new LoggerConfiguration()
+	.MinimumLevel.Debug() // ✅ 设置为显示 Debug 及以上
+	.Enrich.FromLogContext()
+	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+	.CreateLogger();
+
+try
+{
+	var host = Host.CreateDefaultBuilder()
+		.UseSerilog()
+		.ConfigureHostConfiguration(builder =>
+		{
+			builder.AddJsonFile("appsettings.json");
+		})
+		.ConfigureServices((builder, server) =>
+		{
+			//Bot客户端
+			server.AddScoped<MoBotClient>();
+			server.AddScoped<IBotSocketClient, WebSocketClient>();
+		})
+		.Build();
+
+	var MoBotClient = host.Services.GetRequiredService<MoBotClient>();
+	MoBotClient.Initial();
+
+	while (true) ;
+}
+catch (Exception ex)
+{
+	Console.WriteLine(ex.ToString());
+}

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,6 @@ namespace MoBot.Core.Interfaces
 	public interface IMessageHandle
 	{
 		Task<bool> CanHandleAsync();
-		Task HandleAsync();
+		Task HandleAsync(JObject message);
 	}
 }
