@@ -5,9 +5,9 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace MoBot.Core.Models
+namespace MoBot.Core.Models.Net
 {
-	public abstract class MessagePacket
+	public abstract class PacketReq
 	{
 		[JsonPropertyName("action")]
 		public abstract string Action { get; }
