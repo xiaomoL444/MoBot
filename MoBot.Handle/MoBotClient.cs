@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event;
+using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using System;
@@ -36,7 +37,8 @@ namespace MoBot.Handle
 		{
 			try
 			{
-				foreach (var handler in _provider.GetServices<IMessageHandle<T>>())
+				var handers = _provider.GetServices<IMessageHandle<T>>();
+				foreach (var handler in handers)
 				{
 					if (handler.CanHandleAsync(message).Result)
 					{

@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Event;
 
 namespace BilibiliLive.Handle
 {
@@ -18,6 +19,7 @@ namespace BilibiliLive.Handle
 			}
 			return Task.FromResult(false);
 		}
+
 
 		public async Task HandleAsync(Group message)
 		{

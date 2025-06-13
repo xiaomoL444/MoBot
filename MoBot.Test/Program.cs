@@ -32,6 +32,7 @@ try
 
 			//添加事件
 			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
+
 		})
 		.Build();
 
