@@ -37,14 +37,14 @@ namespace MoBot.Handle.Net
 					Serilog.Log.Information($"收到事件：{eventJson.PostType}->{commond}");
 
 					MoBotClient.RouteAsync(eventJson);
-					return;
+					continue;
 				}
 				//判断是不是api回复
 				if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 				{
 					var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
 					Serilog.Log.Information($"收到api回复：{commond}");
-					return;
+					continue;
 				}
 
 				Serilog.Log.Information($"收到未知消息：{commond}");
