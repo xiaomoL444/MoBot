@@ -24,6 +24,7 @@ namespace MoBot.Handle.Net
 		public void Initial()
 		{
 			Serilog.Log.Information("2333启动了控制台Client");
+			MessageSender.SocketClient = this;
 			while (true)
 			{
 				var commond = Console.ReadLine();
@@ -51,9 +52,9 @@ namespace MoBot.Handle.Net
 			}
 		}
 
-		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message)
+		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message)
 		{
-			Log.Information($"发送消息{actionType} /{action} {message}");
+			Log.Information($"发送消息{actionType} /{action} {JsonConvert.SerializeObject(message)}");
 			return Task.FromResult(new ActionPacketRsp());
 		}
 	}

@@ -37,13 +37,23 @@ namespace MoBot.Handle
 		{
 			try
 			{
-				var handers = _provider.GetServices<IMessageHandle<T>>();
-				foreach (var handler in handers)
+				var messageType = message.GetType();
+				var handlerType = typeof(IMessageHandle<>).MakeGenericType(messageType);
+
+				var handlers = (IEnumerable<object>)_provider.GetServices(handlerType);
+
+				foreach (var handler in handlers)
 				{
-					if (handler.CanHandleAsync(message).Result)
-					{
-						await handler.HandleAsync(message);
-					}
+					// 调用 CanHandleAsync
+					var canHandleMethod = handlerType.GetMethod("CanHandleAsync");
+					var canHandleTask = (Task<bool>)canHandleMethod.Invoke(handler, new[] { message });
+					bool canHandle = await canHandleTask;
+					if (!canHandle) continue;
+
+					// 调用 HandleAsync
+					var handleMethod = handlerType.GetMethod("HandleAsync");
+					var handleTask = (Task)handleMethod.Invoke(handler, new[] { message });
+					await handleTask;
 				}
 			}
 			catch (Exception ex)

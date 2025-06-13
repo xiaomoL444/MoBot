@@ -21,8 +21,8 @@ namespace MoBot.Core.Interfaces
 		/// </summary>
 		/// <param name="action">接口名</param>
 		/// <param name="actionType">接口的请求类别</param>
-		/// <param name="message">发送的消息</param>
+		/// <param name="message">发送的消息(自己构建一个匿名类型)</param>
 		/// <returns>发送api后的返回值</returns>
-		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message);
+		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message);
 	}
 }

@@ -31,6 +31,7 @@ namespace MoBot.Handle.Net
 		public void Initial()
 		{
 			Serilog.Log.Information("初始化WebSocketClient");
+			MessageSender.SocketClient = this;
 
 			//消息解析器，因为websocket会返回echo码，所以要把码和对应的结果作为键值保存起来，等待取出
 			var ws_url = _config["Server:ws_url"];
@@ -75,7 +76,7 @@ namespace MoBot.Handle.Net
 
 		}
 
-		public async Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message)
+		public async Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message)
 		{
 			TaskCompletionSource<ActionPacketRsp> echoPacket = new();
 			string uuid = Guid.NewGuid().ToString();
