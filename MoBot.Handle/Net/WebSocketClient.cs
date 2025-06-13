@@ -6,14 +6,15 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Action;
+using MoBot.Core.Models.Event;
 
 namespace MoBot.Handle.Net
 {
 	public class WebSocketClient : IBotSocketClient
 	{
-		private Func<EventPacket, Task> _receiveMessage;
 		private readonly IConfiguration _config;
-		public Func<EventPacket, Task> ReceiveMsgAction { get => _receiveMessage; set { _receiveMessage = value; } }
+
+		public IMoBotClient MoBotClient { get; set; }
 
 		private Dictionary<string, TaskCompletionSource<ActionPacketRsp>> _echoResult = new();
 		public WebSocketClient(
@@ -21,33 +22,34 @@ namespace MoBot.Handle.Net
 			)
 		{
 			_config = config;
-
-			_receiveMessage = (s) => { return Task.CompletedTask; };
 		}
 
 		private WebSocket ws;
 
+
 		public void Initial()
 		{
 			Serilog.Log.Information("初始化WebSocketClient");
-
-			_receiveMessage = (s) => { return Task.CompletedTask; };//重置一下获得消息后的事件
 
 			//消息解析器，因为websocket会返回echo码，所以要把码和对应的结果作为键值保存起来，等待取出
 			var ws_url = _config["Server:ws_url"];
 			try
 			{
 				ws = new WebSocket(_config["Server:ws_url"]);
-				ws.OnMessage += (s, e) =>
+				ws.OnMessage += async (s, e) =>
 				{
 					JObject json = JObject.Parse(e.Data);
 					//判断是不是事件
 					if (json.TryGetValue("post_type", StringComparison.CurrentCultureIgnoreCase, out _))
 					{
+						var settings = new JsonSerializerSettings();
+						settings.Converters.Add(new EventPacketConverter());
 
-						var eventJson = JsonConvert.DeserializeObject<EventPacket>(e.Data)!;
-						Serilog.Log.Information($"收到事件：{e.Data}");
-						_receiveMessage.Invoke(eventJson);
+						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(e.Data, settings)!;
+
+						Serilog.Log.Information($"收到事件：{eventJson.PostType}->{e.Data}");
+
+						await MoBotClient.RouteAsync(eventJson);
 						return;
 					}
 					//判断是不是api回复

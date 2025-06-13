@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Models.Event;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using System;
@@ -10,31 +12,31 @@ using System.Threading.Tasks;
 
 namespace MoBot.Handle
 {
-	public class MoBotClient
+	public class MoBotClient : IMoBotClient
 	{
 		private readonly IBotSocketClient _socketClient;
-		private readonly IEnumerable<IMessageHandle> _messageHandle;
+		private readonly IServiceProvider _provider;
 		public MoBotClient(
 			IBotSocketClient socketClient,
-			IEnumerable<IMessageHandle> messageHandle
+			IServiceProvider provider
 			)
 		{
 			_socketClient = socketClient;
-			_messageHandle = messageHandle;
+			_provider = provider;
 		}
 
 		public void Initial()
 		{
+			_socketClient.MoBotClient = this;
 			_socketClient.Initial();
-			_socketClient.ReceiveMsgAction += RouteAsync;
 			MessageSender.SocketClient = _socketClient;
 		}
 
-		public async Task RouteAsync(EventPacket message)
+		private async Task RouteAsyncPri<T>(T message) where T : EventPacketBase
 		{
 			try
 			{
-				foreach (var handler in _messageHandle)
+				foreach (var handler in _provider.GetServices<IMessageHandle<T>>())
 				{
 					if (handler.CanHandleAsync(message).Result)
 					{
@@ -46,6 +48,11 @@ namespace MoBot.Handle
 			{
 				Serilog.Log.Warning($"消息序列化错误 {ex}");
 			}
+		}
+
+		public async Task RouteAsync(EventPacketBase eventPacket)
+		{
+			await RouteAsyncPri(eventPacket);
 		}
 	}
 }

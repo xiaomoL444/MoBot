@@ -1,10 +1,22 @@
-﻿using MoBot.Core.Models.Net;
+﻿using MoBot.Core.Models.Event;
+using MoBot.Core.Models.Net;
 
 namespace MoBot.Core.Interfaces
 {
-	public interface IMessageHandle
+	public interface IMessageHandle<T> where T : EventPacketBase
 	{
-		Task<bool> CanHandleAsync(EventPacket message);
-		Task HandleAsync(EventPacket message);
+		/// <summary>
+		/// 判断是否执行这个模块
+		/// </summary>
+		/// <param name="message"></param>
+		/// <returns></returns>
+		Task<bool> CanHandleAsync(T message);
+
+		/// <summary>
+		/// 模块的执行函数
+		/// </summary>
+		/// <param name="message"></param>
+		/// <returns></returns>
+		Task HandleAsync(T message);
 	}
 }

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace MoBot.Core.Models.Net
+namespace MoBot.Core.Models.Event
 {
 	/// <summary>
 	/// 表示该上报的类型, 消息, 消息发送, 请求, 通知, 或元事件
@@ -16,7 +16,6 @@ namespace MoBot.Core.Models.Net
 		notice,
 		meta_event
 	}
-	[JsonObject]
 	public class EventPacketBase
 	{
 		/// <summary>
@@ -30,6 +29,11 @@ namespace MoBot.Core.Models.Net
 		/// </summary>
 		[JsonProperty("self_id")]
 		public long SelfID { get; set; } = 0;
+
+		/// <summary>
+		/// 消息类型
+		/// </summary>
+		[JsonProperty("post_type")]
 
 		public PostType PostType { get; set; } = PostType.unknow;
 	}

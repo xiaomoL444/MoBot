@@ -9,7 +9,7 @@ namespace MoBot.Core.Interfaces
 	/// </summary>
 	public interface IBotSocketClient
 	{
-		public Func<EventPacket, Task> ReceiveMsgAction { get; set; }
+		public IMoBotClient MoBotClient { get; set; }
 		/// <summary>
 		/// 客户端初始化
 		/// </summary>
