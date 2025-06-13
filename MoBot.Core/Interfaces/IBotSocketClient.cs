@@ -20,6 +20,7 @@ namespace MoBot.Core.Interfaces
 		/// <param name="action">接口名</param>
 		/// <param name="actionType">接口的请求类别</param>
 		/// <param name="message">发送的消息</param>
-		public void SendMessage(string action, ActionType actionType, string message);
+		/// <returns>发送消息后的返回值</returns>
+		public Task<string> SendMessage(string action, ActionType actionType, string message);
 	}
 }

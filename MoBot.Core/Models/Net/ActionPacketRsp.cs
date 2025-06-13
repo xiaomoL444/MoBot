@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MoBot.Core.Models.Net
 {
-	public class PacketRsp
+	public class ActionPacketRsp
 	{
 		[JsonProperty("status")]
 		public string Status { get; set; } = "";

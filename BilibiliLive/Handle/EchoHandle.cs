@@ -8,12 +8,12 @@ namespace BilibiliLive.Handle
 	{
 		public Task<bool> CanHandleAsync(JObject message)
 		{
-			return Task.FromResult(true);	
+			return Task.FromResult(true);
 		}
 
 		public Task HandleAsync(JObject message)
 		{
-
+			return Task.CompletedTask;
 		}
 	}
 }

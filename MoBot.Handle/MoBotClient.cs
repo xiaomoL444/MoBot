@@ -25,7 +25,8 @@ namespace MoBot.Handle
 		public void Initial()
 		{
 			_socketClient.Initial();
-			_socketClient.ReceiveMsgAction = RouteAsync;
+			_socketClient.ReceiveMsgAction += RouteAsync;
+			MessageSender.SocketClient = _socketClient;
 		}
 
 		public async Task RouteAsync(string message)

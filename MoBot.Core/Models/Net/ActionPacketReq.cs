@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MoBot.Core.Models.Net
 {
-	public abstract class PacketReq
+	public abstract class ActionPacketReq
 	{
 		[JsonProperty("action")]
 		public abstract string Action { get; }
