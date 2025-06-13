@@ -3,6 +3,8 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Event.Message;
+using MoBot.Handle;
+using MoBot.Core.Models.Message;
 
 namespace BilibiliLive.Handle
 {
@@ -10,12 +12,22 @@ namespace BilibiliLive.Handle
 	{
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			throw new NotImplementedException();
+			if (message.GroupId == 1079464803 && message.Sender.UserId == 2580139692)
+			{
+				return Task.FromResult(true);
+			}
+			return Task.FromResult(false);
 		}
 
-		public Task HandleAsync(Group message)
+		public async Task HandleAsync(Group message)
 		{
-			throw new NotImplementedException();
+			var messageChain = MessageChainBuilder
+				.Create()
+				.Text("⎛⎝≥⏝⏝≤⎛⎝")
+				.Build();
+
+
+			await MessageSender.SendGroupMsg(message.GroupId, messageChain);
 		}
 	}
 }

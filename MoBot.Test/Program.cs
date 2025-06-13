@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BilibiliLive.Handle;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.Net;
 using MoBot.Shared;
@@ -27,6 +29,9 @@ try
 			//Bot客户端
 			server.AddScoped<MoBotClient>();
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
+
+			//添加事件
+			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
 		})
 		.Build();
 

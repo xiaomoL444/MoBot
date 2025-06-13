@@ -1,4 +1,5 @@
 ﻿using MoBot.Core.Models.Action;
+using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 
@@ -22,6 +23,6 @@ namespace MoBot.Core.Interfaces
 		/// <param name="actionType">接口的请求类别</param>
 		/// <param name="message">发送的消息</param>
 		/// <returns>发送api后的返回值</returns>
-		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, ActionBase message);
+		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message);
 	}
 }

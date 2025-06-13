@@ -1,9 +1,11 @@
 ﻿using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event;
+using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,8 +51,9 @@ namespace MoBot.Handle.Net
 			}
 		}
 
-		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, ActionBase message)
+		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message)
 		{
+			Log.Information($"发送消息{actionType} /{action} {message}");
 			return Task.FromResult(new ActionPacketRsp());
 		}
 	}

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event;
+using MoBot.Core.Models.Message;
 
 namespace MoBot.Handle.Net
 {
@@ -74,7 +75,7 @@ namespace MoBot.Handle.Net
 
 		}
 
-		public async Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, ActionBase message)
+		public async Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, List<MessageSegment> message)
 		{
 			TaskCompletionSource<ActionPacketRsp> echoPacket = new();
 			string uuid = Guid.NewGuid().ToString();

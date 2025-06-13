@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
+    <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
   </ItemGroup>
 
 </Project>

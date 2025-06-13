@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BilibiliLive\BilibiliLive.csproj" />
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />

@@ -16,7 +16,8 @@ namespace MoBot.Handle
 		/// <returns>发送后返回的值</returns>
 		public static async Task<ActionPacketRsp> SendGroupMsg(long group_id, List<MessageSegment> message_chain)
 		{
-			return new ActionPacketRsp();
+			return (await SocketClient.SendMessage("/send_group_msg", ActionType.Post, message_chain));
+
 		}
 	}
 }
