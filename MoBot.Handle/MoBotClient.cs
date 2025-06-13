@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -29,16 +30,15 @@ namespace MoBot.Handle
 			MessageSender.SocketClient = _socketClient;
 		}
 
-		public async Task RouteAsync(string message)
+		public async Task RouteAsync(EventPacket message)
 		{
 			try
 			{
-				JObject json = JObject.Parse(message);
 				foreach (var handler in _messageHandle)
 				{
-					if (handler.CanHandleAsync(json).Result)
+					if (handler.CanHandleAsync(message).Result)
 					{
-						await handler.HandleAsync(json);
+						await handler.HandleAsync(message);
 					}
 				}
 			}

@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace MoBot.Core.Models.Net
 {
-	public abstract class ActionPacketReq
+	public class ActionPacketReq
 	{
 		[JsonProperty("action")]
-		public abstract string Action { get; }
+		public string Action { get; set; } = "";
 
 		[JsonProperty("params")]
-		public abstract object Params { get; }
+		public object Params { get; set; } = "";
 
 		[JsonProperty("echo")]
-		public abstract string Echo { get; }
+		public string Echo { get; set; } = "";
 	}
 }

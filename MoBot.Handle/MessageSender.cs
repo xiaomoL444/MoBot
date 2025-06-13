@@ -1,11 +1,6 @@
 ﻿using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Message;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MoBot.Core.Models.Net;
 
 namespace MoBot.Handle
 {
@@ -19,9 +14,9 @@ namespace MoBot.Handle
 		/// <param name="group_id">群ID</param>
 		/// <param name="message_chain">消息链</param>
 		/// <returns>发送后返回的值</returns>
-		public static async Task<JObject> SendGroupMsg(long group_id, List<MessageSegment> message_chain)
+		public static async Task<ActionPacketRsp> SendGroupMsg(long group_id, List<MessageSegment> message_chain)
 		{
-			return new JObject();
+			return new ActionPacketRsp();
 		}
 	}
 }

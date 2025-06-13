@@ -4,15 +4,18 @@ using MoBot.Core.Models.Net;
 using WebSocketSharp;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using MoBot.Core.Models.Action;
 
 namespace MoBot.Handle.Net
 {
 	public class WebSocketClient : IBotSocketClient
 	{
-		private Func<string, Task> _receiveMessage;
+		private Func<EventPacket, Task> _receiveMessage;
 		private readonly IConfiguration _config;
-		public Func<string, Task> ReceiveMsgAction { get => _receiveMessage; set { _receiveMessage = value; } }
+		public Func<EventPacket, Task> ReceiveMsgAction { get => _receiveMessage; set { _receiveMessage = value; } }
 
+		private Dictionary<string, TaskCompletionSource<ActionPacketRsp>> _echoResult = new();
 		public WebSocketClient(
 			IConfiguration config
 			)
@@ -31,27 +34,34 @@ namespace MoBot.Handle.Net
 			_receiveMessage = (s) => { return Task.CompletedTask; };//重置一下获得消息后的事件
 
 			//消息解析器，因为websocket会返回echo码，所以要把码和对应的结果作为键值保存起来，等待取出
-			_receiveMessage += (s) =>
-			{
-				try
-				{
-					var json = JsonConvert.DeserializeObject<ActionPacketRsp>(s);
-				}
-				catch (Exception ex)
-				{
-					Serilog.Log.Error($"消息解析失败，{ex}");
-				}
-
-				return Task.CompletedTask;
-			};
 			var ws_url = _config["Server:ws_url"];
 			try
 			{
 				ws = new WebSocket(_config["Server:ws_url"]);
 				ws.OnMessage += (s, e) =>
 				{
-					Serilog.Log.Information($"收到消息：{e.Data}");
-					_receiveMessage.Invoke(e.Data);
+					JObject json = JObject.Parse(e.Data);
+					//判断是不是事件
+					if (json.TryGetValue("post_type", StringComparison.CurrentCultureIgnoreCase, out _))
+					{
+
+						var eventJson = JsonConvert.DeserializeObject<EventPacket>(e.Data)!;
+						Serilog.Log.Information($"收到事件：{e.Data}");
+						_receiveMessage.Invoke(eventJson);
+						return;
+					}
+					//判断是不是api回复
+					if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
+					{
+						var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(e.Data)!;
+						Serilog.Log.Information($"收到api回复：{e.Data}");
+						_echoResult[actionJson.Echo].SetResult(actionJson);
+						_echoResult.Remove(actionJson.Echo);
+						return;
+					}
+
+					Serilog.Log.Information($"收到未知消息：{e.Data}");
+
 				};
 				ws.Connect();
 			}
@@ -64,10 +74,17 @@ namespace MoBot.Handle.Net
 
 		}
 
-		public Task<string> SendMessage(string action, ActionType actionType, string message)
+		public async Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, ActionBase message)
 		{
-			Serilog.Log.Debug($"发送消息{message}");
-			return Task.FromResult("");
+			TaskCompletionSource<ActionPacketRsp> echoPacket = new();
+			string uuid = Guid.NewGuid().ToString();
+			_echoResult.Add(uuid, echoPacket);
+			string msg = JsonConvert.SerializeObject(new ActionPacketReq() { Action = action, Echo = uuid, Params = message });
+			Serilog.Log.Debug($"发送消息{msg}");
+
+			ws.Send(msg);
+
+			return (await echoPacket.Task);
 		}
 	}
 }
