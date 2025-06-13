@@ -1,18 +1,41 @@
-﻿using Newtonsoft.Json;
-using WebSocketSharp;
-using static System.Net.WebRequestMethods;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MoBot.Core.Interfaces;
+using MoBot.Handle;
+using MoBot.Handle.Net;
+using MoBot.Shared;
+using Serilog;
+using System.Runtime;
+using System.Text.Json;
 
-var ws = new WebSocket("ws://192.168.5.2:8489");
-ws.OnMessage += (s, e) => { Console.WriteLine(e.Data); };
-ws.Connect();
-ws.Send(JsonConvert.SerializeObject(new
+
+Log.Logger = new LoggerConfiguration()
+	.MinimumLevel.Debug() // ✅ 设置为显示 Debug 及以上
+	.Enrich.FromLogContext()
+	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+	.CreateLogger();
+
+
+
+try
 {
-	action = "send_group_msg",
-	@params = new
-	{
-		group_id = 1079464803,
-		message = new[] { new { type = "text", data = new { text = "13" } } }
-	},
-	echo = "123465"
-}));
-while (true) { }
+	var host = Host.CreateDefaultBuilder()
+		.ConfigureServices((builder, server) =>
+		{
+			//Bot客户端
+			server.AddScoped<MoBotClient>();
+			server.AddScoped<IBotSocketClient, ConsoleClient>();
+		})
+		.Build();
+
+	var MoBotClient = host.Services.GetRequiredService<MoBotClient>();
+	MoBotClient.Initial();
+
+	while (true) ;
+}
+catch (Exception ex)
+{
+	Log.Error(ex.ToString());
+}

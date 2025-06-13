@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace MoBot.Core.Models.Event
 {
-	public class MetaEventType : EventPacketBase
+	public class MetaEventTypeBase : EventPacketBase
 	{
 		public string meta_event_type { get; set; } = "";
 	}

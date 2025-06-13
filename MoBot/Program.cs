@@ -37,5 +37,5 @@ try
 }
 catch (Exception ex)
 {
-	Console.WriteLine(ex.ToString());
+	Log.Error(ex.ToString());
 }

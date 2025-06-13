@@ -42,10 +42,8 @@ namespace MoBot.Handle.Net
 					//判断是不是事件
 					if (json.TryGetValue("post_type", StringComparison.CurrentCultureIgnoreCase, out _))
 					{
-						var settings = new JsonSerializerSettings();
-						settings.Converters.Add(new EventPacketConverter());
+						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(e.Data, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
-						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(e.Data, settings)!;
 
 						Serilog.Log.Information($"收到事件：{eventJson.PostType}->{e.Data}");
 

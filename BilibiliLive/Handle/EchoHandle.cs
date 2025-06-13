@@ -2,19 +2,20 @@
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
+using MoBot.Core.Models.Event.Message;
 
 namespace BilibiliLive.Handle
 {
-	public class EchoHandle : IMessageHandle
+	public class EchoHandle : IMessageHandle<Group>
 	{
-		public Task<bool> CanHandleAsync(EventPacket message)
+		public Task<bool> CanHandleAsync(Group message)
 		{
-			return Task.FromResult(true);
+			throw new NotImplementedException();
 		}
 
-		public Task HandleAsync(EventPacket message)
+		public Task HandleAsync(Group message)
 		{
-			return Task.CompletedTask;
+			throw new NotImplementedException();
 		}
 	}
 }

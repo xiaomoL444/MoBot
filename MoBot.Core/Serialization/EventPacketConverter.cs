@@ -1,4 +1,6 @@
 ﻿using MoBot.Core.Models.Event;
+using MoBot.Core.Models.Event.Message;
+using MoBot.Core.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -19,12 +21,9 @@ public class EventPacketConverter : JsonConverter
 		return type switch
 		{
 
-			"message" => jo.ToObject<EventPacketBase>(serializer),
-			"message_sent" => jo.ToObject<EventPacketBase>(serializer),
-			"request" => jo.ToObject<EventPacketBase>(serializer),
-			"notice" => jo.ToObject<EventPacketBase>(serializer),
-			"meta_event" => jo.ToObject<MetaEventType>(serializer),
-			_ => jo.ToObject<EventPacketBase>(serializer)
+			"message" => jo.ToObject<MessageBase>(JsonSerializer.Create(new JsonSerializerSettings() { Converters = new List<JsonConverter>() { new MessageEventConvert() } })),
+			"meta_event" => jo.ToObject<MetaEventTypeBase>(serializer),
+			_ => jo.ToObject<EventPacketBase>(new JsonSerializer())
 		};
 	}
 
