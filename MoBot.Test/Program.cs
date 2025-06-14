@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
+using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
