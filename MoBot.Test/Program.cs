@@ -9,6 +9,7 @@ using MoBot.Handle;
 using MoBot.Handle.Net;
 using MoBot.Shared;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 using System.Runtime;
 using System.Text.Json;
 
@@ -16,7 +17,8 @@ using System.Text.Json;
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug() // ✅ 设置为显示 Debug 及以上
 	.Enrich.FromLogContext()
-	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}", theme: AnsiConsoleTheme.Literate)
+	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day)
 	.CreateLogger();
 
 
@@ -43,5 +45,5 @@ try
 }
 catch (Exception ex)
 {
-	Log.Error(ex.ToString());
+	Log.Error(ex,"错误");
 }

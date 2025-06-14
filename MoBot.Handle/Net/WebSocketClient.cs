@@ -69,7 +69,7 @@ namespace MoBot.Handle.Net
 			}
 			catch (Exception ex)
 			{
-				Serilog.Log.Error($"ws_url:{{{ws_url}}}连接ws服务器失败，程序返回，{ex}");
+				Serilog.Log.Error(ex,$"ws_url:{{{ws_url}}}连接ws服务器失败，程序返回");
 				return;
 			}
 			Serilog.Log.Information($"正在监听{ws_url}");
