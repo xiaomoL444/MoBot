@@ -7,7 +7,6 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.Net;
-using MoBot.Shared;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Runtime;

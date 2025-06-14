@@ -7,7 +7,6 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.Net;
-using MoBot.Shared;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Runtime;
@@ -26,10 +25,14 @@ Log.Logger = new LoggerConfiguration()
 try
 {
 	var host = Host.CreateDefaultBuilder()
+		.UseSerilog()
 		.ConfigureServices((builder, server) =>
 		{
+			//添加必要的插件
+			server.AddScoped<IDataStorage,JsonDataStorage>();
+
 			//Bot客户端
-			server.AddScoped<MoBotClient>();
+			server.AddScoped<IMoBotClient, MoBotClient>();
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
@@ -38,12 +41,12 @@ try
 		})
 		.Build();
 
-	var MoBotClient = host.Services.GetRequiredService<MoBotClient>();
+	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
 	MoBotClient.Initial();
 
 	while (true) ;
 }
 catch (Exception ex)
 {
-	Log.Error(ex,"错误");
+	Log.Error(ex, "错误");
 }

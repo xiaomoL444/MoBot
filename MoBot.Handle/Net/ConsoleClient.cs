@@ -1,11 +1,11 @@
-﻿using MoBot.Core.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +19,21 @@ namespace MoBot.Handle.Net
 	/// </summary>
 	public class ConsoleClient : IBotSocketClient
 	{
-		public IMoBotClient MoBotClient { get; set; }
+		private readonly IMoBotClient _moBotClient;
+		private readonly ILogger<ConsoleClient> _logger;
+
+		public ConsoleClient(
+			IMoBotClient moBotClient,
+			ILogger<ConsoleClient> logger)
+		{
+			_moBotClient = moBotClient;
+			_logger = logger;
+		}
 
 		public void Initial()
 		{
-			Serilog.Log.Information("2333启动了控制台Client");
+
+			_logger.LogInformation("2333启动了控制台Client");
 			MessageSender.SocketClient = this;
 			while (true)
 			{
@@ -35,26 +45,26 @@ namespace MoBot.Handle.Net
 					var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(commond, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
 
-					Serilog.Log.Information($"收到事件：{eventJson.PostType}->{commond}");
+					_logger.LogInformation($"收到事件：{eventJson.PostType}->{commond}");
 
-					MoBotClient.RouteAsync(eventJson);
+					_moBotClient.RouteAsync(eventJson);
 					continue;
 				}
 				//判断是不是api回复
 				if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 				{
 					var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
-					Serilog.Log.Information($"收到api回复：{commond}");
+					_logger.LogInformation($"收到api回复：{commond}");
 					continue;
 				}
 
-				Serilog.Log.Information($"收到未知消息：{commond}");
+				_logger.LogWarning($"收到未知消息：{commond}");
 			}
 		}
 
 		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message)
 		{
-			Log.Information($"发送消息{actionType} /{action} {JsonConvert.SerializeObject(message)}");
+			_logger.LogInformation($"发送消息{actionType} /{action} {JsonConvert.SerializeObject(message)}");
 			return Task.FromResult(new ActionPacketRsp());
 		}
 	}

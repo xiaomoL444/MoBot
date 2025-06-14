@@ -1,4 +1,5 @@
-﻿using MoBot.Core.Models.Action;
+﻿using Microsoft.Extensions.Logging;
+using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
@@ -10,7 +11,6 @@ namespace MoBot.Core.Interfaces
 	/// </summary>
 	public interface IBotSocketClient
 	{
-		public IMoBotClient MoBotClient { get; set; }
 		/// <summary>
 		/// 客户端初始化
 		/// </summary>

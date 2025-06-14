@@ -15,22 +15,21 @@ namespace MoBot.Handle
 {
 	public class MoBotClient : IMoBotClient
 	{
-		private readonly IBotSocketClient _socketClient;
 		private readonly IServiceProvider _provider;
+		private readonly ILogger _logger;
 		public MoBotClient(
-			IBotSocketClient socketClient,
-			IServiceProvider provider
+			IServiceProvider provider,
+			ILogger<MoBotClient> logger
 			)
 		{
-			_socketClient = socketClient;
 			_provider = provider;
+			_logger = logger;
 		}
 
 		public void Initial()
 		{
-			_socketClient.MoBotClient = this;
-			_socketClient.Initial();
-			MessageSender.SocketClient = _socketClient;
+			var client = _provider.GetService<IBotSocketClient>();
+			client.Initial();
 		}
 
 		private async Task RouteAsyncPri<T>(T message) where T : EventPacketBase
@@ -58,7 +57,7 @@ namespace MoBot.Handle
 			}
 			catch (Exception ex)
 			{
-				Serilog.Log.Warning($"消息序列化错误 {ex}");
+				_logger.LogWarning($"消息序列化错误 {ex}");
 			}
 		}
 
