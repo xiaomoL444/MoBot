@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using BilibiliLive.Models;
+using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle.Extensions;
@@ -29,8 +30,7 @@ namespace BilibiliLive.Handle
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && message.IsMsg("/开始推流")) return Task.FromResult(true);
-			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && message.IsMsg("/关闭推流")) return Task.FromResult(true);
+			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流"))) return Task.FromResult(true);
 
 			return Task.FromResult(false);
 		}
@@ -52,7 +52,14 @@ namespace BilibiliLive.Handle
 
 		void StartStream()
 		{
-			var args = "";
+			var accountConfig = _dataStorage.Load<AccountConfig>("account");
+
+			if (String.IsNullOrEmpty(accountConfig.RtmpUrl))
+			{
+				_logger.LogWarning("远程推流链接不存在，请重新检查配置文件");
+				return;
+			}
+
 
 
 		}

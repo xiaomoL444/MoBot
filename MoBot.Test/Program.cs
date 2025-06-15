@@ -37,7 +37,7 @@ try
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
-			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
+			server.AddScoped<IMessageHandle<Group>, StreamHandle>();
 
 		})
 		.Build();

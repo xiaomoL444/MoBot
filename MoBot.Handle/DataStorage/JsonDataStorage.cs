@@ -1,4 +1,5 @@
 ﻿using MoBot.Core.Interfaces;
+using Newtonsoft.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,47 +10,37 @@ namespace MoBot.Handle.DataStorage
 	{
 		private readonly string _basePath = "Plugins";
 		private object _lock = new();
-		public T Load<T>(string fileName) where T : new()
+		public T Load<T>(string fileName, string pluginName = "") where T : new()
 		{
 			lock (_lock)
 			{
+				{
+					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
+					string path = GetFilePath(pluginName, fileName);
 
-
-				string pluginName = GetCallerPluginName();
-				string path = GetFilePath(pluginName, fileName);
-
-				if (!File.Exists(path))
-					return new T();
-
-				string json = File.ReadAllText(path);
-				return JsonSerializer.Deserialize<T>(json) ?? new T();
+					if (!File.Exists(path))
+					{
+						//不存在当即创建新的
+						Save<T>(fileName, new(), pluginName);
+						return new T();
+					}
+					string json = File.ReadAllText(path);
+					return JsonConvert.DeserializeObject<T>(json) ?? new T();
+				}
 			}
 		}
 
-		public void Save<T>(string fileName, T data)
+		public void Save<T>(string fileName, T data, string pluginName = "")
 		{
 			lock (_lock)
 			{
-				string pluginName = GetCallerPluginName();
+				pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
 				string path = GetFilePath(pluginName, fileName);
 				Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
-				var options = new JsonSerializerOptions
-				{
-					WriteIndented = true,
-					DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-				};
-
-				string json = JsonSerializer.Serialize(data, options);
+				string json = JsonConvert.SerializeObject(data, new JsonSerializerSettings() { Formatting = Formatting.Indented });
 				File.WriteAllText(path, json);
 			}
-		}
-
-		private string GetCallerPluginName()
-		{
-			// 获取调用者（非当前类）的程序集名
-			var callingAssembly = Assembly.GetCallingAssembly();
-			return callingAssembly.GetName().Name ?? "UnknownPlugin";
 		}
 
 		private string GetFilePath(string pluginName, string fileName)
