@@ -20,7 +20,7 @@ namespace MoBot.Core.Models.Event.Message
 		/// 匿名信息，如果不是匿名消息则为 null（我还不知道里面是什么）
 		/// </summary>
 		[JsonProperty("anonymous")]
-		public Anonymous Anonymous { get; set; } = 0;
+		public Anonymous Anonymous { get; set; } = new();
 	}
 	public class Anonymous
 	{
