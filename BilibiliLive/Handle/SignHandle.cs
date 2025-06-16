@@ -64,7 +64,7 @@ namespace BilibiliLive.Handle
 				string qrCodeAsAsciiArt = qrCodeAscii.GetGraphic(1);
 				_logger.LogInformation($"\n{qrCodeAsAsciiArt}");
 
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image(qrCodeImageAsBase64).Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image($"base64://{qrCodeImageAsBase64}").Build());
 
 				//启动线程，等待连接成功
 				await Task.Run(() => { WaitForScan(group, QRcodeGenResult.Data.QrcodeKey); });
