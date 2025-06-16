@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />

@@ -9,13 +9,11 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
+using Newtonsoft.Json;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
-using System;
-using System.Diagnostics;
-using System.Runtime;
-using System.Runtime.InteropServices;
-using System.Text.Json;
+using System.Collections.Specialized;
+using System.Web;
 
 
 Log.Logger = new LoggerConfiguration()
@@ -39,7 +37,7 @@ try
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
-			server.AddScoped<IMessageHandle<Group>, StreamHandle>();
+			server.AddScoped<IMessageHandle<Group>, SignHandle>();
 
 		})
 		.Build();

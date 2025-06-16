@@ -15,8 +15,8 @@ namespace BilibiliLive.Handle
 	/// </summary>
 	public class StreamHandle : IMessageHandle<Group>
 	{
-		private readonly long _opGroupID = Constant.Constant.OPGroupID;
-		private readonly long _opAdmin = Constant.Constant.OPAdmin;
+		private readonly long _opGroupID = Constant.Constants.OPGroupID;
+		private readonly long _opAdmin = Constant.Constants.OPAdmin;
 
 		private readonly ILogger<StreamHandle> _logger;
 		private readonly IDataStorage _dataStorage;
