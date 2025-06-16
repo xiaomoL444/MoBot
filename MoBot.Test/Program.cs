@@ -38,6 +38,7 @@ try
 
 			//添加事件
 			server.AddScoped<IMessageHandle<Group>, SignHandle>();
+			server.AddScoped<IMessageHandle<Group>, StreamHandle>();
 
 		})
 		.Build();

@@ -1,13 +1,15 @@
-﻿using BilibiliLive.Models;
+﻿using BilibiliLive.Constant;
+using BilibiliLive.Models;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle;
 using MoBot.Handle.Extensions;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
-
+using HttpClient = BilibiliLive.Tool.HttpClient;
 namespace BilibiliLive.Handle
 {
 	/// <summary>
@@ -28,6 +30,7 @@ namespace BilibiliLive.Handle
 
 		private bool isStreaming = false;//是否正在直播
 
+		private string rtmp_url = "";
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -103,8 +106,15 @@ namespace BilibiliLive.Handle
 
 			isStreaming = true;
 
+			if (!await StartLive())
+			{
+				_logger.LogError("开启直播间失败");
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败，请检查控制台输出").Build());
+				return;
+			}
+
 			#region MainProcess
-			var args = $"-fflags +genpts+igndts+discardcorrupt -f lavfi -i color=c=black:s=1280x720 -i udp://127.0.0.1:11111 -filter_complex \"[1:v]scale=1280:720:force_original_aspect_ratio=decrease[vid1];[0:v][vid1]overlay=(W-w)/2:(H-h)/2\" -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -f flv \"{accountConfig.RtmpUrl}\"";
+			var args = $"-fflags +genpts+igndts+discardcorrupt -f lavfi -i color=c=black:s=1280x720 -i udp://127.0.0.1:11111 -filter_complex \"[1:v]scale=1280:720:force_original_aspect_ratio=decrease[vid1];[0:v][vid1]overlay=(W-w)/2:(H-h)/2\" -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -f flv \"{rtmp_url}\"";
 			_mainProcess = new Process
 			{
 				StartInfo = new ProcessStartInfo()
@@ -155,12 +165,23 @@ namespace BilibiliLive.Handle
 
 				TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
 
+				Task CloseHandle = new(() =>
+				{
+					Task.Delay((int)((duration.TotalSeconds + 10) * 1000));
+					//如果超时了进程还在，就强制输入q轮播到下一个影片并提醒
+					if (_childProcess == null || _childProcess.HasExited == true) return;
+					_logger.LogWarning("视频{path}无法正常关闭", _streamVideoPaths[num]);
+					_childProcess.StandardInput.WriteLine("q");
+					_childProcess.StandardInput.Flush();
+					_childProcess.WaitForExit();
+				});
+				CloseHandle.Start();
 				_childProcess = new Process
 				{
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -t {duration.TotalSeconds:F0} -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -shortest -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
@@ -217,6 +238,12 @@ namespace BilibiliLive.Handle
 			_mainProcess.WaitForExit();
 			_childProcess!.Kill();
 			_childProcess.WaitForExit();
+			if (!await StopLive())
+			{
+				_logger.LogError("关闭直播失败");
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("关闭直播间失败，请检查控制台输出").Build());
+				return;
+			}
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流已关闭").Build());
 		}
 
@@ -250,6 +277,55 @@ namespace BilibiliLive.Handle
 			}
 
 			throw new Exception($"无法解析 ffprobe 输出: {output}");
+		}
+
+		/// <summary>
+		/// 开启直播间
+		/// </summary>
+		/// <returns>是否开启成功（也就是有没有报错）</returns>
+		async Task<bool> StartLive()
+		{
+			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
+			var accountConfig = _dataStorage.Load<AccountConfig>("account");
+			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStartLiveAPI}?room_id={streamConfig.RoomID}&area_v2={streamConfig.AreaV2}&platform={streamConfig.Platform}&csrf={accountConfig.Bili_Jct}");
+			httpRequestMessage.Headers.Add("cookie", $"SESSDATA={accountConfig.Sessdata};bili_jct={accountConfig.Bili_Jct}");
+			var response = await HttpClient.SendAsync(httpRequestMessage);
+			_logger.LogDebug("开启直播的回复{@response}", (await response.Content.ReadAsStringAsync()));
+			try
+			{
+				var responseJson = JsonConvert.DeserializeObject<StartLiveRsp>(await response.Content.ReadAsStringAsync());
+				rtmp_url = responseJson?.Data.Rtmp.Addr + JsonConvert.DeserializeObject<string>($"\"{responseJson?.Data.Rtmp.Code}\"");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "开启直播失败");
+				return false;
+			}
+			return true;
+		}
+
+		async Task<bool> StopLive()
+		{
+			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
+			var accountConfig = _dataStorage.Load<AccountConfig>("account");
+			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={streamConfig.RoomID}&csrf={accountConfig.Bili_Jct}");
+			httpRequestMessage.Headers.Add("cookie", $"SESSDATA={accountConfig.Sessdata};bili_jct={accountConfig.Bili_Jct}");
+			var response = await HttpClient.SendAsync(httpRequestMessage);
+			_logger.LogDebug("关闭直播的回复{@response}", (await response.Content.ReadAsStringAsync()));
+			try
+			{
+				var responseJson = JsonConvert.DeserializeObject<StopLiveRsp>(await response.Content.ReadAsStringAsync());
+				if (responseJson?.Data.Status == "PREPARING")
+				{
+					return true;
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "关闭直播失败");
+				return false;
+			}
+			return true;
 		}
 	}
 }

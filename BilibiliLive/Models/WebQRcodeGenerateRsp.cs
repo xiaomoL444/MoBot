@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BilibiliLive.Models
 {
-	public class WebQRcodeGenerate
+	public class WebQRcodeGenerateRsp
 	{
 		/// <summary>
 		/// 返回值，0 表示成功

@@ -26,5 +26,27 @@ namespace BilibiliLive.Models
 		/// </summary>
 		[JsonProperty("index")]
 		public int Index { get; set; } = 0;
+
+		/// <summary>
+		/// 房间ID
+		/// </summary>
+		[JsonProperty("room_id")]
+		public long RoomID { get; set; } = 0;
+
+		/// <summary>
+		/// 直播分区 ID（子分区 ID），必要字段，详见直播分区列表
+		/// </summary>
+		[JsonProperty("area_v2")]
+		public int AreaV2 { get; set; } = 321;
+
+		/// <summary>
+		/// 直播平台，必要字段：
+		///
+		/// - 直播姬（PC）：pc_link  
+		/// - 网页端在线直播：web_link  
+		/// - BiliLink（如安卓）：android_link
+		/// </summary>
+		[JsonProperty("platform")]
+		public string Platform { get; set; } = "web";
 	}
 }

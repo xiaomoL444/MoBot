@@ -54,7 +54,7 @@ namespace BilibiliLive.Handle
 			_logger.LogDebug("扫码登录生成QRcode:{@code_url}", (await QRcodeGen.Content.ReadAsStringAsync()));
 			try
 			{
-				var QRcodeGenResult = JsonConvert.DeserializeObject<WebQRcodeGenerate>(await QRcodeGen.Content.ReadAsStringAsync());
+				var QRcodeGenResult = JsonConvert.DeserializeObject<WebQRcodeGenerateRsp>(await QRcodeGen.Content.ReadAsStringAsync());
 
 				QRCodeGenerator qrGenerator = new QRCodeGenerator();
 				QRCodeData qrCodeData = qrGenerator.CreateQrCode(QRcodeGenResult.Data.Url!, QRCodeGenerator.ECCLevel.Q);
@@ -64,7 +64,7 @@ namespace BilibiliLive.Handle
 				string qrCodeAsAsciiArt = qrCodeAscii.GetGraphic(1);
 				_logger.LogInformation($"\n{qrCodeAsAsciiArt}");
 
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image($"base64://{qrCodeImageAsBase64}").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama~，请登录~(＾ω＾)").Image($"base64://{qrCodeImageAsBase64}").Build());
 
 				//启动线程，等待连接成功
 				await Task.Run(() => { WaitForScan(group, QRcodeGenResult.Data.QrcodeKey); });
@@ -94,7 +94,7 @@ namespace BilibiliLive.Handle
 					var QRcodePoll = await HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"{Constants.BilibiliWebSignQRcodePollApi}?qrcode_key={qrcode_key}"));
 					_logger.LogDebug("{pollingCount} 轮询结果:{@poll_url}", pollingCount, (await QRcodePoll.Content.ReadAsStringAsync()));
 
-					var QRcodePollResult = JsonConvert.DeserializeObject<WebQRcodePoll>(await QRcodePoll.Content.ReadAsStringAsync());
+					var QRcodePollResult = JsonConvert.DeserializeObject<WebQRcodePollRsp>(await QRcodePoll.Content.ReadAsStringAsync());
 					switch (QRcodePollResult.Data.Code)
 					{
 						case 0:

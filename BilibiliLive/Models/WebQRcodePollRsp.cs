@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BilibiliLive.Models
 {
-	internal class WebQRcodePoll
+	internal class WebQRcodePollRsp
 	{
 		/// <summary>
 		/// 返回值，0 表示成功
