@@ -15,19 +15,19 @@ namespace MoBot.Handle.Net
 {
 	public class WebSocketClient : IBotSocketClient
 	{
+		private readonly IMoBotClient _moBotClient;
+		private readonly ILogger<ConsoleClient> _logger;
 		private readonly IDataStorage _dataStorage;
-		private readonly ILogger<WebSocketClient> _logger;
-
-		public IMoBotClient MoBotClient { get; set; }
 
 		private Dictionary<string, TaskCompletionSource<ActionPacketRsp>> _echoResult = new();
 		public WebSocketClient(
 			IDataStorage dataStorage,
-		ILogger<WebSocketClient> logger
-			)
+			IMoBotClient moBotClient,
+			ILogger<ConsoleClient> logger)
 		{
-			_dataStorage = dataStorage;
+			_moBotClient = moBotClient;
 			_logger = logger;
+			_dataStorage = dataStorage;
 		}
 
 		private WebSocket ws;
@@ -54,7 +54,7 @@ namespace MoBot.Handle.Net
 
 						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, e.Data);
 
-						await MoBotClient.RouteAsync(eventJson);
+						await _moBotClient.RouteAsync(eventJson);
 						return;
 					}
 					//判断是不是api回复

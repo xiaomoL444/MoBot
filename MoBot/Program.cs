@@ -33,7 +33,7 @@ try
 			server.AddScoped<IDataStorage, JsonDataStorage>();
 
 			//Bot客户端
-			server.AddScoped<MoBotClient>();
+			server.AddScoped<IMoBotClient, MoBotClient>();
 			server.AddScoped<IBotSocketClient, WebSocketClient>();
 
 			//加载插件
@@ -42,7 +42,7 @@ try
 		})
 		.Build();
 
-	var MoBotClient = host.Services.GetRequiredService<MoBotClient>();
+	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
 	MoBotClient.Initial();
 
 	while (true) ;

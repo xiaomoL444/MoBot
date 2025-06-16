@@ -6,6 +6,7 @@ using MoBot.Core.Models.Message;
 using MoBot.Handle;
 using MoBot.Handle.Extensions;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace BilibiliLive.Handle
 {
@@ -103,7 +104,7 @@ namespace BilibiliLive.Handle
 			isStreaming = true;
 
 			#region MainProcess
-			var args = $"-fflags +genpts+igndts+discardcorrupt -f lavfi -i color=c=black:s=1280x720 -i udp://127.0.0.1:11111 -filter_complex \"[1:v]scale=1280:720:force_original_aspect_ratio=decrease[vid1];[0:v][vid1]overlay=(W-w)/2:(H-h)/2\" -c:v libx264 -preset veryfast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -f mpegts \"{accountConfig.RtmpUrl}\"";
+			var args = $"-fflags +genpts+igndts+discardcorrupt -f lavfi -i color=c=black:s=1280x720 -i udp://127.0.0.1:11111 -filter_complex \"[1:v]scale=1280:720:force_original_aspect_ratio=decrease[vid1];[0:v][vid1]overlay=(W-w)/2:(H-h)/2\" -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -f flv \"{accountConfig.RtmpUrl}\"";
 			_mainProcess = new Process
 			{
 				StartInfo = new ProcessStartInfo()
@@ -152,12 +153,14 @@ namespace BilibiliLive.Handle
 				streamConfig.Index = num;
 				_dataStorage.Save("stream", streamConfig);
 
+				TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
+
 				_childProcess = new Process
 				{
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -shortest -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -t {duration.TotalSeconds:F0} -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -shortest -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
@@ -215,6 +218,38 @@ namespace BilibiliLive.Handle
 			_childProcess!.Kill();
 			_childProcess.WaitForExit();
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流已关闭").Build());
+		}
+
+		/// <summary>
+		/// 获得视频长度
+		/// </summary>
+		/// <param name="videoPath">视频路径</param>
+		/// <returns></returns>
+		/// <exception cref="Exception"></exception>
+		TimeSpan GetVideoDuration(string videoPath)
+		{
+			var process = new Process
+			{
+				StartInfo = new ProcessStartInfo
+				{
+					FileName = "ffprobe",
+					Arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"",
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				}
+			};
+
+			process.Start();
+			string output = process.StandardOutput.ReadToEnd();
+			process.WaitForExit();
+
+			if (double.TryParse(output, NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds))
+			{
+				return TimeSpan.FromSeconds(seconds);
+			}
+
+			throw new Exception($"无法解析 ffprobe 输出: {output}");
 		}
 	}
 }

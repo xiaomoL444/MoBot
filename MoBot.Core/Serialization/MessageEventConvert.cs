@@ -27,7 +27,7 @@ namespace MoBot.Core.Serialization
 			{
 
 				"group" => jo.ToObject<Group>(serializer),
-				_ => jo.ToObject<MessageBase>(serializer)
+				_ => jo.ToObject<MessageBase>(new JsonSerializer())
 			};
 		}
 
