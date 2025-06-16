@@ -8,7 +8,7 @@ namespace MoBot.Handle.DataStorage
 {
 	public class JsonDataStorage : IDataStorage
 	{
-		private readonly string _basePath = "Plugins";
+		private readonly string _basePath = "configs";
 		private object _lock = new();
 		public T Load<T>(string fileName, string pluginName = "") where T : new()
 		{

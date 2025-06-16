@@ -9,13 +9,17 @@ using System.Threading.Tasks;
 
 namespace MoBot.Core.Models
 {
-	public class ApplicationSetting
+	public class AppSetting
 	{
-		[JsonProperty("Server")]
-		public Server server;
-		public class Server
+		[JsonProperty("server")]
+		public ServerConfig Server = new();
+		public class ServerConfig
 		{
-			public string ws_url = "ws://192.168.5.2:8489";
+			/// <summary>
+			/// Websocket的远程连接
+			/// </summary>
+			[JsonProperty("ws_url")]
+			public string Ws_Url = "ws://127.0.0.1:8489";
 		}
 	}
 }

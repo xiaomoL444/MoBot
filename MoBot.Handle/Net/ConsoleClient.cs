@@ -53,17 +53,17 @@ namespace MoBot.Handle.Net
 				if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 				{
 					var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
-					_logger.LogInformation("收到api回复：{@commond}",commond);
+					_logger.LogInformation("收到api回复：{@commond}", commond);
 					continue;
 				}
 
-				_logger.LogWarning($"收到未知消息：{commond}");
+				_logger.LogWarning("收到未知消息：{commond}", commond);
 			}
 		}
 
 		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message)
 		{
-			_logger.LogInformation($"发送消息{actionType} /{action} {JsonConvert.SerializeObject(message)}");
+			_logger.LogInformation("发送消息{actionType} /{action} {message}", actionType, action, JsonConvert.SerializeObject(message));
 			return Task.FromResult(new ActionPacketRsp());
 		}
 	}

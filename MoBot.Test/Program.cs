@@ -1,4 +1,5 @@
 ﻿using BilibiliLive.Handle;
+using BilibiliLive.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +11,10 @@ using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
+using System;
+using System.Diagnostics;
 using System.Runtime;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 
@@ -21,8 +25,6 @@ Log.Logger = new LoggerConfiguration()
 	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day)
 	.CreateLogger();
 
-
-
 try
 {
 	var host = Host.CreateDefaultBuilder()
@@ -30,7 +32,7 @@ try
 		.ConfigureServices((builder, server) =>
 		{
 			//添加必要的插件
-			server.AddScoped<IDataStorage,JsonDataStorage>();
+			server.AddScoped<IDataStorage, JsonDataStorage>();
 
 			//Bot客户端
 			server.AddScoped<IMoBotClient, MoBotClient>();

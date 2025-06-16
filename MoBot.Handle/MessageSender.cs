@@ -6,7 +6,7 @@ namespace MoBot.Handle
 {
 	public static class MessageSender
 	{
-		public static IBotSocketClient? SocketClient;
+		internal static IBotSocketClient? SocketClient;
 
 		/// <summary>
 		/// 发送群组消息
