@@ -19,6 +19,7 @@ namespace BilibiliLive.Models
 		/// 那个大伟的overlay视频位置，不能放在StreamVideoDirectory里面，不然会被读取成主视频
 		/// </summary>
 		[JsonProperty("overlay_stream_video")]
+		[Obsolete]
 		public string OverlayStreamVideo { get; set; } = "";
 
 		/// <summary>

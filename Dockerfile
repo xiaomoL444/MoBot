@@ -1,7 +1,8 @@
 # 使用 Microsoft 官方 .NET 运行时镜像
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+#RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
 WORKDIR /app

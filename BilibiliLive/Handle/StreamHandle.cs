@@ -78,7 +78,7 @@ namespace BilibiliLive.Handle
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 
-			#region 校验参数
+			//校验参数
 
 			var failAction = async () => { await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流失败，请检查控制台输出").Build()); };
 			if (String.IsNullOrEmpty(accountConfig.RtmpUrl))
@@ -93,12 +93,6 @@ namespace BilibiliLive.Handle
 				await failAction();
 				return;
 			}
-			if (!File.Exists(streamConfig.OverlayStreamVideo))
-			{
-				_logger.LogWarning("大伟视频->{path}不存在，请检查配置文件", streamConfig.OverlayStreamVideo);
-				await failAction();
-				return;
-			}
 
 			_streamVideoPaths = Directory.GetFiles(streamConfig.StreamVideoDirectory).Where(q => q.EndsWith(".mp4")).ToList();
 
@@ -108,8 +102,8 @@ namespace BilibiliLive.Handle
 				await failAction();
 				return;
 			}
-			#endregion
 
+			//开启直播
 			isStreaming = true;
 			rtmp_url = accountConfig.RtmpUrl;
 			if (!isDebug)
@@ -123,7 +117,7 @@ namespace BilibiliLive.Handle
 			}
 
 			#region MainProcess
-			var args = $"-fflags +genpts+igndts+discardcorrupt -f lavfi -i color=c=black:s=1280x720 -i udp://127.0.0.1:11111 -filter_complex \"[1:v]scale=1280:720:force_original_aspect_ratio=decrease[vid1];[0:v][vid1]overlay=(W-w)/2:(H-h)/2\" -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -f flv \"{rtmp_url}\"";
+			var args = $"-fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i udp://127.0.0.1:11111 -c copy -f flv \"{rtmp_url}\"";
 			_mainProcess = new Process
 			{
 				StartInfo = new ProcessStartInfo()
@@ -180,7 +174,7 @@ namespace BilibiliLive.Handle
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -shortest -t {duration.TotalSeconds} -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,

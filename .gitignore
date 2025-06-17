@@ -38,3 +38,4 @@ bld/
 .vs/
 
 publish/
+docker/
