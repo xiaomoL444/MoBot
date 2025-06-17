@@ -33,7 +33,8 @@ namespace BilibiliLive.Handle
 		private bool isStreaming = false;//是否正在直播
 
 		private string rtmp_url = "";
-		private bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
+		private bool isDebug = true; //主程序的推流-f flv 要记得改 和 mpegts
+		private string EncoderVideo = "h264_v4l2m2m";//电脑用超绝 h264_nvenc，树莓派用顶级 h264_v4l2m2m
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -116,8 +117,8 @@ namespace BilibiliLive.Handle
 				}
 			}
 
-			#region MainProcess
-			var args = $"-fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i udp://127.0.0.1:11111 -c copy -f flv \"{rtmp_url}\"";
+			//主ffmpeg程序
+			var args = $"-fflags +nobuffer+genpts+igndts+discardcorrupt -i udp://127.0.0.1:11111 -c:v {EncoderVideo} -f {(isDebug ? "mpegts" : "flv")} \"{rtmp_url}\"";
 			_mainProcess = new Process
 			{
 				StartInfo = new ProcessStartInfo()
@@ -141,6 +142,7 @@ namespace BilibiliLive.Handle
 					_logger.LogInformation("主ffmpeg强制退出");
 					return;
 				}
+				_logger.LogWarning("主程序错误码{exit_code}", _mainProcess.ExitCode);
 				isStreaming = false;
 				_logger.LogError("主ffmpeg异常退出");
 				if (_childProcess != null && _childProcess.HasExited == false)
@@ -154,15 +156,15 @@ namespace BilibiliLive.Handle
 			_mainProcess.BeginOutputReadLine();
 			_mainProcess.BeginErrorReadLine();
 
-			#endregion
 
-			#region ChildProcess
+			//子ffmpeg程序
 			Action<int> action = (int num) => { };
 			action = (int num) =>
 			{
 				if (num >= _streamVideoPaths.Count) num = 0;
 				_logger.LogInformation("播放第{i}个视频，路径为：{path}", num, _streamVideoPaths[num]);
 
+				var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 				streamConfig.Index = num;
 				_dataStorage.Save("stream", streamConfig);
 
@@ -174,7 +176,7 @@ namespace BilibiliLive.Handle
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -c copy -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -c:v {EncoderVideo} -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
@@ -199,6 +201,7 @@ namespace BilibiliLive.Handle
 						_logger.LogInformation("子ffmpeg强制退出");
 						return;
 					}
+					_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
 					isStreaming = false;
 					_logger.LogWarning("子ffmpeg异常退出");
 					if (_mainProcess != null && _mainProcess.HasExited == false)
@@ -207,7 +210,7 @@ namespace BilibiliLive.Handle
 						_mainProcess.StandardInput.Flush();
 						_logger.LogError("主ffmpeg一起退出");
 					}
-					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("主程序异常退出，请检查控制台输出").Build());
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
 				};
 				_childProcess.Start();
 				_childProcess.BeginOutputReadLine();
@@ -215,7 +218,7 @@ namespace BilibiliLive.Handle
 			};
 			action(streamConfig.Index);
 
-			#endregion
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("直播已开始").Build());
 		}
 		async void StopStream(Group group)
 		{

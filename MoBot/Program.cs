@@ -15,7 +15,7 @@ using System.Text.Json;
 
 
 Log.Logger = new LoggerConfiguration()
-	.MinimumLevel.Debug() // ✅ 设置为显示 Debug 及以上
+	.MinimumLevel.Information() // ✅ 设置为显示 Debug 及以上
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}", theme: AnsiConsoleTheme.Literate)
 	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day)
