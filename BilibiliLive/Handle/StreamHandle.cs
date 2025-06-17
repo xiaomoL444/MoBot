@@ -174,7 +174,7 @@ namespace BilibiliLive.Handle
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -c copy -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
