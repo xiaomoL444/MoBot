@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
 using HttpClient = BilibiliLive.Tool.HttpClient;
+using Timer = System.Timers.Timer;
+
 namespace BilibiliLive.Handle
 {
 	/// <summary>
@@ -31,6 +33,7 @@ namespace BilibiliLive.Handle
 		private bool isStreaming = false;//是否正在直播
 
 		private string rtmp_url = "";
+		private bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -75,6 +78,8 @@ namespace BilibiliLive.Handle
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 
+			#region 校验参数
+
 			var failAction = async () => { await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流失败，请检查控制台输出").Build()); };
 			if (String.IsNullOrEmpty(accountConfig.RtmpUrl))
 			{
@@ -103,14 +108,18 @@ namespace BilibiliLive.Handle
 				await failAction();
 				return;
 			}
+			#endregion
 
 			isStreaming = true;
-
-			if (!await StartLive())
+			rtmp_url = accountConfig.RtmpUrl;
+			if (!isDebug)
 			{
-				_logger.LogError("开启直播间失败");
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败，请检查控制台输出").Build());
-				return;
+				if (!await StartLive())
+				{
+					_logger.LogError("开启直播间失败");
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败，请检查控制台输出").Build());
+					return;
+				}
 			}
 
 			#region MainProcess
@@ -163,25 +172,15 @@ namespace BilibiliLive.Handle
 				streamConfig.Index = num;
 				_dataStorage.Save("stream", streamConfig);
 
+				//设置关闭程序，若超时了10s视屏还没切换则发出警告并强制切换到下一个影片
 				TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
 
-				Task CloseHandle = new(() =>
-				{
-					Task.Delay((int)((duration.TotalSeconds + 10) * 1000));
-					//如果超时了进程还在，就强制输入q轮播到下一个影片并提醒
-					if (_childProcess == null || _childProcess.HasExited == true) return;
-					_logger.LogWarning("视频{path}无法正常关闭", _streamVideoPaths[num]);
-					_childProcess.StandardInput.WriteLine("q");
-					_childProcess.StandardInput.Flush();
-					_childProcess.WaitForExit();
-				});
-				CloseHandle.Start();
 				_childProcess = new Process
 				{
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -max_interleave_delta 0 -avoid_negative_ts 1 -i \"{_streamVideoPaths[num]}\" -stream_loop -1 -i \"{streamConfig.OverlayStreamVideo}\" -filter_complex \"[1:v]scale=570:405[little];[0:v][little]overlay=W-w:H-h\" -shortest -t {duration.TotalSeconds} -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
@@ -238,11 +237,14 @@ namespace BilibiliLive.Handle
 			_mainProcess.WaitForExit();
 			_childProcess!.Kill();
 			_childProcess.WaitForExit();
-			if (!await StopLive())
+			if (!isDebug)
 			{
-				_logger.LogError("关闭直播失败");
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("关闭直播间失败，请检查控制台输出").Build());
-				return;
+				if (!await StopLive())
+				{
+					_logger.LogError("关闭直播失败");
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("关闭直播间失败，请检查控制台输出").Build());
+					return;
+				}
 			}
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流已关闭").Build());
 		}

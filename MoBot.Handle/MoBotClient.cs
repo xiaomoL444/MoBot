@@ -57,7 +57,7 @@ namespace MoBot.Handle
 			}
 			catch (Exception ex)
 			{
-				_logger.LogWarning($"消息序列化错误 {ex}");
+				_logger.LogWarning(ex,$"消息处理错误");
 			}
 		}
 
