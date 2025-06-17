@@ -39,3 +39,5 @@ bld/
 
 publish/
 docker/
+/.tmp-mobot
+/mobot.rar
