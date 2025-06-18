@@ -162,67 +162,125 @@ namespace BilibiliLive.Handle
 			_mainProcess.BeginOutputReadLine();
 			_mainProcess.BeginErrorReadLine();
 
-			int itoffset = 0;
+
 
 			//子ffmpeg程序
-			Action<int> action = (int num) => { };
-			action = (int num) =>
+
+			_ = Task.Run(async () =>
 			{
-				if (num >= _streamVideoPaths.Count) num = 0;
-				_logger.LogInformation("播放第{i}个视频，路径为：{path}", num, _streamVideoPaths[num]);
-
-				var streamConfig = _dataStorage.Load<StreamConfig>("stream");
-				streamConfig.Index = num;
-				_dataStorage.Save("stream", streamConfig);
-
-				//设置关闭程序，若超时了10s视屏还没切换则发出警告并强制切换到下一个影片
-				TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
-				_childProcess = new Process
+				int num = streamConfig.Index;
+				while (true)
 				{
-					StartInfo = new ProcessStartInfo()
+					try
 					{
-						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://127.0.0.1:11111",
-						RedirectStandardOutput = true,
-						RedirectStandardError = true,
-						RedirectStandardInput = true,
-						UseShellExecute = false,
-						CreateNoWindow = true,
-					},
-					EnableRaisingEvents = true
-				};
-				_childProcess.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
-				_childProcess.ErrorDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
+						CancellationTokenSource cts = new CancellationTokenSource();//要是中途出错了直接打断这个等待的Task并退出循环
 
-				_childProcess.Exited += async (s, e) =>
-				{
-					//0即是正常退出（播放完或者是输入q，这里只有播放完，让他强制退出就使用-1）
-					if (_childProcess.ExitCode == 0)
-					{
-						action(num + 1);
-						return;
+						//设置播放的次序
+						if (num >= _streamVideoPaths.Count) num = 0;
+						_logger.LogInformation("播放第{i}个视频，路径为：{path}", num, _streamVideoPaths[num]);
+
+						var streamConfig = _dataStorage.Load<StreamConfig>("stream");
+						streamConfig.Index = num;
+						_dataStorage.Save("stream", streamConfig);
+
+						//设置视频时长
+						TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
+						_childProcess = new Process
+						{
+							StartInfo = new ProcessStartInfo()
+							{
+								FileName = "ffmpeg",
+								Arguments = $" -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://127.0.0.1:11111",
+								RedirectStandardOutput = true,
+								RedirectStandardError = true,
+								RedirectStandardInput = true,
+								UseShellExecute = false,
+								CreateNoWindow = true,
+							},
+							EnableRaisingEvents = true
+						};
+						_childProcess.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
+						_childProcess.ErrorDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
+
+						_childProcess.Exited += async (s, e) =>
+						{
+							//0即是正常退出（播放完或者是输入q，这里只有播放完，让他强制退出就使用-1）
+							if (_childProcess.ExitCode == 0)
+							{
+								num++;
+								cts.Cancel();
+								return;
+							}
+							//windows是-1，linux是137
+							if (_childProcess.ExitCode == -1 || _childProcess.ExitCode == 137)
+							{
+								_logger.LogInformation("子ffmpeg强制退出");
+								return;
+							}
+							_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
+							isStreaming = false;
+							_logger.LogWarning("子ffmpeg异常退出");
+							if (_mainProcess != null && _mainProcess.HasExited == false)
+							{
+								_mainProcess!.StandardInput.WriteLine("q");
+								_mainProcess.StandardInput.Flush();
+								_logger.LogError("主ffmpeg一起退出");
+							}
+							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
+						};
+						_childProcess.Start();
+						_childProcess.BeginOutputReadLine();
+						_childProcess.BeginErrorReadLine();
+
+						//等待视频的时长
+						try
+						{
+							await Task.Delay((int)duration.TotalMilliseconds, cts.Token);
+						}
+						catch (Exception)
+						{
+							_logger.LogDebug("子程序经过{time}秒退出", duration.TotalSeconds);
+						}
+						if (!_childProcess.HasExited)
+						{
+							//如果没有退出，等待1s（因为可能ffmpeg自己有点慢之类的，容忍等待）
+							try
+							{
+								await Task.Delay(1000, cts.Token);
+								//要是还没退出发送关闭指令
+								_logger.LogWarning("播放第{i}的视频{path}的时候退出慢了", num, _streamVideoPaths[num]);
+								_childProcess.StandardInput.WriteLine("q");
+								_childProcess.StandardInput.Flush();
+							}
+							catch (Exception)
+							{
+								_logger.LogDebug("子程序经过{time} +1秒发送退出请求后退出", duration.TotalSeconds);
+							}
+						}
+						if (!_childProcess.HasExited)
+						{
+							try
+							{
+								await Task.Delay(1000, cts.Token);
+								//要是还没退出强制关闭
+								_logger.LogWarning("播放第{i}的视频{path}的时候需要强制关闭！", num, _streamVideoPaths[num]);
+								_childProcess.Kill();
+								_childProcess.WaitForExit();
+							}
+							catch (Exception)
+							{
+								_logger.LogDebug("子程序经过{time} +2秒发送退出请求后退出", duration.TotalSeconds);
+							}
+						}
 					}
-					if (_childProcess.ExitCode == -1 || _childProcess.ExitCode == 137)
+					catch (Exception ex)
 					{
-						_logger.LogInformation("子ffmpeg强制退出");
-						return;
+						_logger.LogError(ex, "子程序出现错误");
+						await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
+						break;
 					}
-					_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
-					isStreaming = false;
-					_logger.LogWarning("子ffmpeg异常退出");
-					if (_mainProcess != null && _mainProcess.HasExited == false)
-					{
-						_mainProcess!.StandardInput.WriteLine("q");
-						_mainProcess.StandardInput.Flush();
-						_logger.LogError("主ffmpeg一起退出");
-					}
-					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
-				};
-				_childProcess.Start();
-				_childProcess.BeginOutputReadLine();
-				_childProcess.BeginErrorReadLine();
-			};
-			action(streamConfig.Index);
+				}
+			});
 
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("直播已开始").Build());
 		}
