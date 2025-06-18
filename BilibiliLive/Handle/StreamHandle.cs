@@ -33,8 +33,12 @@ namespace BilibiliLive.Handle
 		private bool isStreaming = false;//是否正在直播
 
 		private string rtmp_url = "";
+#if DEBUG
 		private bool isDebug = true; //主程序的推流-f flv 要记得改 和 mpegts
-		private string EncoderVideo = "h264_v4l2m2m";//电脑用超绝 h264_nvenc，树莓派用顶级 h264_v4l2m2m
+#endif
+#if !DEBUG
+		private bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
+#endif
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -95,7 +99,9 @@ namespace BilibiliLive.Handle
 				return;
 			}
 
-			_streamVideoPaths = Directory.GetFiles(streamConfig.StreamVideoDirectory).Where(q => q.EndsWith(".mp4")).ToList();
+			//读取视频文件
+			_streamVideoPaths = Directory.GetFiles(streamConfig.StreamVideoDirectory).Where(q => q.EndsWith(".mp4")).OrderBy(q => Path.GetFileName(q)).ToList();
+			_logger.LogDebug("找到的所有视频文件{paths}", _streamVideoPaths);
 
 			if (_streamVideoPaths.Count <= 0)
 			{
@@ -118,7 +124,7 @@ namespace BilibiliLive.Handle
 			}
 
 			//主ffmpeg程序
-			var args = $"-fflags +nobuffer+genpts+igndts+discardcorrupt -i udp://127.0.0.1:11111 -c:v {EncoderVideo} -f {(isDebug ? "mpegts" : "flv")} \"{rtmp_url}\"";
+			var args = $"-fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://127.0.0.1:11111 -c copy -f {(isDebug ? "mpegts" : "flv")} \"{rtmp_url}\"";
 			_mainProcess = new Process
 			{
 				StartInfo = new ProcessStartInfo()
@@ -156,6 +162,7 @@ namespace BilibiliLive.Handle
 			_mainProcess.BeginOutputReadLine();
 			_mainProcess.BeginErrorReadLine();
 
+			int itoffset = 0;
 
 			//子ffmpeg程序
 			Action<int> action = (int num) => { };
@@ -170,13 +177,12 @@ namespace BilibiliLive.Handle
 
 				//设置关闭程序，若超时了10s视屏还没切换则发出警告并强制切换到下一个影片
 				TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
-
 				_childProcess = new Process
 				{
 					StartInfo = new ProcessStartInfo()
 					{
 						FileName = "ffmpeg",
-						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds} -c:v {EncoderVideo} -f mpegts udp://127.0.0.1:11111",
+						Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://127.0.0.1:11111",
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
@@ -196,7 +202,7 @@ namespace BilibiliLive.Handle
 						action(num + 1);
 						return;
 					}
-					if (_childProcess.ExitCode == -1)
+					if (_childProcess.ExitCode == -1 || _childProcess.ExitCode == 137)
 					{
 						_logger.LogInformation("子ffmpeg强制退出");
 						return;
