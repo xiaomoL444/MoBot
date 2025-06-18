@@ -87,6 +87,20 @@ namespace BilibiliLive.Handle
 				return;
 			}
 
+			//在开播前先把可能存在的进程关闭
+			if (_mainProcess != null && !_mainProcess.HasExited)
+			{
+				_logger.LogWarning("主ffmpeg未关闭!");
+				_mainProcess.StandardInput.WriteLine("q");
+				_mainProcess.WaitForExit();
+			}
+			if (_childProcess != null && !_childProcess.HasExited)
+			{
+				_logger.LogWarning("子ffmpeg未关闭!");
+				_childProcess.StandardInput.WriteLine("q");
+				_childProcess.WaitForExit();
+			}
+
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 
