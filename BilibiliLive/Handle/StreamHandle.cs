@@ -82,7 +82,7 @@ namespace BilibiliLive.Handle
 		{
 			if (isStreaming)
 			{
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("已经在推流中，无法重复推流").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("已经在推流中哦，不能再推啦~").Build());
 				_logger.LogWarning("已经在推流中，无法重复推流");
 				return;
 			}
@@ -106,7 +106,7 @@ namespace BilibiliLive.Handle
 
 			//校验参数
 
-			var failAction = async () => { await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流失败，请检查控制台输出").Build()); };
+			var failAction = async () => { await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流的配置好像不完整...߹ - ߹，勾修金sama请检查一下吧").Build()); };
 			if (String.IsNullOrEmpty(accountConfig.RtmpUrl))
 			{
 				_logger.LogError("远程推流链接不存在，请重新检查配置文件");
@@ -139,11 +139,10 @@ namespace BilibiliLive.Handle
 				if (!await StartLive() || !await StartLiveEvent())
 				{
 					_logger.LogError("开启直播间失败");
-					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败，请检查控制台输出").Build());
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败了>﹏<，请检查一下控制台输出吧").Build());
 					return;
 				}
 			}
-			await StartLiveEvent();
 			//主ffmpeg程序
 			var args = $"-fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://127.0.0.1:11111 -c copy -f {(isDebug ? "mpegts" : "flv")} \"{rtmp_url}\"";
 			_mainProcess = new Process
@@ -177,7 +176,7 @@ namespace BilibiliLive.Handle
 					_childProcess.Kill();
 					_logger.LogWarning("子ffmpeg一起退出");
 				}
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("主程序异常退出，请检查控制台输出").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("主程序退出出现了一些异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 			};
 			_mainProcess.Start();
 			_mainProcess.BeginOutputReadLine();
@@ -251,7 +250,7 @@ namespace BilibiliLive.Handle
 								_mainProcess.StandardInput.Flush();
 								_logger.LogError("主ffmpeg一起退出");
 							}
-							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
+							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序退出出现了异常1...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 							isStream = false;
 						};
 						_childProcess.Start();
@@ -302,20 +301,20 @@ namespace BilibiliLive.Handle
 					catch (Exception ex)
 					{
 						_logger.LogError(ex, "子程序出现错误");
-						await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
+						await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序退出出现了异常2...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 						break;
 					}
 				}
 			});
 
-			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("直播已开始").Build());
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("直播已开始啦(＾ω＾)").Build());
 		}
 		async void StopStream(Group group)
 		{
 			if (!isStreaming)
 			{
 				_logger.LogWarning("没有正在进行的推流");
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("没有正在进行的推流").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("现在末酱不在在推流哦~").Build());
 				return;
 			}
 			isStreaming = false;
@@ -329,16 +328,18 @@ namespace BilibiliLive.Handle
 				if (!await StopLive() || !await StopLiveEvent())
 				{
 					_logger.LogError("关闭直播失败");
-					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("关闭直播间失败，请检查控制台输出").Build());
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("哇...!关闭...失败了......可能要请勾修金sama邦邦末酱了(｡•́︿•̀｡) ").Build());
 					return;
 				}
 			}
-			await StopLiveEvent();
-			var LiveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs").logs;
-			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text(@$"推流已关闭，本次推流活动如下-------------
-{String.Join("\n", LiveLogs.Take(5).ToDictionary().Values)}{(LiveLogs.Count > 5 ? $"以及其他{LiveLogs.Count - 5}条信息......" : "")}
+			var liveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs").logs;
+			var showLogNum = 4;
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text(@$"这次的推流很成功哦~
+(●• ̀ω•́ )✧末酱在直播间看到了一些有趣的消息
 -------------
-From:BilibiliLive_{streamOpenTime}").Build());
+{String.Join("\n", liveLogs.Take(showLogNum).ToDictionary().Values)}{(liveLogs.Count > showLogNum ? $"以及其他{liveLogs.Count - showLogNum}条信息......" : "")}
+-------------
+可以来这里查看哦*⸜( •ᴗ• )⸝*:BilibiliLive_{streamOpenTime}").Build());
 		}
 
 		/// <summary>

@@ -17,4 +17,4 @@ WORKDIR /app
 COPY ./publish/ .
 
 # 设置容器启动时运行的命令
-ENTRYPOINT ["dotnet", "MoBot.Test.dll"]
+ENTRYPOINT ["dotnet", "MoBot.dll"]

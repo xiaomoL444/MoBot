@@ -72,7 +72,7 @@ namespace BilibiliLive.Handle
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "获取QRcode链接失败");
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("获取QRcode链接失败，请查看控制台").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("获取二维码失败了哦(｡•́︿•̀｡)").Build());
 				throw;
 			}
 		}
@@ -111,13 +111,13 @@ namespace BilibiliLive.Handle
 							accountConfig.Bili_Jct = cookies["bili_jct"]!;
 							_dataStorage.Save("account", accountConfig);
 							_logger.LogInformation("登录成功");
-							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("登录成功").Build());
+							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama登录成功~ヾ(✿ﾟ▽ﾟ)ノ").Build());
 							break;
 						case 86038:
 							isPolling = false;
 
 							//TODO 撤回过期图片
-							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("二维码已过期，请重新登录").Build());
+							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("二维码过期了哦，勾修金sama请再来一次吧|･ω･｀)").Build());
 							_logger.LogWarning("二维码已失效");
 							break;
 						case 86090:
@@ -136,7 +136,7 @@ namespace BilibiliLive.Handle
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "轮询失败");
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("轮询失败，请查看控制台").Build());
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("轮询...失败了?Σ( ° △ °|||)︴，请查看一下控制台吧").Build());
 				throw;
 			}
 		}
