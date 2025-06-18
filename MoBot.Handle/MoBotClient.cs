@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 namespace MoBot.Handle
 {
 	public class MoBotClient : IMoBotClient
@@ -57,7 +56,7 @@ namespace MoBot.Handle
 			}
 			catch (Exception ex)
 			{
-				_logger.LogWarning(ex,$"消息处理错误");
+				_logger.LogError(ex, $"消息处理错误");
 			}
 		}
 

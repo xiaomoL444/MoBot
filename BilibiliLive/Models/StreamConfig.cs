@@ -49,5 +49,20 @@ namespace BilibiliLive.Models
 		/// </summary>
 		[JsonProperty("platform")]
 		public string Platform { get; set; } = "web";
+
+		public LiveOpenPlatForm LiveOpenPlatForm = new();
+	}
+
+	public class LiveOpenPlatForm
+	{
+		//直播用
+		[JsonProperty("access_key_id")]
+		public string AccessKeyId = "";//填入你的accessKeyId，可以在直播创作者服务中心【个人资料】页面获取(https://open-live.bilibili.com/open-manage)
+		[JsonProperty("access_key_secret")]
+		public string AccessKeySecret = "";//填入你的accessKeySecret，可以在直播创作者服务中心【个人资料】页面获取(https://open-live.bilibili.com/open-manage)
+		[JsonProperty("app_id")]
+		public string AppId = "";//填入你的appId，可以在直播创作者服务中心【我的项目】页面创建应用后获取(https://open-live.bilibili.com/open-manage)
+		[JsonProperty("code")]
+		public string Code = "";//填入你的主播身份码Code，可以在互动玩法首页，右下角【身份码】处获取(互玩首页：https://play-live.bilibili.com/)
 	}
 }

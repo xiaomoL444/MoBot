@@ -8,20 +8,19 @@ namespace MoBot.Handle.DataStorage
 {
 	public class JsonDataStorage : IDataStorage
 	{
-		private readonly string _basePath = "configs";
 		private object _lock = new();
-		public T Load<T>(string fileName, string pluginName = "") where T : new()
+		public T Load<T>(string fileName, string basePath = "configs", string pluginName = "") where T : new()
 		{
 			lock (_lock)
 			{
 				{
 					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-					string path = GetFilePath(pluginName, fileName);
+					string path = GetFilePath(basePath, pluginName, fileName);
 
 					if (!File.Exists(path))
 					{
 						//不存在当即创建新的
-						Save<T>(fileName, new(), pluginName);
+						Save<T>(fileName, new(), basePath, pluginName);
 						return new T();
 					}
 					string json = File.ReadAllText(path);
@@ -30,12 +29,12 @@ namespace MoBot.Handle.DataStorage
 			}
 		}
 
-		public void Save<T>(string fileName, T data, string pluginName = "")
+		public void Save<T>(string fileName, T data, string basePath = "configs", string pluginName = "")
 		{
 			lock (_lock)
 			{
 				pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-				string path = GetFilePath(pluginName, fileName);
+				string path = GetFilePath(basePath, pluginName, fileName);
 				Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
 				string json = JsonConvert.SerializeObject(data, new JsonSerializerSettings() { Formatting = Formatting.Indented });
@@ -43,9 +42,9 @@ namespace MoBot.Handle.DataStorage
 			}
 		}
 
-		private string GetFilePath(string pluginName, string fileName)
+		private string GetFilePath(string basePath, string pluginName, string fileName)
 		{
-			return Path.Combine(_basePath, pluginName, $"{fileName}.json");
+			return Path.Combine(basePath, pluginName, $"{fileName}.json");
 		}
 	}
 }

@@ -74,7 +74,7 @@ namespace MoBot.Handle.Net
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "ws_url:{{ws}}连接ws服务器失败，程序返回", ws_url);
+				_logger.LogError(ex, "ws_url:{ws}连接ws服务器失败，程序返回", ws_url);
 				return;
 			}
 			_logger.LogInformation("正在监听{ws_url}", ws_url);

@@ -17,4 +17,22 @@
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="OpenBLive">
+      <HintPath>Third\OpenBLive.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Third\OpenBLive.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Third\System.Reactive.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Third\Websocket.Client.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

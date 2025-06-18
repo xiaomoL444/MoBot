@@ -7,6 +7,11 @@ using MoBot.Core.Models.Message;
 using MoBot.Handle;
 using MoBot.Handle.Extensions;
 using Newtonsoft.Json;
+using OpenBLive.Client;
+using OpenBLive.Client.Data;
+using OpenBLive.Runtime;
+using OpenBLive.Runtime.Data;
+using OpenBLive.Runtime.Utilities;
 using System.Diagnostics;
 using System.Globalization;
 using HttpClient = BilibiliLive.Tool.HttpClient;
@@ -39,6 +44,8 @@ namespace BilibiliLive.Handle
 #if !DEBUG
 		private bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
 #endif
+
+		private string streamOpenTime = "";
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -88,13 +95,13 @@ namespace BilibiliLive.Handle
 			var failAction = async () => { await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流失败，请检查控制台输出").Build()); };
 			if (String.IsNullOrEmpty(accountConfig.RtmpUrl))
 			{
-				_logger.LogWarning("远程推流链接不存在，请重新检查配置文件");
+				_logger.LogError("远程推流链接不存在，请重新检查配置文件");
 				await failAction();
 				return;
 			}
 			if (!Directory.Exists(streamConfig.StreamVideoDirectory))
 			{
-				_logger.LogWarning("视频目录->{path}不存在，请检查配置文件", streamConfig.StreamVideoDirectory);
+				_logger.LogError("视频目录->{path}不存在，请检查配置文件", streamConfig.StreamVideoDirectory);
 				await failAction();
 				return;
 			}
@@ -105,7 +112,7 @@ namespace BilibiliLive.Handle
 
 			if (_streamVideoPaths.Count <= 0)
 			{
-				_logger.LogWarning("视频目录->{path}下不存在视频源", streamConfig.StreamVideoDirectory);
+				_logger.LogError("视频目录->{path}下不存在视频源", streamConfig.StreamVideoDirectory);
 				await failAction();
 				return;
 			}
@@ -115,14 +122,14 @@ namespace BilibiliLive.Handle
 			rtmp_url = accountConfig.RtmpUrl;
 			if (!isDebug)
 			{
-				if (!await StartLive())
+				if (!await StartLive() || !await StartLiveEvent())
 				{
 					_logger.LogError("开启直播间失败");
 					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败，请检查控制台输出").Build());
 					return;
 				}
 			}
-
+			await StartLiveEvent();
 			//主ffmpeg程序
 			var args = $"-fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://127.0.0.1:11111 -c copy -f {(isDebug ? "mpegts" : "flv")} \"{rtmp_url}\"";
 			_mainProcess = new Process
@@ -169,7 +176,8 @@ namespace BilibiliLive.Handle
 			_ = Task.Run(async () =>
 			{
 				int num = streamConfig.Index;
-				while (true)
+				bool isStream = true;
+				while (isStream)
 				{
 					try
 					{
@@ -190,7 +198,7 @@ namespace BilibiliLive.Handle
 							StartInfo = new ProcessStartInfo()
 							{
 								FileName = "ffmpeg",
-								Arguments = $" -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://127.0.0.1:11111",
+								Arguments = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://127.0.0.1:11111",
 								RedirectStandardOutput = true,
 								RedirectStandardError = true,
 								RedirectStandardInput = true,
@@ -215,8 +223,11 @@ namespace BilibiliLive.Handle
 							if (_childProcess.ExitCode == -1 || _childProcess.ExitCode == 137)
 							{
 								_logger.LogInformation("子ffmpeg强制退出");
+								cts.Cancel();
+								isStream = false;
 								return;
 							}
+							cts.Cancel();
 							_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
 							isStreaming = false;
 							_logger.LogWarning("子ffmpeg异常退出");
@@ -227,6 +238,7 @@ namespace BilibiliLive.Handle
 								_logger.LogError("主ffmpeg一起退出");
 							}
 							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常退出，请检查控制台输出").Build());
+							isStream = false;
 						};
 						_childProcess.Start();
 						_childProcess.BeginOutputReadLine();
@@ -300,14 +312,19 @@ namespace BilibiliLive.Handle
 			_childProcess.WaitForExit();
 			if (!isDebug)
 			{
-				if (!await StopLive())
+				if (!await StopLive() || !await StopLiveEvent())
 				{
 					_logger.LogError("关闭直播失败");
 					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("关闭直播间失败，请检查控制台输出").Build());
 					return;
 				}
 			}
-			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("推流已关闭").Build());
+			await StopLiveEvent();
+			var LiveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs").logs;
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text(@$"推流已关闭，本次推流活动如下-------------
+{String.Join("\n", LiveLogs.Take(5).ToDictionary().Values)}{(LiveLogs.Count > 5 ? $"以及其他{LiveLogs.Count - 5}条信息......" : "")}
+-------------
+From:BilibiliLive_{streamOpenTime}").Build());
 		}
 
 		/// <summary>
@@ -367,6 +384,10 @@ namespace BilibiliLive.Handle
 			return true;
 		}
 
+		/// <summary>
+		/// 关闭直播间
+		/// </summary>
+		/// <returns></returns>
 		async Task<bool> StopLive()
 		{
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
@@ -388,6 +409,122 @@ namespace BilibiliLive.Handle
 				_logger.LogError(ex, "关闭直播失败");
 				return false;
 			}
+			return true;
+		}
+
+		IBApiClient bApiClient = new BApiClient();
+		string appId = "";
+		string gameId = "";
+		/// <summary>
+		/// 开启监控直播间事件
+		/// </summary>
+		/// <returns></returns>
+		async Task<bool> StartLiveEvent()
+		{
+			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
+			string AccessKeyId = streamConfig.LiveOpenPlatForm.AccessKeyId;
+			string AccessKeySecret = streamConfig.LiveOpenPlatForm.AccessKeySecret;
+			string AppId = streamConfig.LiveOpenPlatForm.AppId;
+			string Code = streamConfig.LiveOpenPlatForm.Code;
+
+			string game_id = string.Empty;
+
+			//是否为测试环境（一般用户可无视，给专业对接测试使用）
+			BApi.isTestEnv = false;
+
+			SignUtility.accessKeyId = AccessKeyId;
+			SignUtility.accessKeySecret = AccessKeySecret;
+			appId = AppId;
+			var code = Code;
+
+
+			var startInfo = new AppStartInfo();
+
+			//Console.WriteLine("请输入自动关闭时间,不输入默认30秒");
+			//var closeTimeStr = Console.ReadLine();
+			//if (string.IsNullOrEmpty(closeTimeStr))
+			//{
+			//	closeTimeStr = "30";
+			//}
+
+			if (!string.IsNullOrEmpty(appId))
+			{
+				startInfo = await bApiClient.StartInteractivePlay(code, appId);
+
+				_logger.LogDebug("B站直播开放平台的开始信息{@startInfo}", startInfo);
+
+				if (startInfo?.Code != 0)
+				{
+					_logger.LogError("B站直播开放平台的开始信息有误{startinfo}", startInfo?.Message);
+					return false;
+				}
+
+				gameId = startInfo?.Data?.GameInfo?.GameId;
+				if (gameId != null)
+				{
+					game_id = gameId;
+					_logger.LogInformation("B站直播开放平台成功开启，开始心跳，场次ID: ", gameId);
+
+					//心跳API（用于保持在线）
+					InteractivePlayHeartBeat m_PlayHeartBeat = new InteractivePlayHeartBeat(gameId);
+					m_PlayHeartBeat.HeartBeatError += (string json) => { JsonConvert.DeserializeObject<EmptyInfo>(json); _logger.LogWarning("{time}心跳失败{json}", DateTime.Now, json); };
+					m_PlayHeartBeat.HeartBeatSucceed += () => { _logger.LogDebug("{time}心跳成功", DateTime.Now); };
+					m_PlayHeartBeat.Start();
+
+					streamOpenTime = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss_zz");
+
+					Action<string> WriteLog = (string content) =>
+					{
+						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs");
+						_logger.LogInformation(content);
+						logList.logs.Add($"[{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss_zz")}]", $"{content}");
+						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, "logs");
+					};
+
+					//长链接（用户持续接收服务器推送消息）
+					WebSocketBLiveClient m_WebSocketBLiveClient;
+					m_WebSocketBLiveClient = new WebSocketBLiveClient(startInfo.GetWssLink(), startInfo.GetAuthBody());
+					m_WebSocketBLiveClient.OnDanmaku += (dm) => { WriteLog($"[{dm.userName}]:{dm.msg}"); };//弹幕事件
+					m_WebSocketBLiveClient.OnGift += (sendGift) => { WriteLog($"[{sendGift.userName}]:(赠送了{sendGift.giftNum}个[{sendGift.giftName}])"); };//礼物事件
+					m_WebSocketBLiveClient.OnGuardBuy += (guard) => { WriteLog($"[{guard.userInfo.userName}]:(充值了{(guard.guardUnit == "月" ? (guard.guardNum + "个月") : guard.guardUnit.TrimStart('*'))}[{(guard.guardLevel == 1 ? "总督" : guard.guardLevel == 2 ? "提督" : "舰长")}]大航海)"); };//大航海事件
+					m_WebSocketBLiveClient.OnSuperChat += (superChat) => { WriteLog($"[{superChat.userName}]:({superChat.rmb}元的醒目留言内容)：{superChat.message}"); };//SC事件
+					m_WebSocketBLiveClient.OnLike += (like) => { WriteLog($"[{like.uname}]:(点赞了{like.unamelike_count}次)"); };//点赞事件(点赞需要直播间开播才会触发推送)
+					m_WebSocketBLiveClient.OnEnter += (enter) => { WriteLog($"[{enter.uname}]进入房间"); };//观众进入房间事件
+					m_WebSocketBLiveClient.OnLiveStart += (liveStart) => { WriteLog($"直播间[{liveStart.room_id}]开始直播，分区ID：【{liveStart.area_id}】,标题为【{liveStart.title}】"); };//直播间开始直播事件
+					m_WebSocketBLiveClient.OnLiveEnd += (liveEnd) => { WriteLog($"直播间[{liveEnd.room_id}]直播结束，分区ID：【{liveEnd.area_id}】,标题为【{liveEnd.title}】"); };//直播间停止直播事件
+																																								//m_WebSocketBLiveClient.Connect();//正常连接
+					m_WebSocketBLiveClient.Connect(TimeSpan.FromSeconds(30));//失败后30秒重连
+					return true;
+				}
+				else
+				{
+					_logger.LogError("开启玩法错误: {@info}", startInfo);
+				}
+			}
+			else
+			{
+				_logger.LogError("AppID不存在: {appId}", appId);
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// 关闭监控直播间事件
+		/// </summary>
+		/// <returns></returns>
+		async Task<bool> StopLiveEvent()
+		{
+			try
+			{
+				var ret = await bApiClient.EndInteractivePlay(appId, gameId);
+				_logger.LogInformation("关闭玩法:{@ret} ", ret);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "关闭玩法失败");
+				return false;
+			}
+
 			return true;
 		}
 	}

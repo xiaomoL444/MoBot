@@ -37,27 +37,35 @@ namespace MoBot.Handle.Net
 			MessageSender.SocketClient = this;
 			while (true)
 			{
-				var commond = Console.ReadLine();
-				JObject json = JObject.Parse(commond);
-				//判断是不是事件
-				if (json.TryGetValue("post_type", StringComparison.CurrentCultureIgnoreCase, out _))
+				try
 				{
-					var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(commond, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
+					var commond = Console.ReadLine();
+					JObject json = JObject.Parse(commond);
+					//判断是不是事件
+					if (json.TryGetValue("post_type", StringComparison.CurrentCultureIgnoreCase, out _))
+					{
+						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(commond, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
-					_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, commond);
+						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, commond);
 
-					_moBotClient.RouteAsync(eventJson);
-					continue;
+						_moBotClient.RouteAsync(eventJson);
+						continue;
+					}
+					//判断是不是api回复
+					if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
+					{
+						var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
+						_logger.LogInformation("收到api回复：{@commond}", commond);
+						continue;
+					}
+
+					_logger.LogWarning("收到未知消息：{commond}", commond);
 				}
-				//判断是不是api回复
-				if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
+				catch (Exception ex)
 				{
-					var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
-					_logger.LogInformation("收到api回复：{@commond}", commond);
-					continue;
+					_logger.LogError(ex, "读取控制台错误");
 				}
 
-				_logger.LogWarning("收到未知消息：{commond}", commond);
 			}
 		}
 

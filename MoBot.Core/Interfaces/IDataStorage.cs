@@ -15,7 +15,7 @@ namespace MoBot.Core.Interfaces
 		/// <param name="fileName">文件名</param>
 		/// <param name="pluginName">插件名，默认为空，则是调用Load的函数所在的插件名作为config路径</param>
 		/// <returns></returns>
-		T Load<T>(string fileName, string pluginName = "") where T : new();
+		T Load<T>(string fileName, string basePath = "configs", string pluginName = "") where T : new();
 		/// <summary>
 		/// 保存文件
 		/// </summary>
@@ -23,6 +23,6 @@ namespace MoBot.Core.Interfaces
 		/// <param name="fileName">文件名</param>
 		/// <param name="data">保存的内容</param>
 		/// <param name="pluginName">插件名，默认为空，则是调用Save的函数所在的插件名作为config路径</param>
-		void Save<T>(string fileName, T data, string pluginName = "");
+		void Save<T>(string fileName, T data, string basePath = "configs", string pluginName = "");
 	}
 }
