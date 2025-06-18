@@ -37,8 +37,9 @@ try
 			server.AddScoped<IBotSocketClient, WebSocketClient>();
 
 			//加载插件
-			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
-			server.AddScoped<IMessageHandle<Group>, StreamHandle>();
+			server.AddScoped<IMessageHandle<Group>, EchoHandle>();//复活吧我的爱人
+			server.AddScoped<IMessageHandle<Group>, StreamHandle>();//直播
+			server.AddScoped<IMessageHandle<Group>, SignHandle>();//登录B站
 		})
 		.Build();
 

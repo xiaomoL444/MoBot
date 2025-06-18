@@ -337,7 +337,7 @@ namespace BilibiliLive.Handle
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text(@$"这次的推流很成功哦~
 (●• ̀ω•́ )✧末酱在直播间看到了一些有趣的消息
 -------------
-{String.Join("\n", liveLogs.Take(showLogNum).ToDictionary().Values)}{(liveLogs.Count > showLogNum ? $"以及其他{liveLogs.Count - showLogNum}条信息......" : "")}
+{String.Join("\n", liveLogs.Take(showLogNum).ToDictionary().Values)}{(liveLogs.Count > showLogNum ? $"\n以及其他{liveLogs.Count - showLogNum}条信息......" : "")}
 -------------
 可以来这里查看哦*⸜( •ᴗ• )⸝*:BilibiliLive_{streamOpenTime}").Build());
 		}
