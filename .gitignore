@@ -41,3 +41,4 @@ publish/
 docker/
 /.tmp-mobot
 /mobot.rar
+/mobot_test.rar
