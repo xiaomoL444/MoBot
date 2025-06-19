@@ -136,7 +136,7 @@ namespace BilibiliLive.Handle
 			rtmp_url = accountConfig.RtmpUrl;
 			if (!isDebug)
 			{
-				if (!await StartLive() || !await StartLiveEvent())
+				if (!await StartLiveEvent() || !await StartLive())
 				{
 					_logger.LogError("开启直播间失败");
 					await StopLive();
@@ -400,6 +400,7 @@ namespace BilibiliLive.Handle
 			{
 				var responseJson = JsonConvert.DeserializeObject<StartLiveRsp>(await response.Content.ReadAsStringAsync());
 				rtmp_url = responseJson?.Data.Rtmp.Addr + JsonConvert.DeserializeObject<string>($"\"{responseJson?.Data.Rtmp.Code}\"");
+				_logger.LogInformation("直播间开启成功");
 			}
 			catch (Exception ex)
 			{
