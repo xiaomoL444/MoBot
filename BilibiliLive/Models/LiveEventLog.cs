@@ -8,6 +8,6 @@ namespace BilibiliLive.Models
 {
 	internal class LiveEventLog
 	{
-		public Dictionary<string, string> logs = new Dictionary<string, string>();
+		public List<KeyValuePair<string, string>> logs = new();
 	}
 }

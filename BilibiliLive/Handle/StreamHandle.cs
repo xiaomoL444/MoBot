@@ -427,7 +427,9 @@ namespace BilibiliLive.Handle
 			return true;
 		}
 
+
 		IBApiClient bApiClient = new BApiClient();
+		WebSocketBLiveClient m_WebSocketBLiveClient;
 		string appId = "";
 		string gameId = "";
 		/// <summary>
@@ -492,12 +494,12 @@ namespace BilibiliLive.Handle
 					{
 						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs");
 						_logger.LogInformation(content);
-						logList.logs.Add($"[{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss_zz")}]", $"{content}");
+						logList.logs.Add(new($"[{DateTime.Now.ToString("O")}]", $"{content}"));
 						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, "logs");
 					};
 
 					//长链接（用户持续接收服务器推送消息）
-					WebSocketBLiveClient m_WebSocketBLiveClient;
+
 					m_WebSocketBLiveClient = new WebSocketBLiveClient(startInfo.GetWssLink(), startInfo.GetAuthBody());
 					m_WebSocketBLiveClient.OnDanmaku += (dm) => { WriteLog($"[{dm.userName}]:{dm.msg}"); };//弹幕事件
 					m_WebSocketBLiveClient.OnGift += (sendGift) => { WriteLog($"[{sendGift.userName}]:(赠送了{sendGift.giftNum}个[{sendGift.giftName}])"); };//礼物事件
@@ -533,6 +535,8 @@ namespace BilibiliLive.Handle
 			{
 				var ret = await bApiClient.EndInteractivePlay(appId, gameId);
 				_logger.LogInformation("关闭玩法:{@ret} ", ret);
+				m_WebSocketBLiveClient.Disconnect();
+				_logger.LogInformation("断开心跳");
 			}
 			catch (Exception ex)
 			{
