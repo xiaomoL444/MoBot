@@ -139,6 +139,9 @@ namespace BilibiliLive.Handle
 				if (!await StartLive() || !await StartLiveEvent())
 				{
 					_logger.LogError("开启直播间失败");
+					await StopLive();
+					await StopLiveEvent();
+					isStreaming = false;
 					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("打开直播间失败了>﹏<，请检查一下控制台输出吧").Build());
 					return;
 				}
@@ -319,15 +322,22 @@ namespace BilibiliLive.Handle
 			}
 			isStreaming = false;
 			_logger.LogInformation("关闭推流");
-			_mainProcess!.StandardInput.WriteLine("q");
-			_mainProcess.WaitForExit();
-			_childProcess!.Kill();
-			_childProcess.WaitForExit();
+			if (_mainProcess != null && !_mainProcess.HasExited)
+			{
+				_mainProcess!.StandardInput.WriteLine("q");
+				_mainProcess.WaitForExit();
+			}
+			if (_childProcess != null && _childProcess.HasExited)
+			{
+				_childProcess!.Kill();
+				_childProcess.WaitForExit();
+			}
 			if (!isDebug)
 			{
 				if (!await StopLive() || !await StopLiveEvent())
 				{
 					_logger.LogError("关闭直播失败");
+					isStreaming = true;
 					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("哇...!关闭...失败了......可能要请勾修金sama邦邦末酱了(｡•́︿•̀｡) ").Build());
 					return;
 				}
