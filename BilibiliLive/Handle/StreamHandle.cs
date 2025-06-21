@@ -327,7 +327,7 @@ namespace BilibiliLive.Handle
 				_mainProcess!.StandardInput.WriteLine("q");
 				_mainProcess.WaitForExit();
 			}
-			if (_childProcess != null && _childProcess.HasExited)
+			if (_childProcess != null && !_childProcess.HasExited)
 			{
 				_childProcess!.Kill();
 				_childProcess.WaitForExit();
