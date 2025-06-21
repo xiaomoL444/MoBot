@@ -208,7 +208,16 @@ namespace BilibiliLive.Handle
 						_dataStorage.Save("stream", streamConfig);
 
 						//设置视频时长
-						TimeSpan duration = GetVideoDuration(_streamVideoPaths[num]);
+						TimeSpan duration;
+						try
+						{
+							duration = GetVideoDuration(_streamVideoPaths[num]);
+						}
+						catch (Exception ex)
+						{
+							_logger.LogWarning(ex, "视频读取失败,{path}", _streamVideoPaths[num]);
+							continue;
+						}
 						_childProcess = new Process
 						{
 							StartInfo = new ProcessStartInfo()
