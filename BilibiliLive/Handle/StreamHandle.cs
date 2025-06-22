@@ -351,7 +351,7 @@ namespace BilibiliLive.Handle
 					return;
 				}
 			}
-			var liveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs").logs;
+			var liveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "data").logs;
 			var showLogNum = 4;
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text(@$"这次的推流很成功哦~
 (●• ̀ω•́ )✧末酱在直播间看到了一些有趣的消息
@@ -512,10 +512,10 @@ namespace BilibiliLive.Handle
 
 					Action<string> WriteLog = (string content) =>
 					{
-						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "logs");
+						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "data");
 						_logger.LogInformation(content);
 						logList.logs.Add(new($"[{DateTime.Now.ToString("O")}]", $"{content}"));
-						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, "logs");
+						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, "data");
 					};
 
 					//长链接（用户持续接收服务器推送消息）
