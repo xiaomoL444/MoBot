@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Test", "MoBot.Test\Mo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChat", "DailyChat\DailyChat.csproj", "{ED177A6F-2695-470C-BE9D-2C6BDB657E34}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChatSettingWinForm", "DailyChatSettingWinForm\DailyChatSettingWinForm.csproj", "{F5A649B3-C600-458A-B13F-02B1D6FE835A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,77 @@
+{
+  "reply_items": [
+    {
+      "white_list": [
+        {
+          "user_id": 2580139692,
+          "message": [
+            {
+              "message_chains": [
+                {
+                  "message_items": [
+                    {
+                      "message_item": "image",
+                      "content": "0艾丝妲asaaa"
+                    },
+                    {
+                      "message_item": "text",
+                      "content": ""
+                    },
+                    {
+                      "message_item": "image",
+                      "content": ""
+                    }
+                  ]
+                },
+                {
+                  "message_items": [
+                    {
+                      "message_item": "image",
+                      "content": ""
+                    }
+                  ]
+                },
+                {
+                  "message_items": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "user_id": 1650106898,
+          "message": []
+        }
+      ],
+      "normal": [
+        {
+          "user_id": 0,
+          "message": [
+            {
+              "message_chains": []
+            },
+            {
+              "message_chains": []
+            },
+            {
+              "message_chains": []
+            }
+          ]
+        }
+      ],
+      "key_word": "贴贴",
+      "trigger": [
+        "/贴贴",
+        "/test贴贴"
+      ]
+    },
+    {
+      "white_list": [],
+      "normal": [],
+      "key_word": "抱抱",
+      "trigger": [
+        "/抱抱"
+      ]
+    }
+  ]
+}
