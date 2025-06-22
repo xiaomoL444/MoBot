@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Shared", "MoBot.Share
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Test", "MoBot.Test\MoBot.Test.csproj", "{ABA741C7-38DA-402D-AA63-B6BF7A4C134B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChat", "DailyChat\DailyChat.csproj", "{ED177A6F-2695-470C-BE9D-2C6BDB657E34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,8 +47,15 @@ Global
 		{ABA741C7-38DA-402D-AA63-B6BF7A4C134B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABA741C7-38DA-402D-AA63-B6BF7A4C134B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABA741C7-38DA-402D-AA63-B6BF7A4C134B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED177A6F-2695-470C-BE9D-2C6BDB657E34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {02C257C1-1600-43F7-831B-D0C592A3DB71}
 	EndGlobalSection
 EndGlobal
