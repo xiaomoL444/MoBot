@@ -65,9 +65,13 @@ namespace DailyChat
 				_logger.LogWarning(ex, "获取bot登录信息失败");
 			}
 
-			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", selfIDMessage);
 
-			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(result));
+			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Any(s =>
+			{
+				string result = Regex.Replace(s, @"\[@selfID\]", selfIDMessage);
+				if (group.RawMessage == result) return true;
+				return false;
+			}));
 
 			if (echoRule == null) return;
 
