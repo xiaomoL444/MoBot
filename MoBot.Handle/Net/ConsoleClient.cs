@@ -4,6 +4,7 @@ using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
+using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;

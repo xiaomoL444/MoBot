@@ -1,13 +1,15 @@
-﻿using MoBot.Core.Interfaces;
-using MoBot.Core.Models.Message;
+﻿using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace MoBot.Handle
+namespace MoBot.Handle.Message
 {
-	public static class MessageSender
+	public static partial class MessageSender
 	{
-		internal static IBotSocketClient? SocketClient;
-
 		/// <summary>
 		/// 发送群组消息
 		/// </summary>
@@ -16,11 +18,11 @@ namespace MoBot.Handle
 		/// <returns>发送后返回的值</returns>
 		public static async Task<ActionPacketRsp> SendGroupMsg(long group_id, List<MessageSegment> message_chain)
 		{
-			return (await SocketClient.SendMessage("send_group_msg", ActionType.Post, new
+			return await SocketClient!.SendMessage("send_group_msg", ActionType.Post, new
 			{
 				group_id,
 				message = message_chain
-			}));
+			});
 
 		}
 	}

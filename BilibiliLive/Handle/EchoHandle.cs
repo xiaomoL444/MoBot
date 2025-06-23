@@ -3,9 +3,9 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Event.Message;
-using MoBot.Handle;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Event;
+using MoBot.Handle.MessageSender;
 
 namespace BilibiliLive.Handle
 {
