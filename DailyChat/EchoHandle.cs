@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Handle;
 using MoBot.Handle.Extensions;
 using System;
 using System.Collections.Generic;
@@ -36,14 +37,93 @@ namespace DailyChat
 			return Task.FromResult(false);
 		}
 
-		public Task HandleAsync(Group message)
+		public async Task HandleAsync(Group group)
 		{
 			var MsgChain = MessageChainBuilder.Create();
 
 			var EchoRules = _dataStorage.Load<EchoRule>("EchoRules");
 
+			//获得当次的回复
+			//这里只是粗略的写string==，如果有必要以后可以用正则表达式 
+			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(group.RawMessage));
 
-			return Task.CompletedTask;
+			if (echoRule == null) return;
+
+			//白名单处理
+			var whiteRule = echoRule.WhiteList.FirstOrDefault(q => group.IsUserID(q.UserID));
+			if (whiteRule != null)
+			{
+				//组装消息
+				var msg = whiteRule.message[Random.Shared.Next(0, whiteRule.message.Count)];
+				_logger.LogInformation("触发{uid}的白名单回复，选择的消息是{@msg}", group.UserId, msg);
+
+				//异步发送消息，因为每个消息间要有停顿
+				_ = Task.Run(async () =>
+				{
+					try
+					{
+						foreach (var msgChain in msg.MessageChains)
+						{
+							var buildMessage = BuildMessage(msgChain.MessageItems);
+							await MessageSender.SendGroupMsg(group.GroupId, buildMessage);
+							await Task.Delay(Random.Shared.Next(500, 1500));
+						}
+					}
+					catch (Exception ex)
+					{
+						_logger.LogError(ex, "异步发送白名单消息失败");
+					}
+				});
+
+				return;
+			}
+			var normalRule = echoRule.Normal.FirstOrDefault(q => group.IsUserID(0));//获取uid为0的消息，若uid不为0，则不处理默认消息，要自己去json文件里面改，或者是uid为0里面没有消息，则理应跳过
+			if (normalRule != null)
+			{
+				//组装消息
+				var msg = normalRule.message[Random.Shared.Next(0, normalRule.message.Count)];
+				_logger.LogInformation("触发{uid}的普通回复，选择的消息是{@msg}", group.UserId, msg);
+
+				//异步发送消息，因为每个消息间要有停顿
+				_ = Task.Run(async () =>
+				{
+					try
+					{
+						foreach (var msgChain in msg.MessageChains)
+						{
+							var buildMessage = BuildMessage(msgChain.MessageItems);
+							await MessageSender.SendGroupMsg(group.GroupId, buildMessage);
+							await Task.Delay(Random.Shared.Next(500, 1500));
+						}
+					}
+					catch (Exception ex)
+					{
+						_logger.LogError(ex, "异步发送普通消息失败");
+					}
+				});
+				return;
+			}
+			return;
+		}
+
+		List<MessageSegment> BuildMessage(List<MessageItem> messages)
+		{
+			var msgChain = MessageChainBuilder.Create();
+			foreach (var message in messages)
+			{
+				switch (message.MessageItemType)
+				{
+					case MessageItemType.text:
+						msgChain.Text(message.content);
+						break;
+					case MessageItemType.image:
+						msgChain.Image(message.content);
+						break;
+					default:
+						break;
+				}
+			}
+			return msgChain.Build();
 		}
 	}
 }

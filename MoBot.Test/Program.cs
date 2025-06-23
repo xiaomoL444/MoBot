@@ -1,5 +1,5 @@
-﻿using BilibiliLive.Handle;
-using BilibiliLive.Models;
+﻿using BilibiliLive.Models;
+using DailyChat;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,8 +37,10 @@ try
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
-			server.AddScoped<IMessageHandle<Group>, SignHandle>();
-			server.AddScoped<IMessageHandle<Group>, StreamHandle>();
+			//server.AddScoped<IMessageHandle<Group>, SignHandle>();
+			//server.AddScoped<IMessageHandle<Group>, StreamHandle>();
+
+			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
 
 		})
 		.Build();

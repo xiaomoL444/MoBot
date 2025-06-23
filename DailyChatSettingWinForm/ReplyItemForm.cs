@@ -39,6 +39,7 @@ namespace DailyChatSettingWinForm
 					if (ShareField.EchoRule.ReplyItems[ShareField.SeleteKeyWord].Normal.Count <= 0)
 					{
 						ShareField.EchoRule.ReplyItems[ShareField.SeleteKeyWord].Normal.Add(new());
+						ShareField.Save();
 					}
 					response = ShareField.EchoRule.ReplyItems[ShareField.SeleteKeyWord].Normal[0];
 
