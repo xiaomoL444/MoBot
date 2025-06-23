@@ -2,6 +2,7 @@
 using DailyChat.Models;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
@@ -48,8 +49,19 @@ namespace DailyChat
 
 			//获得当次的回复
 			//这里只是粗略的写string==，如果有必要以后可以用正则表达式 
+			var selfIDMessage = string.Empty;
+			try
+			{
+				var QQData = (GetLoginInfo)(await MessageSender.GetLoginInfo()).Data;
+				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}] ";
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "获取bot登录信息失败");
+				throw;
+			}
 
-			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", "<当前用户>");
+			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", selfIDMessage);
 
 			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(group.RawMessage));
 
