@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoBot.Core.Models.Event.Message;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,14 +43,15 @@ namespace MoBot.Core.Models.Message
 		/// <para>base64编码 base64://xxxxxxxx</para>
 		/// </param>
 		/// <returns></returns>
-		public MessageChainBuilder Image(string content)
+		public MessageChainBuilder Image(string content, ImageType imageType = ImageType.Image)
 		{
 			_msgSegment.Add(new()
 			{
 				Type = "image",
 				Data = new
 				{
-					file = content
+					file = content,
+					subType = (int)imageType
 				}
 			});
 			return this;
