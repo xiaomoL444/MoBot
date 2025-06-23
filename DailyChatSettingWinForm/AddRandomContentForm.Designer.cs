@@ -65,6 +65,7 @@
 			// 
 			// ValuePanel
 			// 
+			ValuePanel.AutoScroll = true;
 			ValuePanel.Location = new Point(330, 36);
 			ValuePanel.Margin = new Padding(4, 3, 4, 3);
 			ValuePanel.Name = "ValuePanel";
