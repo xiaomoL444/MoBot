@@ -48,6 +48,9 @@ namespace DailyChat
 
 			//获得当次的回复
 			//这里只是粗略的写string==，如果有必要以后可以用正则表达式 
+
+			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", "<当前用户>");
+
 			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(group.RawMessage));
 
 			if (echoRule == null) return;
@@ -115,7 +118,8 @@ namespace DailyChat
 			var randonContent = _dataStorage.Load<EchoRule>("EchoRules");
 			foreach (var message in messages)
 			{
-				string result = Regex.Replace(message.content, @"\[RandomContent:""(.*?)""\]", match =>
+				//替换随机内容
+				string result = Regex.Replace(message.content, @"\[RandomContent:(.*?)\]", match =>
 				{
 					string key = match.Groups[1].Value;
 					if (randonContent.RandomContent.TryGetValue("key", out var output))
@@ -132,10 +136,10 @@ namespace DailyChat
 				switch (message.MessageItemType)
 				{
 					case MessageItemType.text:
-						msgChain.Text(message.content);
+						msgChain.Text(result);
 						break;
 					case MessageItemType.image:
-						msgChain.Image(message.content);
+						msgChain.Image(result);
 						break;
 					default:
 						break;
