@@ -159,7 +159,7 @@ namespace DailyChat
 						msgChain.Text(result);
 						break;
 					case MessageItemType.image:
-						msgChain.Image(result);
+						msgChain.Image(result, ImageType.Emoticon);
 						break;
 					default:
 						break;
