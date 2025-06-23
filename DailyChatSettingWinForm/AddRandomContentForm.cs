@@ -45,8 +45,9 @@ namespace DailyChatSettingWinForm
 				for (int i = 0; i < ShareField.EchoRule.RandomContent[_selectKey].Count; i++)
 				{
 					int selfID = i;
+					string text = ShareField.EchoRule.RandomContent[_selectKey][selfID];
 					Button btn = new Button();
-					btn.Text = $"{ShareField.EchoRule.RandomContent[_selectKey][selfID]}";
+					btn.Text = $"{(text.Length <= 50 ? text : text[..50])}";
 					btn.Size = new Size(ValuePanel.Width - 20, 60);
 					btn.Click += (s, e) =>
 					{
@@ -56,11 +57,13 @@ namespace DailyChatSettingWinForm
 						{
 							string newValue = form.InputValue;
 							ShareField.EchoRule.RandomContent[_selectKey][selfID] = newValue;
+							ShareField.Save();
 							RefreshPanel();
 						}
 						else if (form.DialogResult == DialogResult.Yes && form.Deleted)
 						{
 							ShareField.EchoRule.RandomContent[_selectKey].Remove(ShareField.EchoRule.RandomContent[_selectKey][selfID]);
+							ShareField.Save();
 							RefreshPanel();
 						}
 						else
@@ -116,6 +119,11 @@ namespace DailyChatSettingWinForm
 				RefreshPanel();
 				ShareField.Save();
 			}
+		}
+
+		private void AddRandomContentForm_Load(object sender, EventArgs e)
+		{
+
 		}
 	}
 }

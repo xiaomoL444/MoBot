@@ -119,6 +119,7 @@
 			Margin = new Padding(4, 3, 4, 3);
 			Name = "AddRandomContentForm";
 			Text = "AddRandomContentForm";
+			Load += AddRandomContentForm_Load;
 			ResumeLayout(false);
 			PerformLayout();
 		}
