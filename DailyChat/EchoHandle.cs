@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Group = MoBot.Core.Models.Event.Message.Group;
 
 namespace DailyChat
@@ -52,8 +53,12 @@ namespace DailyChat
 			var selfIDMessage = string.Empty;
 			try
 			{
+#if !DEBUG
 				var QQData = (GetLoginInfo)(await MessageSender.GetLoginInfo()).Data;
 				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}]";
+#else
+				selfIDMessage = $"[CQ:at,qq=3485806003,name=黑塔]";
+#endif
 			}
 			catch (Exception ex)
 			{
@@ -62,7 +67,7 @@ namespace DailyChat
 
 			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", selfIDMessage);
 
-			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(group.RawMessage));
+			var echoRule = EchoRules.ReplyItems.FirstOrDefault(q => q.Trigger.Contains(result));
 
 			if (echoRule == null) return;
 
