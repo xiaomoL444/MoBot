@@ -38,6 +38,7 @@
 			SaveButton = new Button();
 			ShowJsonPanel = new FlowLayoutPanel();
 			ShowJsonLabel = new Label();
+			AddRandomContent = new Button();
 			ShowJsonPanel.SuspendLayout();
 			SuspendLayout();
 			// 
@@ -132,11 +133,22 @@
 			ShowJsonLabel.TabIndex = 0;
 			ShowJsonLabel.Text = "label2";
 			// 
+			// AddRandomContent
+			// 
+			AddRandomContent.Location = new Point(247, 691);
+			AddRandomContent.Name = "AddRandomContent";
+			AddRandomContent.Size = new Size(232, 52);
+			AddRandomContent.TabIndex = 8;
+			AddRandomContent.Text = "添加RandomContent";
+			AddRandomContent.UseVisualStyleBackColor = true;
+			AddRandomContent.Click += AddRandomContent_Click;
+			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(11F, 22F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(879, 755);
+			Controls.Add(AddRandomContent);
 			Controls.Add(ShowJsonPanel);
 			Controls.Add(SaveButton);
 			Controls.Add(KeyWordPanel);
@@ -168,5 +180,6 @@
 		private Button SaveButton;
 		private FlowLayoutPanel ShowJsonPanel;
 		private Label ShowJsonLabel;
+		private Button AddRandomContent;
 	}
 }
