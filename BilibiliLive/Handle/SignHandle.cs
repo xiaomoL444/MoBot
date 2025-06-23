@@ -5,7 +5,7 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
-using MoBot.Handle.MessageSender;
+using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using QRCoder;
 using System.Collections.Specialized;

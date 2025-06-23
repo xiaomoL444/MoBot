@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Event;
-using MoBot.Handle.MessageSender;
+using MoBot.Handle.Message;
 
 namespace BilibiliLive.Handle
 {

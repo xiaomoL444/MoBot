@@ -53,12 +53,11 @@ namespace DailyChat
 			try
 			{
 				var QQData = (GetLoginInfo)(await MessageSender.GetLoginInfo()).Data;
-				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}] ";
+				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}]";
 			}
 			catch (Exception ex)
 			{
 				_logger.LogWarning(ex, "获取bot登录信息失败");
-				throw;
 			}
 
 			string result = Regex.Replace(group.RawMessage, @"\[@selfID\]", selfIDMessage);
