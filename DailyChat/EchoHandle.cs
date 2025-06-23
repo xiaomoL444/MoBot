@@ -122,7 +122,7 @@ namespace DailyChat
 				string result = Regex.Replace(message.content, @"\[RandomContent:(.*?)\]", match =>
 				{
 					string key = match.Groups[1].Value;
-					if (randonContent.RandomContent.TryGetValue("key", out var output))
+					if (randonContent.RandomContent.TryGetValue(key, out var output))
 					{
 						return output[Random.Shared.Next(0, output.Count)];
 					}
