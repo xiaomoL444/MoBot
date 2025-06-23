@@ -100,6 +100,7 @@ namespace DailyChatSettingWinForm
 				btn.Size = new Size(190, 30);
 				btn.Click += (s, e) =>
 				{
+					ShowJsonLabel.Text = JsonConvert.SerializeObject(ShareField.EchoRule.ReplyItems[selfIndex],Formatting.Indented);
 					ShareField.SeleteKeyWord = selfIndex;
 					Form KeyWordForm = new KeyWordForm();
 					KeyWordForm.ShowDialog();

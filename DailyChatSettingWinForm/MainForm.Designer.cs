@@ -36,6 +36,9 @@
 			flowLayoutPanel1 = new FlowLayoutPanel();
 			KeyWordPanel = new FlowLayoutPanel();
 			SaveButton = new Button();
+			ShowJsonPanel = new FlowLayoutPanel();
+			ShowJsonLabel = new Label();
+			ShowJsonPanel.SuspendLayout();
 			SuspendLayout();
 			// 
 			// openFileDialog1
@@ -109,11 +112,32 @@
 			SaveButton.UseVisualStyleBackColor = true;
 			SaveButton.Click += SaveButton_Click;
 			// 
+			// ShowJsonPanel
+			// 
+			ShowJsonPanel.AutoScroll = true;
+			ShowJsonPanel.Controls.Add(ShowJsonLabel);
+			ShowJsonPanel.Location = new Point(244, 86);
+			ShowJsonPanel.MaximumSize = new Size(623, 599);
+			ShowJsonPanel.Name = "ShowJsonPanel";
+			ShowJsonPanel.Size = new Size(623, 599);
+			ShowJsonPanel.TabIndex = 7;
+			// 
+			// ShowJsonLabel
+			// 
+			ShowJsonLabel.AutoSize = true;
+			ShowJsonLabel.Location = new Point(3, 0);
+			ShowJsonLabel.MaximumSize = new Size(596, 0);
+			ShowJsonLabel.Name = "ShowJsonLabel";
+			ShowJsonLabel.Size = new Size(68, 24);
+			ShowJsonLabel.TabIndex = 0;
+			ShowJsonLabel.Text = "label2";
+			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(11F, 22F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(879, 755);
+			Controls.Add(ShowJsonPanel);
 			Controls.Add(SaveButton);
 			Controls.Add(KeyWordPanel);
 			Controls.Add(AddKeyWordButton);
@@ -126,6 +150,8 @@
 			Name = "MainForm";
 			Text = "MainForm";
 			Load += Form_Load;
+			ShowJsonPanel.ResumeLayout(false);
+			ShowJsonPanel.PerformLayout();
 			ResumeLayout(false);
 			PerformLayout();
 		}
@@ -140,5 +166,7 @@
 		private FlowLayoutPanel flowLayoutPanel1;
 		private FlowLayoutPanel KeyWordPanel;
 		private Button SaveButton;
+		private FlowLayoutPanel ShowJsonPanel;
+		private Label ShowJsonLabel;
 	}
 }
