@@ -12,6 +12,9 @@ namespace DailyChat.Models
 	{
 		[JsonProperty("reply_items")]
 		public List<ReplyItem> ReplyItems { get; set; } = new();
+
+		[JsonProperty("random_content")]
+		public Dictionary<string, List<string>> RandomContent { get; set; } = new();
 	}
 
 	public class ReplyItem

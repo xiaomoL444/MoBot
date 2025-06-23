@@ -8,9 +8,12 @@ using MoBot.Handle;
 using MoBot.Handle.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Group = MoBot.Core.Models.Event.Message.Group;
 
 namespace DailyChat
 {
@@ -109,8 +112,23 @@ namespace DailyChat
 		List<MessageSegment> BuildMessage(List<MessageItem> messages)
 		{
 			var msgChain = MessageChainBuilder.Create();
+			var randonContent = _dataStorage.Load<EchoRule>("EchoRules");
 			foreach (var message in messages)
 			{
+				string result = Regex.Replace(message.content, @"\[RandomContent:""(.*?)""\]", match =>
+				{
+					string key = match.Groups[1].Value;
+					if (randonContent.RandomContent.TryGetValue("key", out var output))
+					{
+						return output[Random.Shared.Next(0, output.Count)];
+					}
+					else
+					{
+						_logger.LogWarning("未能匹配到关键词");
+						return $"[未知内容:{key}]"; // 如果没有匹配到
+					}
+				});
+
 				switch (message.MessageItemType)
 				{
 					case MessageItemType.text:
