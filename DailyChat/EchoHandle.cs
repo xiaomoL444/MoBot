@@ -100,10 +100,9 @@ namespace DailyChat
 						_logger.LogError(ex, "异步发送白名单消息失败");
 					}
 				});
-
 				return;
 			}
-			var normalRule = echoRule.Normal.FirstOrDefault(q => group.IsUserID(0));//获取uid为0的消息，若uid不为0，则不处理默认消息，要自己去json文件里面改，或者是uid为0里面没有消息，则理应跳过
+			var normalRule = echoRule.Normal.FirstOrDefault(q => q.UserID == 0);//获取uid为0的消息，若uid不为0，则不处理默认消息，要自己去json文件里面改，或者是uid为0里面没有消息，则理应跳过
 			if (normalRule != null)
 			{
 				//组装消息
