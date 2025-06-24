@@ -7,6 +7,7 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -54,7 +55,7 @@ namespace DailyChat
 			try
 			{
 #if !DEBUG
-				var QQData = (GetLoginInfo)(await MessageSender.GetLoginInfo()).Data;
+				var QQData = ((JObject)(await MessageSender.GetLoginInfo()).Data).ToObject<GetLoginInfo>();
 				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}]";
 #else
 				selfIDMessage = $"[CQ:at,qq=3485806003,name=黑塔]";

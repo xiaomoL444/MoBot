@@ -1,4 +1,5 @@
-﻿using BilibiliLive.Models;
+﻿using BilibiliLive.Handle;
+using BilibiliLive.Models;
 using DailyChat;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,14 @@ Log.Logger = new LoggerConfiguration()
 	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day)
 	.CreateLogger();
 
+var _dataStorage = new JsonDataStorage();
+var streamConfig = _dataStorage.Load<StreamConfig>("stream");
+var accountConfig = _dataStorage.Load<AccountConfig>("account");
+var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BilibiliLive.Constant.Constants.BilibiliStartLiveAPI}?room_id={streamConfig.RoomID}&area_v2={streamConfig.AreaV2}&platform={streamConfig.Platform}&csrf={accountConfig.Bili_Jct}");
+httpRequestMessage.Headers.Add("cookie", $"SESSDATA={accountConfig.Sessdata};bili_jct={accountConfig.Bili_Jct}");
+var response = await BilibiliLive.Tool.HttpClient.SendAsync(httpRequestMessage);
+Log.Debug("开启直播的回复{@response}", (await response.Content.ReadAsStringAsync()));
+
 try
 {
 	var host = Host.CreateDefaultBuilder()
@@ -37,10 +46,10 @@ try
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
-			//server.AddScoped<IMessageHandle<Group>, SignHandle>();
-			//server.AddScoped<IMessageHandle<Group>, StreamHandle>();
+			server.AddScoped<IMessageHandle<Group>, SignHandle>();
+			server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.StreamHandle>();
 
-			server.AddScoped<IMessageHandle<Group>, EchoHandle>();
+			server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();
 
 		})
 		.Build();

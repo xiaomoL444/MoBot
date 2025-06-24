@@ -15,6 +15,7 @@ using System.Text.Json;
 
 
 Log.Logger = new LoggerConfiguration()
+	.MinimumLevel.Debug()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}", theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
 	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
