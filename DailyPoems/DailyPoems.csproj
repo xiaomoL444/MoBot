@@ -1,21 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <PackageReference Include="Quartz" Version="3.14.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BilibiliLive\BilibiliLive.csproj" />
-    <ProjectReference Include="..\DailyChat\DailyChat.csproj" />
-    <ProjectReference Include="..\DailyPoems\DailyPoems.csproj" />
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />

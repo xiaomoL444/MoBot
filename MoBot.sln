@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChat", "DailyChat\Dail
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChatSettingWinForm", "DailyChatSettingWinForm\DailyChatSettingWinForm.csproj", "{F5A649B3-C600-458A-B13F-02B1D6FE835A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyPoems", "DailyPoems\DailyPoems.csproj", "{985FC48B-F393-4BF7-84AB-3D47C4585B82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5A649B3-C600-458A-B13F-02B1D6FE835A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{985FC48B-F393-4BF7-84AB-3D47C4585B82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{985FC48B-F393-4BF7-84AB-3D47C4585B82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{985FC48B-F393-4BF7-84AB-3D47C4585B82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{985FC48B-F393-4BF7-84AB-3D47C4585B82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
