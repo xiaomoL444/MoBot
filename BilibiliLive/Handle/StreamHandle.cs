@@ -56,6 +56,10 @@ namespace BilibiliLive.Handle
 			_dataStorage = dataStorage;
 		}
 
+		public Task Initial()
+		{
+			return Task.CompletedTask;
+		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
 			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流"))) return Task.FromResult(true);

@@ -11,6 +11,10 @@ namespace BilibiliLive.Handle
 {
 	public class EchoHandle : IMessageHandle<Group>
 	{
+		public Task Initial()
+		{
+			return Task.CompletedTask;
+		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
 			if (message.GroupId == 1079464803 && message.Sender.UserId == 2580139692 && message.RawMessage == "复活吧我的爱人")
@@ -31,5 +35,6 @@ namespace BilibiliLive.Handle
 
 			await MessageSender.SendGroupMsg(message.GroupId, messageChain);
 		}
+
 	}
 }

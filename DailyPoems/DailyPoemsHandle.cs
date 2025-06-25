@@ -44,6 +44,11 @@ namespace DailyPoems
 		{
 			return Task.CompletedTask;
 		}
+
+		public Task Initial()
+		{
+return Task.CompletedTask;
+		}
 	}
 
 	class FetchPoems : IJob

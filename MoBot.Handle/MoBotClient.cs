@@ -29,6 +29,27 @@ namespace MoBot.Handle
 		{
 			var client = _provider.GetService<IBotSocketClient>();
 			client.Initial();
+
+			//模块的初始化
+			var imTypes = AppDomain.CurrentDomain
+			.GetAssemblies()
+			.SelectMany(x => x.GetTypes())
+			.Where(t => !t.IsAbstract && !t.IsInterface)
+			.SelectMany(t => t.GetInterfaces()
+				.Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageHandle<>))
+				.Select(i => new { Implementation = t, Interface = i }))
+			.Distinct();
+
+			foreach (var type in imTypes)
+			{
+				var service = _provider.GetService(type.Interface);
+				if (service is null)
+					continue;
+
+				// 调用 Init()
+				var initMethod = type.Interface.GetMethod("Initial");
+				initMethod?.Invoke(service, null);
+			}
 		}
 
 		private async Task RouteAsyncPri<T>(T message) where T : EventPacketBase

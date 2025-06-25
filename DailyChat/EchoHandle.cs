@@ -34,6 +34,10 @@ namespace DailyChat
 			_dataStorage = dataStorage;
 		}
 
+		public Task Initial()
+		{
+			return Task.CompletedTask;
+		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
 			if (message.IsGroupID(Constants.OPGroupID))
