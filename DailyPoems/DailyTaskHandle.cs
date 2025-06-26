@@ -49,7 +49,9 @@ namespace DailyTask
 		public async Task HandleAsync(Group group)
 		{
 			var config = _dataStorage.Load<Config>("config");
-			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron);
+			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron);//DailyPoems
+			await RescheduleOrCreateJob(scheduler, "DailyPraiseJob", DefaultJobGrpup, "DailyPraiseTrigger", DefaultTriggerGrpup, config.DailyPraiseCron);//每日夸夸
+
 			return;
 		}
 
@@ -74,6 +76,13 @@ namespace DailyTask
 				})
 				.Build();
 			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron, DailyPoemsJob);//创建DailyPoems的定时任务
+
+			var DailyPraise = JobBuilder.Create<DailyPraise>()
+				.SetJobData(new JobDataMap() {
+					new KeyValuePair<string, object>("Logger",_logger)
+				})
+				.Build();
+			await RescheduleOrCreateJob(scheduler, "DailyPraiseJob", DefaultJobGrpup, "DailyPraiseTrigger", DefaultTriggerGrpup, config.DailyPraiseCron, DailyPraise);//创建每日夸夸的定时任务
 
 
 			return;
@@ -151,6 +160,7 @@ class FetchPoems : IJob
 	{
 		return Task.Factory.StartNew(async () =>
 		{
+			Logger.LogInformation("触发古文事件");
 			var config = DataStorage!.Load<Config>("config");
 			if (string.IsNullOrEmpty(config.Token))
 			{
@@ -197,8 +207,26 @@ link:https://www.gushiwen.cn/{mingjuList[randomIndex].Guishu switch
 
 class DailyPraise : IJob
 {
-	public Task Execute(IJobExecutionContext context)
+
+	public ILogger? Logger { get; set; }
+
+	private List<string> _imageUrl = new() { "http://i0.hdslb.com/bfs/new_dyn/31b533ee46fc3ab53d7348079c330440609872107.jpg",
+	"http://i0.hdslb.com/bfs/new_dyn/b24e8c4041836ec90c6a5706f52a8091609872107.jpg",
+	"http://i0.hdslb.com/bfs/new_dyn/6f985f0cb051634d33471c6e09b2384a609872107.jpg",
+	"http://i0.hdslb.com/bfs/new_dyn/7c4bd657f7c30a37c5847bbca12f63cb609872107.jpg" };//bilibili动态 4
+
+	public async Task Execute(IJobExecutionContext context)
 	{
-		return Task.CompletedTask;
+		Logger.LogInformation("触发每日夸夸事件");
+		var msg = "今天的沫沫也很可爱哦，今天也要继续加油哦~☆";
+		_ = Task.Run(async () =>
+		{ //发送消息
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
+			await Task.Delay(Random.Shared.Next(500, 1500));
+			//发送图片
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Image(_imageUrl[Random.Shared.Next(0, _imageUrl.Count)]).Build());
+		});
+
+		return;
 	}
 }
