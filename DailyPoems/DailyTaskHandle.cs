@@ -265,7 +265,7 @@ class DailyPraise : IJob
 			try
 			{
 				//发送消息
-				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().At($"{Constants.OPAdmin}").Text($" {msg}").Build());
 				await Task.Delay(Random.Shared.Next(500, 1500));
 				//发送图片
 				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Image(_imageUrl[Random.Shared.Next(0, _imageUrl.Count)], ImageType.Emoticon).Build());
