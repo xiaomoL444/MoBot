@@ -56,5 +56,23 @@ namespace MoBot.Core.Models.Message
 			});
 			return this;
 		}
+
+		/// <summary>
+		/// 群聊At消息
+		/// </summary>
+		/// <param name="uid">被At人的qq号，可以输入all表示@at全体</param>
+		/// <returns></returns>
+		public MessageChainBuilder At(string uid)
+		{
+			_msgSegment.Add(new()
+			{
+				Type = "at",
+				Data = new
+				{
+					qq = uid
+				}
+			});
+			return this;
+		}
 	}
 }
