@@ -1,4 +1,6 @@
 ﻿using DailyTask.Models;
+using DailyTask.Constant;
+using DailyTask.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;
@@ -13,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HttpClient = DailyTask.Tool.HttpClient;
 
 namespace DailyTask
 {
@@ -23,7 +26,8 @@ namespace DailyTask
 
 		private IScheduler scheduler;
 
-		private const string DefaultGroup = "Default";
+		private const string DefaultTriggerGrpup = "Default";
+		private const string DefaultJobGrpup = "Default";
 
 		public DailyTaskHandle(
 			ILogger<DailyTaskHandle> logger,
@@ -45,22 +49,22 @@ namespace DailyTask
 		public async Task HandleAsync(Group group)
 		{
 			var config = _dataStorage.Load<Config>("config");
-			await RescheduleJob(scheduler, "DailyPoemsTrigger", DefaultGroup, config.DailyPoemsCron);
+			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron);
 			return;
 		}
 
-		public Task Initial()
+		public async Task Initial()
 		{
 			var config = _dataStorage.Load<Config>("config");
 			if (!CronExpression.IsValidExpression(config.DailyPoemsCron))
 			{
 				_logger.LogError("Cron表达式非法");
-				return Task.CompletedTask;
+				return;
 			}
 			//添加定时调度器
 			var schedulerFactory = new StdSchedulerFactory();
 			scheduler = schedulerFactory.GetScheduler().Result;
-			scheduler.Start();
+			await scheduler.Start();
 			_logger.LogDebug("定时调度器开启成功");
 
 			var DailyPoemsJob = JobBuilder.Create<FetchPoems>()
@@ -69,92 +73,132 @@ namespace DailyTask
 					new KeyValuePair<string, object>("Logger",_logger)
 				})
 				.Build();
-			var DailyPoemsTrigger = TriggerBuilder.Create()
-				.WithIdentity("DailyPoemsTrigger", DefaultGroup)
-				.WithCronSchedule(config.DailyPoemsCron)
-				.Build();
-
-			scheduler.ScheduleJob(DailyPoemsJob, DailyPoemsTrigger);
-			_logger.LogInformation("每日诗文定时开启，设置的corn表达式为{time}，下次触发时间: {next_time}", config.DailyPoemsCron, DailyPoemsTrigger.GetNextFireTimeUtc()?.ToLocalTime());
+			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron, DailyPoemsJob);//创建DailyPoems的定时任务
 
 
-
-			return Task.CompletedTask;
+			return;
 		}
-		public async Task RescheduleJob(IScheduler scheduler, string triggerName, string triggerGtoup, string newCron)
+		public async Task RescheduleOrCreateJob(
+			IScheduler scheduler,
+			string jobName,
+			string jobGroup,
+			string triggerName,
+			string triggerGroup,
+			string cron,
+			IJobDetail jobDetail = null)
 		{
-			var triggerKey = new TriggerKey(triggerName, triggerGtoup);
+			var triggerKey = new TriggerKey(triggerName, triggerGroup);
+			var jobKey = new JobKey(jobName, jobGroup);
 
-			// 先获取旧的 Trigger
-			var oldTrigger = await scheduler.GetTrigger(triggerKey);
-			if (oldTrigger == null)
+			var existingTrigger = await scheduler.GetTrigger(triggerKey);
+
+			ITrigger newTrigger;
+
+			if (existingTrigger != null)
 			{
-				_logger.LogError("Trigger 不存在，无法更新");
+				//已存在 trigger，重载时间
+				newTrigger = TriggerBuilder.Create()
+					   .WithIdentity(triggerKey)
+					   .WithSchedule(CronScheduleBuilder.CronSchedule(cron))
+					   .Build();
+
+				await scheduler.RescheduleJob(triggerKey, newTrigger);
+				_logger.LogInformation("已更新 Trigger {triggerName} 的定时时间：{cron}", triggerName, cron);
+			}
+			else
+			{
+				// ❌ 不存在 trigger，检查 Job 是否存在
+				if (!await scheduler.CheckExists(jobKey))
+				{
+					// Job 不存在，必须传入 jobDetail 才能创建
+					if (jobDetail == null)
+						throw new InvalidOperationException("Job 不存在，必须提供 jobDetail 用于注册");
+
+					newTrigger = TriggerBuilder.Create()
+						.WithIdentity(triggerKey)
+						.WithSchedule(CronScheduleBuilder.CronSchedule(cron))
+						.Build();
+					await scheduler.ScheduleJob(jobDetail, newTrigger);
+
+					_logger.LogInformation("创建新的 Job 和 Trigger，定时为：{cron}", cron);
+				}
+				else
+				{
+					// Job 存在，添加一个新的 trigger
+					newTrigger = TriggerBuilder.Create()
+						.WithIdentity(triggerKey)
+						.ForJob(jobKey)
+						.WithSchedule(CronScheduleBuilder.CronSchedule(cron))
+						.Build();
+					_logger.LogInformation("Job 已存在，添加新 Trigger，定时为{cron}", cron);
+				}
+			}
+			_logger.LogInformation("更新{jobName} {jobGrpup} {triggerName} {triggerGroup}，设置的时间为{time}，下次触发时间: {next_time}", jobName, jobGroup, triggerName, triggerGroup, CronExpressionDescriptor.ExpressionDescriptor.GetDescription(cron, new CronExpressionDescriptor.Options
+			{
+				Locale = "zh-CN",
+				Use24HourTimeFormat = true
+			}), newTrigger.GetNextFireTimeUtc()?.ToLocalTime());
+		}
+	}
+
+}
+
+class FetchPoems : IJob
+{
+	public ILogger? Logger { get; set; }
+	public IDataStorage? DataStorage { get; set; }
+	public Task Execute(IJobExecutionContext context)
+	{
+		return Task.Factory.StartNew(async () =>
+		{
+			var config = DataStorage!.Load<Config>("config");
+			if (string.IsNullOrEmpty(config.Token))
+			{
+				Logger!.LogError("每日古文Token不存在");
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("古诗文token为空，请检查配置文件").Build());
+				return;
+			}
+			HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://app24.guwendao.net/router/mingju/mingjuXiaobujian.aspx?source=gwd&token={config.Token}&zujianType=0");
+			var result = await (await HttpClient.SendAsync(requestMessage)).Content.ReadAsStringAsync();
+			Logger.LogDebug(result);
+			if (string.Equals(result, "非法请求"))
+			{
+				Logger.LogError("偶遇非法请求，拼尽全力无法战胜");
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("偶遇古诗文非法请求，拼尽全力无法战胜").Build());
+				return;
+			}
+			var json = JsonConvert.DeserializeObject<MingjuListResponse>(result);
+			if (json.Code != 200)
+			{
+				Logger.LogWarning("遇见意外错误，错误码{code}，错误信息{msg}", json.Code, json.Message);
 				return;
 			}
 
-			// 创建新 Trigger（带新 Cron）
-			var newTrigger = TriggerBuilder.Create()
-				.WithIdentity(triggerKey)
-				.WithSchedule(CronScheduleBuilder.CronSchedule(newCron))
-				.Build();
+			var msgChain = MessageChainBuilder.Create();
+			var mingjuList = json.Result.MingjuList;
 
-			// 使用 RescheduleJob 重新绑定
-			await scheduler.RescheduleJob(triggerKey, newTrigger);
-			_logger.LogInformation($"已更新 {triggerName} 的 Cron 表达式为 {newCron}");
-		}
-
-	}
-
-	class FetchPoems : IJob
-	{
-		public ILogger? Logger { get; set; }
-		public IDataStorage? DataStorage { get; set; }
-		public Task Execute(IJobExecutionContext context)
-		{
-			return Task.Factory.StartNew(async () =>
-			{
-				var config = DataStorage!.Load<Config>("config");
-				if (string.IsNullOrEmpty(config.Token))
-				{
-					Logger!.LogError("每日古文Token不存在");
-					await MessageSender.SendGroupMsg(Constant.Constants.OPGroupID, MessageChainBuilder.Create().Text("古诗文token为空，请检查配置文件").Build());
-					return;
-				}
-				HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://app24.guwendao.net/router/mingju/mingjuXiaobujian.aspx?source=gwd&token={config.Token}&zujianType=0");
-				var result = await (await Tool.HttpClient.SendAsync(requestMessage)).Content.ReadAsStringAsync();
-				Logger.LogDebug(result);
-				if (string.Equals(result, "非法请求"))
-				{
-					Logger.LogError("偶遇非法请求，拼尽全力无法战胜");
-					await MessageSender.SendGroupMsg(Constant.Constants.OPGroupID, MessageChainBuilder.Create().Text("偶遇古诗文非法请求，拼尽全力无法战胜").Build());
-					return;
-				}
-				var json = JsonConvert.DeserializeObject<MingjuListResponse>(result);
-				if (json.Code != 200)
-				{
-					Logger.LogWarning("遇见意外错误，错误码{code}，错误信息{msg}", json.Code, json.Message);
-					return;
-				}
-
-				var msgChain = MessageChainBuilder.Create();
-				var mingjuList = json.Result.MingjuList;
-
-				int randomIndex = Random.Shared.Next(0, mingjuList.Count);
-				var msg = $@"{mingjuList[randomIndex].NameStr}
+			int randomIndex = Random.Shared.Next(0, mingjuList.Count);
+			var msg = $@"{mingjuList[randomIndex].NameStr}
 
 —{mingjuList[randomIndex].Author}《{mingjuList[randomIndex].Source}》
 link:https://www.gushiwen.cn/{mingjuList[randomIndex].Guishu switch
-				{
-					1 => "shiwenv",
-					2 => "bookv",
-					4 => "juv",
-					_ => "归属其他，不明，请前往控制台查看"
-				}}_{mingjuList[randomIndex].SourceIdStr}.aspx";
+			{
+				1 => "shiwenv",
+				2 => "bookv",
+				4 => "juv",
+				_ => "归属其他，不明，请前往控制台查看"
+			}}_{mingjuList[randomIndex].SourceIdStr}.aspx";
 
-				Logger.LogInformation("古诗文选中的古诗{msg}", msg);
-				await MessageSender.SendGroupMsg(Constant.Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
-			});
-		}
+			Logger.LogInformation("古诗文选中的古诗{msg}", msg);
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
+		});
+	}
+}
+
+class DailyPraise : IJob
+{
+	public Task Execute(IJobExecutionContext context)
+	{
+		return Task.CompletedTask;
 	}
 }
