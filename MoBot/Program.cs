@@ -43,6 +43,8 @@ try
 
 			server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
 
+			server.AddScoped<IMessageHandle<Group>, DailyTask.DailyTaskHandle>();//每日定时任务（古文和夸夸）
+
 		})
 		.Build();
 
