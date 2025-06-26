@@ -431,7 +431,7 @@ namespace BilibiliLive.Handle
 		{
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
-			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={streamConfig.RoomID}&csrf={accountConfig.Bili_Jct}");
+			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={streamConfig.RoomID}&csrf={accountConfig.Bili_Jct}&platform={streamConfig.Platform}");
 			httpRequestMessage.Headers.Add("cookie", $"SESSDATA={accountConfig.Sessdata};bili_jct={accountConfig.Bili_Jct}");
 			var response = await HttpClient.SendAsync(httpRequestMessage);
 			_logger.LogDebug("关闭直播的回复{@response}", (await response.Content.ReadAsStringAsync()));
