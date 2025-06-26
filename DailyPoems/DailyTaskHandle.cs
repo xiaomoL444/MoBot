@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HttpClient = DailyTask.Tool.HttpClient;
+using Quartz.Impl.Matchers;
 
 namespace DailyTask
 {
@@ -52,6 +53,10 @@ namespace DailyTask
 			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron);//DailyPoems
 			await RescheduleOrCreateJob(scheduler, "DailyPraiseJob", DefaultJobGrpup, "DailyPraiseTrigger", DefaultTriggerGrpup, config.DailyPraiseCron);//每日夸夸
 
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(@$"重载成功
+每日诗文时间：{CronExpressionDescriptor.ExpressionDescriptor.GetDescription(config.DailyPoemsCron, new CronExpressionDescriptor.Options { Locale = "zh-CN", Use24HourTimeFormat = true })}
+每日夸夸时间：{CronExpressionDescriptor.ExpressionDescriptor.GetDescription(config.DailyPraiseCron, new CronExpressionDescriptor.Options { Locale = "zh-CN", Use24HourTimeFormat = true })}").Build());
+
 			return;
 		}
 
@@ -66,6 +71,7 @@ namespace DailyTask
 			//添加定时调度器
 			var schedulerFactory = new StdSchedulerFactory();
 			scheduler = schedulerFactory.GetScheduler().Result;
+			scheduler.ListenerManager.AddJobListener(new JobFinishedListener(_logger), GroupMatcher<JobKey>.AnyGroup());
 			await scheduler.Start();
 			_logger.LogDebug("定时调度器开启成功");
 
@@ -151,57 +157,87 @@ namespace DailyTask
 	}
 
 }
+class JobFinishedListener : IJobListener
+{
+	private readonly ILogger _logger;
+
+	public JobFinishedListener(ILogger logger)
+	{
+		_logger = logger;
+	}
+	public string Name => "JobFinishedListener";
+
+	public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
+	{
+		return Task.CompletedTask;
+
+	}
+
+	public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
+	{
+		return Task.CompletedTask;
+	}
+
+	public Task JobWasExecuted(IJobExecutionContext context, JobExecutionException? jobException, CancellationToken cancellationToken = default)
+	{
+		// ✅ 执行后触发（不管是否成功）
+		var jobKey = context.JobDetail.Key;
+		if (jobException == null)
+			_logger.LogInformation("任务{Name}执行完成，下一次触发时间{nextTime}", jobKey.Name, context.Trigger.GetNextFireTimeUtc()?.ToLocalTime());
+		else
+			_logger.LogError(jobException, "任务 {Name} 执行异常", jobKey.Name);
+		return Task.CompletedTask;
+	}
+}
 
 class FetchPoems : IJob
 {
 	public ILogger? Logger { get; set; }
 	public IDataStorage? DataStorage { get; set; }
-	public Task Execute(IJobExecutionContext context)
+	public async Task Execute(IJobExecutionContext context)
 	{
-		return Task.Factory.StartNew(async () =>
+		Logger.LogInformation("触发古文事件");
+		var config = DataStorage!.Load<Config>("config");
+		if (string.IsNullOrEmpty(config.Token))
 		{
-			Logger.LogInformation("触发古文事件");
-			var config = DataStorage!.Load<Config>("config");
-			if (string.IsNullOrEmpty(config.Token))
-			{
-				Logger!.LogError("每日古文Token不存在");
-				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("古诗文token为空，请检查配置文件").Build());
-				return;
-			}
-			HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://app24.guwendao.net/router/mingju/mingjuXiaobujian.aspx?source=gwd&token={config.Token}&zujianType=0");
-			var result = await (await HttpClient.SendAsync(requestMessage)).Content.ReadAsStringAsync();
-			Logger.LogDebug(result);
-			if (string.Equals(result, "非法请求"))
-			{
-				Logger.LogError("偶遇非法请求，拼尽全力无法战胜");
-				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("偶遇古诗文非法请求，拼尽全力无法战胜").Build());
-				return;
-			}
-			var json = JsonConvert.DeserializeObject<MingjuListResponse>(result);
-			if (json.Code != 200)
-			{
-				Logger.LogWarning("遇见意外错误，错误码{code}，错误信息{msg}", json.Code, json.Message);
-				return;
-			}
+			Logger!.LogError("每日古文Token不存在");
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("古诗文token为空，请检查配置文件").Build());
+			return;
+		}
+		HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://app24.guwendao.net/router/mingju/mingjuXiaobujian.aspx?source=gwd&token={config.Token}&zujianType=0");
+		var result = await (await HttpClient.SendAsync(requestMessage)).Content.ReadAsStringAsync();
+		Logger.LogDebug(result);
+		if (string.Equals(result, "非法请求"))
+		{
+			Logger.LogError("偶遇非法请求，拼尽全力无法战胜");
+			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text("偶遇古诗文非法请求，拼尽全力无法战胜").Build());
+			return;
+		}
+		var json = JsonConvert.DeserializeObject<MingjuListResponse>(result);
+		if (json.Code != 200)
+		{
+			Logger.LogWarning("遇见意外错误，错误码{code}，错误信息{msg}", json.Code, json.Message);
+			return;
+		}
 
-			var msgChain = MessageChainBuilder.Create();
-			var mingjuList = json.Result.MingjuList;
+		var msgChain = MessageChainBuilder.Create();
+		var mingjuList = json.Result.MingjuList;
 
-			int randomIndex = Random.Shared.Next(0, mingjuList.Count);
-			var msg = $@"{mingjuList[randomIndex].NameStr}
+		int randomIndex = Random.Shared.Next(0, mingjuList.Count);
+		var msg = $@"{mingjuList[randomIndex].NameStr}
 
 —{mingjuList[randomIndex].Author}《{mingjuList[randomIndex].Source}》
 link:https://www.gushiwen.cn/{mingjuList[randomIndex].Guishu switch
-			{
-				1 => "shiwenv",
-				2 => "bookv",
-				4 => "juv",
-				_ => "归属其他，不明，请前往控制台查看"
-			}}_{mingjuList[randomIndex].SourceIdStr}.aspx";
+		{
+			1 => "shiwenv",
+			2 => "bookv",
+			4 => "juv",
+			_ => "归属其他，不明，请前往控制台查看"
+		}}_{mingjuList[randomIndex].SourceIdStr}.aspx";
 
-			Logger.LogInformation("古诗文选中的古诗{msg}", msg);
-			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
-		});
+		Logger.LogInformation("古诗文选中的古诗{msg}", msg);
+		await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
+
 	}
 }
 
@@ -218,7 +254,12 @@ class DailyPraise : IJob
 	public async Task Execute(IJobExecutionContext context)
 	{
 		Logger.LogInformation("触发每日夸夸事件");
-		var msg = "今天的沫沫也很可爱哦，今天也要继续加油哦~☆";
+
+		await MessageSender.SendLike(Constants.OPAdmin, 10);
+
+		var msg = @"今天的沫沫也很可爱哦，今天也要继续加油哦~☆
+
+（今日每日点赞+10）";
 		_ = Task.Run(async () =>
 		{
 			try
