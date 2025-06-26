@@ -220,11 +220,19 @@ class DailyPraise : IJob
 		Logger.LogInformation("触发每日夸夸事件");
 		var msg = "今天的沫沫也很可爱哦，今天也要继续加油哦~☆";
 		_ = Task.Run(async () =>
-		{ //发送消息
-			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
-			await Task.Delay(Random.Shared.Next(500, 1500));
-			//发送图片
-			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Image(_imageUrl[Random.Shared.Next(0, _imageUrl.Count)]).Build());
+		{
+			try
+			{
+				//发送消息
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(msg).Build());
+				await Task.Delay(Random.Shared.Next(500, 1500));
+				//发送图片
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Image(_imageUrl[Random.Shared.Next(0, _imageUrl.Count)]).Build());
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError(ex, "每日夸夸发送消息失败");
+			}
 		});
 
 		return;
