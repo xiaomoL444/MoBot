@@ -40,15 +40,23 @@ namespace MoBot.Handle
 				.Select(i => new { Implementation = t, Interface = i }))
 			.Distinct();
 
-			foreach (var type in imTypes)
+			var types = imTypes
+			.GroupBy(x => x.Interface.GenericTypeArguments[0]) // 按 T 分组
+			.Select(g => g.First().Interface)                  // 只取每种 T 的一个 IM<T>
+			.ToList();
+
+			foreach (var type in types)
 			{
-				var service = _provider.GetService(type.Interface);
-				if (service is null)
+				var services = _provider.GetServices(type);
+				if (services is null)
 					continue;
 
 				// 调用 Init()
-				var initMethod = type.Interface.GetMethod("Initial");
-				initMethod?.Invoke(service, null);
+				var initMethod = type.GetMethod("Initial");
+				foreach (var service in services)
+				{
+					initMethod?.Invoke(service, null);
+				}
 			}
 		}
 
