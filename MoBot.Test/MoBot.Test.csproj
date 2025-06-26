@@ -15,7 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BilibiliLive\BilibiliLive.csproj" />
     <ProjectReference Include="..\DailyChat\DailyChat.csproj" />
-    <ProjectReference Include="..\DailyPoems\DailyPoems.csproj" />
+    <ProjectReference Include="..\DailyPoems\DailyTask.csproj" />
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />

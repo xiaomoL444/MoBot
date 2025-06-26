@@ -1,7 +1,7 @@
 ﻿using BilibiliLive.Handle;
 using BilibiliLive.Models;
 using DailyChat;
-using DailyPoems;
+using DailyTask;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,7 +43,7 @@ try
 			//server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.StreamHandle>();
 
 			//server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();
-			server.AddScoped<IMessageHandle<Group>, DailyPoemsHandle>();
+			server.AddScoped<IMessageHandle<Group>, DailyTaskHandle>();
 		})
 		.Build();
 

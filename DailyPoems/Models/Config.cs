@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DailyPoems.Models
+namespace DailyTask.Models
 {
 	internal class Config
 	{
@@ -18,7 +18,7 @@ namespace DailyPoems.Models
 		/// <summary>
 		/// Corn表达式的定时，默认是每天13点触发一次
 		/// </summary>
-		[JsonProperty("cron_schedule")]
-		public string CronSchedule { get; set; } = "0 0 13 1/1 * ? *";
+		[JsonProperty("daily_poems_cron")]
+		public string DailyPoemsCron { get; set; } = "0 0 13 1/1 * ? *";
 	}
 }
