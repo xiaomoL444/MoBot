@@ -26,5 +26,11 @@ namespace DailyTask.Models
 		/// </summary>
 		[JsonProperty("daily_praise_cron")]
 		public string DailyPraiseCron { get; set; } = "0 0 8 1/1 * ? *";
+
+		/// <summary>
+		/// 另一位的QQID
+		/// </summary>
+		[JsonProperty("love_qq_id")]
+		public long LoveQQID { get; set; } = 0;
 	}
 }

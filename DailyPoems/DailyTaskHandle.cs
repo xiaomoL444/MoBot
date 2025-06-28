@@ -85,6 +85,7 @@ namespace DailyTask
 
 			var DailyPraise = JobBuilder.Create<DailyPraise>()
 				.SetJobData(new JobDataMap() {
+					new KeyValuePair<string, object>("DataStorage", _dataStorage) ,
 					new KeyValuePair<string, object>("Logger",_logger)
 				})
 				.Build();
@@ -245,6 +246,7 @@ class DailyPraise : IJob
 {
 
 	public ILogger? Logger { get; set; }
+	public IDataStorage? DataStorage { get; set; }
 
 	private List<string> _imageUrl = new() { "http://i0.hdslb.com/bfs/new_dyn/31b533ee46fc3ab53d7348079c330440609872107.jpg",
 	"http://i0.hdslb.com/bfs/new_dyn/b24e8c4041836ec90c6a5706f52a8091609872107.jpg",
@@ -255,7 +257,10 @@ class DailyPraise : IJob
 	{
 		Logger.LogInformation("触发每日夸夸事件");
 
-		await MessageSender.SendLike(Constants.OPAdmin, 10);
+		var opResult = await MessageSender.SendLike(Constants.OPAdmin, 10);
+		Logger.LogDebug("OP的点赞结果{@result}", opResult);
+		var loveResult = await MessageSender.SendLike(DataStorage.Load<Config>("config").LoveQQID, 10);
+		Logger.LogDebug("Love的点赞结果{@result}", loveResult);
 
 		var msg = @"今天的沫沫也很可爱哦，今天也要继续加油哦~☆
 
