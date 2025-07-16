@@ -32,6 +32,7 @@ namespace BilibiliLive.Models
 		/// 房间ID
 		/// </summary>
 		[JsonProperty("room_id")]
+		[Obsolete]
 		public long RoomID { get; set; } = 0;
 
 		/// <summary>
@@ -48,7 +49,7 @@ namespace BilibiliLive.Models
 		/// - BiliLink（如安卓）：android_link
 		/// </summary>
 		[JsonProperty("platform")]
-		public string Platform { get; set; } = "web";
+		public string Platform { get; set; } = "pc_link";
 
 		public LiveOpenPlatForm LiveOpenPlatForm = new();
 	}

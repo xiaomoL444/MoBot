@@ -39,11 +39,11 @@ try
 			server.AddScoped<IBotSocketClient, ConsoleClient>();
 
 			//添加事件
-			//server.AddScoped<IMessageHandle<Group>, SignHandle>();
-			//server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.StreamHandle>();
-
+			server.AddScoped<IMessageHandle<Group>, SignHandle>();
+			server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.StreamHandle>();
+			server.AddScoped < IMessageHandle<Group>,AccountListHandle >();
 			//server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();
-			server.AddScoped<IMessageHandle<Group>, DailyTaskHandle>();
+			//server.AddScoped<IMessageHandle<Group>, DailyTaskHandle>();
 		})
 		.Build();
 

@@ -11,6 +11,8 @@ namespace BilibiliLive.Constant
 		public const long OPGroupID = 1079464803;
 		public const long OPAdmin = 2580139692;
 
+		public const string AccountFile = "account";
+
 		#region 登录API
 		public const string BilibiliWebSignQRcodeGenerataApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";//B站的web端扫码链接生成api
 		public const string BilibiliWebSignQRcodePollApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll";//B站的web端扫码轮询是否登录成功
@@ -19,7 +21,11 @@ namespace BilibiliLive.Constant
 		#region 直播间API
 		public const string BilibiliStartLiveAPI = "https://api.live.bilibili.com/room/v1/Room/startLive";//B站的开播连接
 		public const string BilibiliStopLiveApi = "https://api.live.bilibili.com/room/v1/Room/stopLive";//B站的关播连接
+		public const string BilibiliGetRoomInfoOld = "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld";//获取房间信息（主要是为了获取roomID）
 		#endregion
 
+		#region 用户API
+		public const string GetUserInfo = "https://api.bilibili.com/x/space/wbi/acc/info";
+		#endregion
 	}
 }

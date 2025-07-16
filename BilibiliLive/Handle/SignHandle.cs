@@ -108,11 +108,21 @@ namespace BilibiliLive.Handle
 							// 解析URL参数
 							NameValueCollection cookies = HttpUtility.ParseQueryString(JsonConvert.DeserializeObject<string>($"\"{queryString}\"")!);
 							var accountConfig = _dataStorage.Load<AccountConfig>("account");
-							accountConfig.DedeUserID = cookies["DedeUserID"]!;
-							accountConfig.DedeUserID__ckMd5 = cookies["DedeUserID__ckMd5"]!;
-							accountConfig.Expires = cookies["Expires"]!;
-							accountConfig.Sessdata = cookies["SESSDATA"]!;
-							accountConfig.Bili_Jct = cookies["bili_jct"]!;
+							var singleAccount = new AccountConfig.Account();
+							singleAccount.DedeUserID = cookies["DedeUserID"]!;
+							singleAccount.DedeUserID__ckMd5 = cookies["DedeUserID__ckMd5"]!;
+							singleAccount.Expires = cookies["Expires"]!;
+							singleAccount.Sessdata = cookies["SESSDATA"]!;
+							singleAccount.Bili_Jct = cookies["bili_jct"]!;
+
+							//判断该用户是否已存在
+							if (accountConfig.Accounts.Any(q => q.DedeUserID == singleAccount.DedeUserID))
+							{
+								_logger.LogWarning("已经有相同的用户登录过了{uid}", singleAccount.DedeUserID);
+								await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama已经有相同的账号登陆过了哦").Build());
+								break;
+							}
+							accountConfig.Accounts.Add(singleAccount);
 							_dataStorage.Save("account", accountConfig);
 							_logger.LogInformation("登录成功");
 							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama登录成功~ヾ(✿ﾟ▽ﾟ)ノ").Build());
