@@ -40,6 +40,7 @@ try
 			server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.EchoHandle>();//复活吧我的爱人
 			server.AddScoped<IMessageHandle<Group>, StreamHandle>();//直播
 			server.AddScoped<IMessageHandle<Group>, SignHandle>();//登录B站
+			server.AddScoped<IMessageHandle<Group>, AccountListHandle>();//登录B站
 
 			server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
 

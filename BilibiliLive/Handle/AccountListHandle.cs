@@ -91,15 +91,7 @@ namespace BilibiliLive.Handle
 			for (int i = 0; i < accountConfig.Accounts.Count; i++)
 			{
 				var account = accountConfig.Accounts[i];
-				var wbi = await BilibiliApiTool.GetWbi(new() { { "mid", $"{account.DedeUserID}" } });
-				_logger.LogDebug("Wbi={wbiurl}", wbi);
-				var userInfoReqMsg = new HttpRequestMessage(HttpMethod.Get, $"{Constants.GetUserInfo}?{wbi}");
-				userInfoReqMsg.Headers.Add("cookie", $"SESSDATA={account.Sessdata}");
-				userInfoReqMsg.Headers.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36");
-				var userInfoRsp = await HttpClient.SendAsync(userInfoReqMsg);
-				_logger.LogDebug("获取{user}个人信息的回复{@response}", account.DedeUserID, (await userInfoRsp.Content.ReadAsStringAsync()));
-
-				var userInfo = JsonConvert.DeserializeObject<UserInfoRsp>((await userInfoRsp.Content.ReadAsStringAsync()));
+				var userInfo = await BilibiliApiTool.GetUserInfo(account);
 
 				try
 				{

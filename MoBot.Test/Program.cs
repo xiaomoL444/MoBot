@@ -41,13 +41,14 @@ try
 			//添加事件
 			server.AddScoped<IMessageHandle<Group>, SignHandle>();
 			server.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.StreamHandle>();
-			server.AddScoped < IMessageHandle<Group>,AccountListHandle >();
+			server.AddScoped<IMessageHandle<Group>, AccountListHandle>();
 			//server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();
 			//server.AddScoped<IMessageHandle<Group>, DailyTaskHandle>();
 		})
 		.Build();
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
+	BilibiliLive.Tool.GlobalLogger.LoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
 	MoBotClient.Initial();
 
 	while (true) ;

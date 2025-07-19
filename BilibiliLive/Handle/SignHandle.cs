@@ -108,7 +108,7 @@ namespace BilibiliLive.Handle
 							// 解析URL参数
 							NameValueCollection cookies = HttpUtility.ParseQueryString(JsonConvert.DeserializeObject<string>($"\"{queryString}\"")!);
 							var accountConfig = _dataStorage.Load<AccountConfig>("account");
-							var singleAccount = new AccountConfig.Account();
+							var singleAccount = new UserCredential();
 							singleAccount.DedeUserID = cookies["DedeUserID"]!;
 							singleAccount.DedeUserID__ckMd5 = cookies["DedeUserID__ckMd5"]!;
 							singleAccount.Expires = cookies["Expires"]!;

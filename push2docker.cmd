@@ -7,10 +7,10 @@ if "%public%"=="0" goto Debug
 if "%public%"=="1" goto Release
 
 :Debug
-dotnet publish -c Debug -r linux-arm64 --self-contained false -o publish
+dotnet publish -c Debug -r linux-arm64 --self-contained false -o ./docker/publish
 
 :Release
-dotnet publish -c Release -r linux-arm64 --self-contained false -o publish
+dotnet publish -c Release -r linux-arm64 --self-contained false -o ./docker/publish
 
 if "%num%"=="0" goto Mobot_Test
 if "%num%"=="" goto Mobot_Test
