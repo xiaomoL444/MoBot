@@ -234,7 +234,7 @@ namespace BilibiliLive.Handle
 					if (session.IsLive)
 					{
 						_logger.LogInformation("[{user}]已经在直播中，跳过重复开播", userInfo.Data.Name);
-						msgChain.Text($"{userInfo.Data.Name}已在直播中\n");
+						msgChain.Text($"[{userInfo.Data.Name}]：已在直播中\n");
 						continue;
 					}
 					else
@@ -391,7 +391,7 @@ namespace BilibiliLive.Handle
 				var startLiveEventResult = await StartLiveEvent();
 				startLiveEventResult.Switch(none => { _isGameStart = true; msgChain.Text("已开启"); }, error => { msgChain.Text("开启失败！"); });
 			}
-			msgChain.Text("\n");
+			//msgChain.Text("\n");
 
 
 			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
@@ -465,12 +465,13 @@ namespace BilibiliLive.Handle
 				try
 				{
 					await _childProcess.WaitForExitAsync(cts.Token);
+					msgChain.Text("串流程序关闭成功");
 					_logger.LogInformation("串流程序关闭成功");
 				}
 				catch (OperationCanceledException)
 				{
 					_logger.LogWarning("串流程序关闭失败");
-					msgChain.Text("串流程序关闭失败！\n");
+					msgChain.Text("串流程序关闭失败！");
 				}
 			}
 
