@@ -10,6 +10,9 @@
   <ItemGroup>
     <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Asserts\fonts\Goth.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Asserts\fonts\Kawayi.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Third\OpenBLive.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -34,6 +43,17 @@
     <None Update="Third\Websocket.Client.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Asserts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Asserts\fonts\" />
+    <Folder Include="Asserts\images\" />
   </ItemGroup>
 
 </Project>

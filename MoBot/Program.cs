@@ -14,11 +14,14 @@ using System.Runtime;
 using System.Text.Json;
 
 
+string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {CallerFilePath} {CallerMemberName} {CallerLineNumber} : {Message:lj}{NewLine}{Exception}";
+
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
+	.Destructure.ToMaximumStringLength(50) // 限制字符串属性长度为100
 	.Enrich.FromLogContext()
-	.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}", theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
-	.WriteTo.File("./logs/log-.txt", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
+	.WriteTo.File("./logs/log-.txt", outputTemplate: outputTemplate, rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
 	.CreateLogger();
 
 
@@ -41,6 +44,7 @@ try
 			server.AddScoped<IMessageHandle<Group>, StreamHandle>();//直播
 			server.AddScoped<IMessageHandle<Group>, SignHandle>();//登录B站
 			server.AddScoped<IMessageHandle<Group>, AccountListHandle>();//登录B站
+			server.AddScoped<IMessageHandle<Group>, EraHandle>();//激励计划
 
 			server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
 
@@ -50,6 +54,7 @@ try
 		.Build();
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
+	BilibiliLive.Tool.GlobalLogger.LoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
 	MoBotClient.Initial();
 
 	while (true) ;

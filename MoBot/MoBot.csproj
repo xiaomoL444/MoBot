@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
+    <PackageReference Include="Serilog.Enrichers.WithCaller" Version="1.3.0" />
   </ItemGroup>
 
   <ItemGroup>

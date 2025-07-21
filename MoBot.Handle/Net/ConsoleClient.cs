@@ -62,7 +62,7 @@ namespace MoBot.Handle.Net
 							continue;
 						}
 
-						_logger.LogWarning("收到未知消息：{commond}", commond);
+						_logger.LogWarning("收到未知消息：{@commond}", commond);
 					}
 					catch (Exception ex)
 					{
@@ -74,7 +74,7 @@ namespace MoBot.Handle.Net
 
 		public Task<ActionPacketRsp> SendMessage(string action, ActionType actionType, object message)
 		{
-			_logger.LogInformation("发送消息{actionType} /{action} {message}", actionType, action, JsonConvert.SerializeObject(message));
+			_logger.LogInformation("发送消息{actionType} /{action} {@message}", actionType, action, message);
 			return Task.FromResult(new ActionPacketRsp());
 		}
 	}

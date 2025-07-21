@@ -12,6 +12,7 @@ namespace BilibiliLive.Constant
 		public const long OPAdmin = 2580139692;
 
 		public const string AccountFile = "account";
+		public const string EraFile = "era";
 
 		#region 登录API
 		public const string BilibiliWebSignQRcodeGenerataApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";//B站的web端扫码链接生成api
@@ -27,6 +28,11 @@ namespace BilibiliLive.Constant
 
 		#region 用户API
 		public const string GetUserInfo = "https://api.bilibili.com/x/space/wbi/acc/info";
+		#endregion
+
+		#region 激励计划API
+		public const string GetEraUrl = "https://app.bilibili.com/x/topic/web/details/top";//获取激励计划的页面链接
+		public const string GetEraTask = "https://api.bilibili.com/x/task/totalv2";//获取任务完成情况
 		#endregion
 	}
 }
