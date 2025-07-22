@@ -70,7 +70,7 @@ namespace BilibiliLive.Handle
 			{
 				var args = group.SplitMsg();
 				int index = int.Parse(args[1]);
-				accountConfig.Accounts.RemoveAt(index);
+				accountConfig.Users.RemoveAt(index);
 				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text($"成功帮勾修金sama移除第[{index}]个用户(骄傲)").Build());
 				_dataStorage.Save(Constants.AccountFile, accountConfig);
 			}
@@ -88,10 +88,10 @@ namespace BilibiliLive.Handle
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 
 			var msgChain = MessageChainBuilder.Create().Text("末酱为勾修金sama找到了的用户\n");
-			for (int i = 0; i < accountConfig.Accounts.Count; i++)
+			for (int i = 0; i < accountConfig.Users.Count; i++)
 			{
-				var account = accountConfig.Accounts[i];
-				var userInfo = await BilibiliApiTool.GetUserInfo(account);
+				var userCredential = accountConfig.Users[i].UserCredential;
+				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
 
 				try
 				{

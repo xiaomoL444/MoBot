@@ -195,22 +195,23 @@ namespace BilibiliLive.Handle
 
 			//获取任务
 
-			foreach (var account in accountConfig.Accounts)
+			foreach (var account in accountConfig.Users)
 			{
-				var userInfo = await BilibiliApiTool.GetUserInfo(account);
+				var userCredential = account.UserCredential;
+				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
 
 				//直播任务
-				var liveRes = await GetTaskInfo(account, eraConfig.LiveTaskIDs);
+				var liveRes = await GetTaskInfo(userCredential, eraConfig.LiveTaskIDs);
 				if (liveRes is not { Code: 0 })
 				{
-					_logger.LogError("获取{user}直播任务信息错误CODE:{code}", account.DedeUserID, liveRes?.Code);
+					_logger.LogError("获取{user}直播任务信息错误CODE:{code}", userCredential.DedeUserID, liveRes?.Code);
 				}
 
 				//看播任务
-				var viewRes = await GetTaskInfo(account, eraConfig.ViewTaskIDs);
+				var viewRes = await GetTaskInfo(userCredential, eraConfig.ViewTaskIDs);
 				if (viewRes is not { Code: 0 })
 				{
-					_logger.LogError("获取{user}看播任务信息错误CODE:{code}", account.DedeUserID, viewRes?.Code);
+					_logger.LogError("获取{user}看播任务信息错误CODE:{code}", userCredential.DedeUserID, viewRes?.Code);
 				}
 
 				var startChar = " ♪ ";
@@ -444,7 +445,7 @@ namespace BilibiliLive.Handle
 			return base64;
 		}
 
-		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName)
+		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName, int duration = 60)
 		{
 			Dictionary<string, string> param = new() {
 				{ "task_id", taskID },

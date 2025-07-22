@@ -108,21 +108,21 @@ namespace BilibiliLive.Handle
 							// 解析URL参数
 							NameValueCollection cookies = HttpUtility.ParseQueryString(JsonConvert.DeserializeObject<string>($"\"{queryString}\"")!);
 							var accountConfig = _dataStorage.Load<AccountConfig>("account");
-							var singleAccount = new UserCredential();
-							singleAccount.DedeUserID = cookies["DedeUserID"]!;
-							singleAccount.DedeUserID__ckMd5 = cookies["DedeUserID__ckMd5"]!;
-							singleAccount.Expires = cookies["Expires"]!;
-							singleAccount.Sessdata = cookies["SESSDATA"]!;
-							singleAccount.Bili_Jct = cookies["bili_jct"]!;
+							var userCredential = new UserCredential();
+							userCredential.DedeUserID = cookies["DedeUserID"]!;
+							userCredential.DedeUserID__ckMd5 = cookies["DedeUserID__ckMd5"]!;
+							userCredential.Expires = cookies["Expires"]!;
+							userCredential.Sessdata = cookies["SESSDATA"]!;
+							userCredential.Bili_Jct = cookies["bili_jct"]!;
 
 							//判断该用户是否已存在
-							if (accountConfig.Accounts.Any(q => q.DedeUserID == singleAccount.DedeUserID))
+							if (accountConfig.Users.Any(q => q.Uid == userCredential.DedeUserID))
 							{
-								_logger.LogWarning("已经有相同的用户登录过了{uid}", singleAccount.DedeUserID);
+								_logger.LogWarning("已经有相同的用户登录过了{uid}", userCredential.DedeUserID);
 								await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama已经有相同的账号登陆过了哦").Build());
 								break;
 							}
-							accountConfig.Accounts.Add(singleAccount);
+							accountConfig.Users.Add(InitailUser(userCredential));
 							_dataStorage.Save("account", accountConfig);
 							_logger.LogInformation("登录成功");
 							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("勾修金sama登录成功~ヾ(✿ﾟ▽ﾟ)ノ").Build());
@@ -153,6 +153,14 @@ namespace BilibiliLive.Handle
 				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("轮询...失败了?Σ( ° △ °|||)︴，请查看一下控制台吧").Build());
 				throw;
 			}
+		}
+		AccountConfig.User InitailUser(UserCredential userCredential)
+		{
+			return new()
+			{
+				UserCredential = userCredential,
+				Uid = userCredential.DedeUserID
+			};
 		}
 	}
 }

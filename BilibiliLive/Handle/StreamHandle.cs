@@ -162,7 +162,7 @@ namespace BilibiliLive.Handle
 		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流") || message.IsMsg("/推流状态"))) return Task.FromResult(true);
+			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流") || message.IsMsg("/推流状态") || message.IsMsg("/投喂任务"))) return Task.FromResult(true);
 
 			return Task.FromResult(false);
 		}
@@ -180,6 +180,9 @@ namespace BilibiliLive.Handle
 					break;
 				case "/推流状态":
 					ViewStreamState(message);
+					break;
+				case "/投喂任务":
+					FinishGiftTask(message);
 					break;
 			}
 			return Task.CompletedTask;
@@ -225,10 +228,11 @@ namespace BilibiliLive.Handle
 			}
 
 			//开启直播
-			foreach (var account in accountConfig.Accounts)
+			foreach (var account in accountConfig.Users)
 			{
-				var userInfo = await BilibiliApiTool.GetUserInfo(account);
-				var session = _sessions.FirstOrDefault(q => q.UserCredential.DedeUserID == account.DedeUserID);
+				var userCredential = account.UserCredential;
+				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
+				var session = _sessions.FirstOrDefault(q => q.UserCredential.DedeUserID == userCredential.DedeUserID);
 				if (session is not null)
 				{
 					if (session.IsLive)
@@ -249,7 +253,7 @@ namespace BilibiliLive.Handle
 					_logger.LogInformation("[{user}]不在直播，创建直播会话中", userInfo.Data.Name);
 				}
 				//开启直播
-				var result = await StartLive(account, streamConfig.AreaV2, streamConfig.Platform);
+				var result = await StartLive(userCredential, streamConfig.AreaV2, streamConfig.Platform);
 				result.Switch(session =>
 				{
 					_logger.LogInformation("开播成功");
@@ -498,6 +502,11 @@ namespace BilibiliLive.Handle
 
 			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
 			return;
+		}
+
+		async void FinishGiftTask(Group group)
+		{
+
 		}
 
 		/// <summary>
