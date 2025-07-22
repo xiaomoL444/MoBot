@@ -15,7 +15,7 @@ dotnet publish -c Release -r linux-arm64 --self-contained false -o publish
 
 docker build --platform linux/arm64 -t mobot .
 
-docker run -d --name mobot -v /mnt/mmc0-4/MoBot/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot/configs:/app/configs -v /mnt/mmc0-4/MoBot/data:/app/data -v /mnt/mmc0-4/MoBot/cache:/app/cache --dns 192.168.100.1 mobot
+docker run -d --name mobot -v /mnt/mmc0-4/MoBot/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot/config:/app/config -v /mnt/mmc0-4/MoBot/data:/app/data -v /mnt/mmc0-4/MoBot/cache:/app/cache --dns 192.168.100.1 mobot
 
 docker run -d --name mobot -v C:/Code/MoBot/docker/logs:/app/logs -v C:/Code/MoBot/docker/videos:/app/videos -v C:/Code/MoBot/docker/configs:/app/configs -v C:/Code/MoBot/docker/data:/app/data mobot
 
