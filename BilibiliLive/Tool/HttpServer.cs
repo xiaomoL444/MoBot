@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using MoBot.Handle.Extensions;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using System;
@@ -18,6 +19,7 @@ namespace BilibiliLive.Tool
 	{
 		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(HttpServer));
 		private static Dictionary<string, string> _contents = new();
+		private static object _lock = new();
 		public static void Start()
 		{
 			// 创建一个 HttpListener 实例
@@ -42,21 +44,24 @@ namespace BilibiliLive.Tool
 					_logger.LogDebug("收到请求{url}", request.Url);
 					string query = request.Url.Query;
 					var queryParams = HttpUtility.ParseQueryString(query); // 解析查询字符串为键值对
+					lock (_lock)
+					{
 
-					//key不存在
-					if (!queryParams.AllKeys.Any(q => q == "id"))
-					{
-						Response(response, HttpStatusCode.BadRequest, "{}");
-						continue;
+						//key不存在
+						if (!queryParams.AllKeys.Any(q => q == "id"))
+						{
+							Response(response, HttpStatusCode.BadRequest, "{}");
+							continue;
+						}
+						string id = queryParams["id"];
+						if (!_contents.ContainsKey(id))
+						{
+							_logger.LogError("键不存在！{key}", id);
+							Response(response, HttpStatusCode.NotFound, "{}");
+							continue;
+						}
+						Response(response, HttpStatusCode.OK, _contents[id]);
 					}
-					string id = queryParams["id"];
-					if (!_contents.ContainsKey(id))
-					{
-						_logger.LogError("键不存在！{key}", id);
-						Response(response, HttpStatusCode.NotFound, "{}");
-						continue;
-					}
-					Response(response, HttpStatusCode.OK, _contents[id]);
 				}
 			});
 		}
@@ -78,7 +83,7 @@ namespace BilibiliLive.Tool
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", responseMessage);
+				_logger.LogDebug("已响应请应：{@result}", responseMessage.TryPraseToJson());
 			}
 			catch (Exception ex)
 			{
@@ -88,31 +93,25 @@ namespace BilibiliLive.Tool
 		}
 		public static void SetNewContent(string uuid, string content)
 		{
-			object log = content;
-			try
+			lock (_lock)
 			{
-				log = JObject.Parse(content);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError("回复内容无法序列化{uuid},{content}", uuid, content);
-			}
-			if (_contents.ContainsValue(uuid))
-			{
-				_logger.LogWarning("存在键值配对{key},{value}", uuid, content);
-				return;
-			}
-			_contents.Add(uuid, content);
-			_ = Task.Run(async () =>
-			{
-				await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
-				if (!_contents.ContainsValue(uuid))
+				if (_contents.ContainsValue(uuid))
 				{
-					_logger.LogWarning("键值配对不存在{key},{value}", uuid, log);
+					_logger.LogWarning("存在键值配对{key},{@value}", uuid, content.TryPraseToJson());
 					return;
 				}
-				_contents.Remove(uuid);
-			});
+				_contents.Add(uuid, content);
+				_ = Task.Run(async () =>
+				{
+					await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
+					if (!_contents.ContainsKey(uuid))
+					{
+						_logger.LogWarning("键值配对不存在{key},{@value}", uuid, content.TryPraseToJson());
+						return;
+					}
+					_contents.Remove(uuid);
+				});
+			}
 		}
 	}
 }

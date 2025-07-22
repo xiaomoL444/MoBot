@@ -256,6 +256,14 @@ namespace BilibiliLive.Handle
 				_logger.LogDebug("设置http数据{@content}", new { uuid, content });
 				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
 				//准备绘画
+
+				await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = false });
+				await using var page = await browser.NewPageAsync();
+				await page.GoToAsync($"http://localhost:8080/TaskStatus?id={uuid}");
+				var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
+				await page.ScreenshotAsync(path);
+
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image(path).Build());
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
 				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());

@@ -106,7 +106,7 @@ const route = useRoute()
 // const bg = computed(() => route.params.bg)
 const bg = ref(require("../assets/TaskStatus/background.png"));
 const face = ref(require("../assets/TaskStatus/icon.png"));
-const task_info = ref(`task_info`);
+const task_info = ref(`读取中`);
 
 const create_time = ref(formatDate(new Date(), 'Y-M-D H:m:s'));
 
@@ -129,10 +129,9 @@ onMounted(() => {
   axios.get('http://localhost:5416?id=' + id)
     .then(response => {
       if (response == undefined) { return; }
-      console.log(response.task_info);
-      bg.value = response.bg;
-      face.value = response.face;
-      task_info.value = response.task_info;
+      bg.value = response.data.background;
+      face.value = response.data.iconBase64;
+      task_info.value = response.data.text;
     })
     .catch(error => {
       console.error('请求出错：', error)
