@@ -32,45 +32,59 @@ namespace BilibiliLive.Tool
 
 			_ = Task.Run(() =>
 			{
-				// 等待接收请求
-				HttpListenerContext context = listener.GetContext();
-				HttpListenerRequest request = context.Request;
-				HttpListenerResponse response = context.Response;
-
-				_logger.LogDebug("收到请求{url}", request.Url);
-				string query = request.Url.Query;
-				var queryParams = HttpUtility.ParseQueryString(query); // 解析查询字符串为键值对
-
-				// 获取查询参数中的 "name" 和 "age"
-				if (!queryParams.AllKeys.Any(q => q == "id"))
+				for (; ; )
 				{
-					Response(response, HttpStatusCode.BadRequest, "{}");
+					// 等待接收请求
+					HttpListenerContext context = listener.GetContext();
+					HttpListenerRequest request = context.Request;
+					HttpListenerResponse response = context.Response;
+
+					_logger.LogDebug("收到请求{url}", request.Url);
+					string query = request.Url.Query;
+					var queryParams = HttpUtility.ParseQueryString(query); // 解析查询字符串为键值对
+
+					//key不存在
+					if (!queryParams.AllKeys.Any(q => q == "id"))
+					{
+						Response(response, HttpStatusCode.BadRequest, "{}");
+						continue;
+					}
+					string id = queryParams["id"];
+					if (!_contents.ContainsKey(id))
+					{
+						_logger.LogError("键不存在！{key}", id);
+						Response(response, HttpStatusCode.NotFound, "{}");
+						continue;
+					}
+					Response(response, HttpStatusCode.OK, _contents[id]);
 				}
-				string id = queryParams["id"];
-				if (!_contents.ContainsValue(id))
-				{
-					_logger.LogError("键不存在！{key}", id);
-					Response(response, HttpStatusCode.NotFound, "{}");
-					return;
-				}
-				Response(response, HttpStatusCode.OK, _contents[id]);
 			});
 		}
 		static void Response(HttpListenerResponse response, HttpStatusCode httpStatus, string message)
 		{
 			// 设置响应头和状态
 			response.ContentType = "text/plain";
-			response.StatusCode = (int)HttpStatusCode.OK;
+			response.StatusCode = (int)httpStatus;
 
-			// 编写响应内容
-			string responseMessage = "Hello, this is a response from the HTTP server!";
-			byte[] buffer = Encoding.UTF8.GetBytes(responseMessage);
+			try
+			{
 
-			// 写入响应
-			response.ContentLength64 = buffer.Length;
-			response.OutputStream.Write(buffer, 0, buffer.Length);
-			response.OutputStream.Close();
-			_logger.LogDebug("已响应请应：{result}", responseMessage);
+				// 编写响应内容
+				string responseMessage = message;
+				byte[] buffer = Encoding.UTF8.GetBytes(responseMessage);
+
+				// 写入响应
+				response.ContentLength64 = buffer.Length;
+				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
+				response.OutputStream.Write(buffer, 0, buffer.Length);
+				response.OutputStream.Close();
+				_logger.LogDebug("已响应请应：{@result}", responseMessage);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "返回消息时错误");
+			}
+
 		}
 		public static void SetNewContent(string uuid, string content)
 		{

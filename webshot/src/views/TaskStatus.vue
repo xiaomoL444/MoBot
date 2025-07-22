@@ -123,11 +123,13 @@ function formatDate(date, format) {
   return format.replace(/Y|M|D|H|m|s/g, (match) => map[match]);
 }
 onMounted(() => {
-  var id = route.params.id;
+  var id = route.query.id;
+  console.log(id);
   if (id == undefined) { return; }
-  axios.get('https://localhost:5416?id=' + id)
+  axios.get('http://localhost:5416?id=' + id)
     .then(response => {
       if (response == undefined) { return; }
+      console.log(response.task_info);
       bg.value = response.bg;
       face.value = response.face;
       task_info.value = response.task_info;

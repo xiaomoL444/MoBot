@@ -253,7 +253,7 @@ namespace BilibiliLive.Handle
 					text
 				}
 			;
-				_logger.LogDebug("设置http数据{content}", new { uuid, content });
+				_logger.LogDebug("设置http数据{@content}", new { uuid, content });
 				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
 				//准备绘画
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
