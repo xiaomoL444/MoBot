@@ -35,12 +35,13 @@ namespace BilibiliLive.Models
 			/// <summary>
 			/// 发送给哪个用户的直播礼物
 			/// </summary>
-			[JsonProperty("")]
+			[JsonProperty("gift_users")]
 			public List<string> GiftUsers { get; set; } = new();
 
 			/// <summary>
 			/// 看哪个用户的直播间
 			/// </summary>
+			[JsonProperty("view_live_users")]
 			public List<string> ViewLiveUsers { get; set; } = new();
 		}
 	}
