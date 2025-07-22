@@ -24,6 +24,7 @@ namespace BilibiliLive.Constant
 		public const string BilibiliStopLiveApi = "https://api.live.bilibili.com/room/v1/Room/stopLive";//B站的关播连接
 		public const string BilibiliGetRoomInfoOld = "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld";//获取用户对应的直播间状态（主要是为了获取roomID）
 		public const string GetLivehimeVersion = "https://api.live.bilibili.com/xlive/app-blink/v1/liveVersionInfo/getHomePageLiveVersion";//获取直播姬版本信息
+		public const string SendGift = "https://api.live.bilibili.com/xlive/revenue/v1/gift/sendGold";//发送礼物
 		#endregion
 
 		#region 用户API

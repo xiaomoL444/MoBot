@@ -26,7 +26,6 @@ Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
 	.Destructure.ToMaximumStringLength(50) // 限制字符串属性长度为100
 	.Enrich.FromLogContext()
-	.Enrich.WithCaller()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
 	.WriteTo.File("./logs/log-.txt", outputTemplate: outputTemplate, rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
 	.CreateLogger();

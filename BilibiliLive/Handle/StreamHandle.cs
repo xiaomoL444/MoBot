@@ -511,7 +511,10 @@ namespace BilibiliLive.Handle
 
 		async void FinishGiftTask(Group group)
 		{
-
+			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			//发送礼物
+			var userCredential = account.Users[0].UserCredential;
+			await BilibiliApiTool.SendLiveGift(userCredential, "127835421", "8895169", "31039");
 		}
 
 		/// <summary>

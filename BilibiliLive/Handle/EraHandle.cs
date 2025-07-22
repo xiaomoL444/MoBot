@@ -447,7 +447,7 @@ namespace BilibiliLive.Handle
 
 		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName, int duration = 60)
 		{
-			Dictionary<string, string> param = new() {
+			Dictionary<string, string> body = new() {
 				{ "task_id", taskID },
 				{ "activity_id", activityID },
 				{ "activity_name", activityName },
@@ -457,10 +457,10 @@ namespace BilibiliLive.Handle
 				{ "receive_from", "missionPage" },
 				{ "csrf", userCredential.Bili_Jct },
 			};
-			var wbi = BilibiliApiTool.GetWbi(param);
+			var wbi = BilibiliApiTool.GetWbi(new());
 			using var request = new HttpRequestMessage(HttpMethod.Post, $"{Constants.ReceiveAward}?{wbi}");
 			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
-			request.Content = new FormUrlEncodedContent(param);
+			request.Content = new FormUrlEncodedContent(body);
 
 			var result = HttpClient.SendAsync(request);
 			_logger.LogInformation("用户{user}领取的任务id：{}活动id：{}活动名称：{}任务名称：{}奖励名称：{}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
