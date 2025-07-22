@@ -1,10 +1,10 @@
 @echo off
-set /p num="0（或空）mobot_test，1 mobot："
-set /p public="0（或空）Debug， 1 Release"
+set /p num="0（或空）mobot，1 mobot_test："
+set /p public="0（或空）Release， 1 Debug"
 
-if "%public%"=="" goto Debug
-if "%public%"=="0" goto Debug
-if "%public%"=="1" goto Release
+if "%public%"=="" goto Release
+if "%public%"=="0" goto Release
+if "%public%"=="1" goto Debug
 
 :Debug
 dotnet publish -c Debug -r linux-arm64 --self-contained false -o ./publish

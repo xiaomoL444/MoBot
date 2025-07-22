@@ -1,9 +1,9 @@
 @echo off
-set /p num="0£¨»ò¿Õ£©mobot_test£¬1 mobot£º"
+set /p num="0£¨»ò¿Õ£©mobot£¬1 mobot_test£º"
 
-if "%num%"=="0" goto Mobot_Test
-if "%num%"=="" goto Mobot_Test
-if "%num%"=="1" goto Mobot
+if "%num%"=="0" goto Mobot
+if "%num%"=="" goto Mobot
+if "%num%"=="1" goto Mobot_Test
 
 :Mobot_Test
 docker save -o docker/mobot_test.rar mobot_test:latest

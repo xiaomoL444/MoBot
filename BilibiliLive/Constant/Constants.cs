@@ -33,6 +33,7 @@ namespace BilibiliLive.Constant
 		#region 激励计划API
 		public const string GetEraUrl = "https://app.bilibili.com/x/topic/web/details/top";//获取激励计划的页面链接
 		public const string GetEraTask = "https://api.bilibili.com/x/task/totalv2";//获取任务完成情况
+		public const string ReceiveAward = "https://api.bilibili.com/x/activity_components/mission/receive";//领取任务奖励
 		#endregion
 	}
 }

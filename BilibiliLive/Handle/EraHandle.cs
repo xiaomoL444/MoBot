@@ -430,7 +430,7 @@ namespace BilibiliLive.Handle
 			canvas.Restore();
 
 			//添加生成时间
-			var time = "Create Time At :" + DateTimeOffset.Now.ToString("u");
+			var time = "Create By MoBot :" + DateTimeOffset.Now.ToString("u");
 			canvas.DrawText(time, blurRect.Right - innerHorizontalPadding - fonts[0].MeasureText(time), blurRect.Bottom - innerVerticalPadding, fonts[0], textPaint);
 
 			using var image = surface.Snapshot(); // 从画布截图
@@ -442,6 +442,27 @@ namespace BilibiliLive.Handle
 #endif
 
 			return base64;
+		}
+
+		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName)
+		{
+			Dictionary<string, string> param = new() {
+				{ "task_id", taskID },
+				{ "activity_id", activityID },
+				{ "activity_name", activityName },
+				{ "task_name", taskName },
+				{ "reward_name", rewaredName },
+				{ "gaia_vtoken", "" },//默认为空
+				{ "receive_from", "missionPage" },
+				{ "csrf", userCredential.Bili_Jct },
+			};
+			var wbi = BilibiliApiTool.GetWbi(param);
+			using var request = new HttpRequestMessage(HttpMethod.Post, $"{Constants.ReceiveAward}?{wbi}");
+			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
+			request.Content = new FormUrlEncodedContent(param);
+
+			var result = HttpClient.SendAsync(request);
+			_logger.LogInformation("用户{user}领取的任务id：{}活动id：{}活动名称：{}任务名称：{}奖励名称：{}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
 		}
 	}
 }

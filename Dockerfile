@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y ffmpeg tzdata && rm -rf /var/lib/apt/li
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
+RUN apt-get update && apt-get install -y libfontconfig1 libfreetype6 libpng16-16 libgif7 libjpeg62-turbo libgl1 libx11-6 libuuid1
+
 # 设置工作目录
 WORKDIR /app
 
