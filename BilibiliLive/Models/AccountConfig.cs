@@ -26,6 +26,22 @@ namespace BilibiliLive.Models
 			[JsonProperty("userCredential")]
 			public UserCredential UserCredential { get; set; } = new();
 
+			/// <summary>
+			/// 是否是要开播的账号
+			/// </summary>
+			[JsonProperty("is_start_live")]
+			public bool IsStartLive { get; set; } = false;
+
+			/// <summary>
+			/// 发送给哪个用户的直播礼物
+			/// </summary>
+			[JsonProperty("")]
+			public List<string> GiftUsers { get; set; } = new();
+
+			/// <summary>
+			/// 看哪个用户的直播间
+			/// </summary>
+			public List<string> ViewLiveUsers { get; set; } = new();
 		}
 	}
 }

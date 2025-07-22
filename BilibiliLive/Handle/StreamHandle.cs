@@ -230,6 +230,11 @@ namespace BilibiliLive.Handle
 			//开启直播
 			foreach (var account in accountConfig.Users)
 			{
+				if (!account.IsStartLive)
+				{
+					_logger.LogInformation("{uid}未开启直播选项", account.Uid);
+					return;
+				}
 				var userCredential = account.UserCredential;
 				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
 				var session = _sessions.FirstOrDefault(q => q.UserCredential.DedeUserID == userCredential.DedeUserID);
