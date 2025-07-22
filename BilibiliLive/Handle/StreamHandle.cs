@@ -450,7 +450,7 @@ namespace BilibiliLive.Handle
 				if (!_isGameStart)
 				{
 					//若活动玩法成功关闭就发送
-					var liveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "data").logs;
+					var liveLogs = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", MoBot.Core.Models.DirectoryType.Data).logs;
 					var showLogNum = 4;
 					gameResultMsgChain.Text(@$"这次的推流很成功哦~
 (●• ̀ω•́ )✧末酱在直播间看到了一些有趣的消息
@@ -732,10 +732,10 @@ namespace BilibiliLive.Handle
 
 					Action<string> WriteLog = (string content) =>
 					{
-						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", "data");
+						var logList = _dataStorage.Load<LiveEventLog>($"BilibiliLive_{streamOpenTime}", MoBot.Core.Models.DirectoryType.Data);
 						_logger.LogInformation(content);
 						logList.logs.Add(new($"[{DateTime.Now.ToString("O")}]", $"{content}"));
-						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, "data");
+						_dataStorage.Save($"BilibiliLive_{streamOpenTime}", logList, MoBot.Core.Models.DirectoryType.Data);
 					};
 
 					//长链接（用户持续接收服务器推送消息）

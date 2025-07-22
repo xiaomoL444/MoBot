@@ -1,4 +1,5 @@
 ﻿using MoBot.Core.Interfaces;
+using MoBot.Core.Models;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Text.Json;
@@ -9,18 +10,18 @@ namespace MoBot.Handle.DataStorage
 	public class JsonDataStorage : IDataStorage
 	{
 		private object _lock = new();
-		public T Load<T>(string fileName, string basePath = "configs", string pluginName = "") where T : new()
+		public T Load<T>(string fileName, DirectoryType directoryType = DirectoryType.Config, string pluginName = "") where T : new()
 		{
 			lock (_lock)
 			{
 				{
 					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-					string path = GetFilePath(basePath, pluginName, fileName);
+					string path = GetFilePath(GetDirectoryName(directoryType), pluginName, fileName);
 
 					if (!File.Exists(path))
 					{
 						//不存在当即创建新的
-						Save<T>(fileName, new(), basePath, pluginName);
+						Save<T>(fileName, new(), directoryType, pluginName);
 						return new T();
 					}
 					string json = File.ReadAllText(path);
@@ -29,17 +30,33 @@ namespace MoBot.Handle.DataStorage
 			}
 		}
 
-		public void Save<T>(string fileName, T data, string basePath = "configs", string pluginName = "")
+		public void Save<T>(string fileName, T data, DirectoryType directoryType = DirectoryType.Config, string pluginName = "")
 		{
 			lock (_lock)
 			{
 				pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-				string path = GetFilePath(basePath, pluginName, fileName);
+				string path = GetFilePath(GetDirectoryName(directoryType), pluginName, fileName);
 				Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
 				string json = JsonConvert.SerializeObject(data, new JsonSerializerSettings() { Formatting = Formatting.Indented });
 				File.WriteAllText(path, json);
 			}
+		}
+
+		public string GetPath(DirectoryType directoryType, string pluginName = "")
+		{
+			pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
+			return Path.Combine(GetDirectoryName(directoryType), pluginName);
+		}
+
+		private string GetDirectoryName(DirectoryType directoryType)
+		{
+			return directoryType switch
+			{
+				DirectoryType.Config => "config",
+				DirectoryType.Data => "data",
+				DirectoryType.Cache => "cache"
+			};
 		}
 
 		private string GetFilePath(string basePath, string pluginName, string fileName)
