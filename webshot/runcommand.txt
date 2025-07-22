@@ -1,0 +1,2 @@
+docker load < /mnt/share/webshot.rar
+docker run -d -p 8080:80 webshot webshot

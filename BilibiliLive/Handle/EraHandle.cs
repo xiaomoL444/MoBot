@@ -259,8 +259,14 @@ namespace BilibiliLive.Handle
 
 				await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = false });
 				await using var page = await browser.NewPageAsync();
-				await page.GoToAsync($"http://localhost:8080/TaskStatus?id={uuid}");
+				await page.GoToAsync($"http://localhost:8080/TaskStatus?id={uuid}", WaitUntilNavigation.Networkidle2);
 				var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
+				await page.SetViewportAsync(new ViewPortOptions
+				{
+					Width = 2560,
+					Height = 1440
+				});
+				await page.WaitForFunctionAsync("() => window.appLoaded === true");
 				await page.ScreenshotAsync(path);
 
 				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image(path).Build());

@@ -15,7 +15,7 @@ namespace MoBot.Handle.DataStorage
 			lock (_lock)
 			{
 				{
-					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
+					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "Unknown") : pluginName;
 					string path = GetFilePath(GetDirectoryName(directoryType), pluginName, fileName);
 
 					if (!File.Exists(path))
@@ -48,7 +48,6 @@ namespace MoBot.Handle.DataStorage
 			pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
 			return Path.Combine(GetDirectoryName(directoryType), pluginName);
 		}
-
 		private string GetDirectoryName(DirectoryType directoryType)
 		{
 			return directoryType switch

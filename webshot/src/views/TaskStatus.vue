@@ -70,16 +70,17 @@ img {
   position: relative;
   padding-left: 2vw;
   font-size: 2.35vw;
-  white-space: pre-line;
   /* 允许换行符生效 */
+  white-space: pre;
+
 }
 
 .icon {
   position: absolute;
   top: 1.5vw;
   right: 1.5vw;
-  width: 8vw;
-  height: 8vw;
+  width: 10vw;
+  height: 10vw;
 
   border-radius: 100%;
 }
@@ -123,6 +124,7 @@ function formatDate(date, format) {
   return format.replace(/Y|M|D|H|m|s/g, (match) => map[match]);
 }
 onMounted(() => {
+  window.appLoaded = false;
   var id = route.query.id;
   console.log(id);
   if (id == undefined) { return; }
@@ -132,6 +134,9 @@ onMounted(() => {
       bg.value = response.data.background;
       face.value = response.data.iconBase64;
       task_info.value = response.data.text;
+      setTimeout(() => {
+        window.appLoaded = true; // 模拟加载完成
+      }, 0);
     })
     .catch(error => {
       console.error('请求出错：', error)
