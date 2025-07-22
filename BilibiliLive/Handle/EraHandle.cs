@@ -9,7 +9,7 @@ using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SkiaSharp;
+using PuppeteerSharp;
 using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 using HttpClient = BilibiliLive.Tool.HttpClient;
@@ -33,9 +33,22 @@ namespace BilibiliLive.Handle
 			_dataStorage = dataStorage;
 		}
 
-		public Task Initial()
+		public async Task Initial()
 		{
-			return Task.CompletedTask;
+			//初始化浏览器
+			var browserFetcher = new BrowserFetcher();
+			if (browserFetcher.GetInstalledBrowsers().ToList().Count <= 0)
+			{
+				_logger.LogWarning("浏览器未下载，等待安装中");
+				await browserFetcher.DownloadAsync();
+				_logger.LogWarning("浏览器下载完成");
+			}
+			else
+			{
+				_logger.LogInformation("浏览器已存在");
+			}
+			_logger.LogDebug("浏览器地址{paths}", string.Join(",", browserFetcher.GetInstalledBrowsers().Select(s=>s.GetExecutablePath())));
+			return;
 		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
@@ -227,9 +240,9 @@ namespace BilibiliLive.Handle
 
 				var imageStream = await image.Content.ReadAsStreamAsync();
 				//准备绘画
-				var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
+				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
+				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 
 				//File.Delete(filePath);
 			}
@@ -249,200 +262,6 @@ namespace BilibiliLive.Handle
 			_logger.LogDebug("获取{user}任务：{@taskID}的任务结果{Info}", userCredential.DedeUserID, taskIds, responseString);
 
 			return JsonConvert.DeserializeObject<TaskInfoRsp>(responseString);
-		}
-
-		/// <summary>
-		/// 绘制推片
-		/// </summary>
-		/// <param name="backgroud">背景图片</param>
-		/// <param name="text">文字</param>
-		/// <returns>base64</returns>
-		string DrawImage(string backgroudPath, string text, Stream iconStream)
-		{
-			if (!File.Exists(backgroudPath))
-			{
-				_logger.LogError("图片[{path}]未找到", backgroudPath);
-				return null;
-			}
-
-			int padding = 60;//内边距
-			int cornerRadius = 40;//圆角半径
-			List<string> fontPaths = ["./Asserts/fonts/Goth.ttf", "./Asserts/fonts/msyh.ttc", "./Asserts/fonts/SegUIVar.ttf"];
-			int fontSize = 64;//字体大小
-			int strokeWidth = 4;//描边宽度
-			int iconDiameter = 250;//头像直径
-			int innerHorizontalPadding = 50;//水平内边距
-			int innerVerticalPadding = 60;//垂直内边距
-
-			static List<string> WrapText(string text, SKFont font, SKPaint paint, float maxWidth)
-			{
-				var resultLines = new List<string>();
-				var lines = text.Replace("\r\n", "\n").Split('\n'); // 支持 Windows 和 Unix 换行
-
-				foreach (var line in lines)
-				{
-					string currentLine = string.Empty;
-					foreach (char c in line)
-					{
-						string testLine = currentLine + c;
-						if (font.MeasureText(testLine) <= maxWidth)
-						{
-							currentLine = testLine;
-						}
-						else
-						{
-							if (!string.IsNullOrEmpty(currentLine))
-								resultLines.Add(currentLine);
-							currentLine = c.ToString();
-						}
-					}
-					if (!string.IsNullOrEmpty(currentLine))
-						resultLines.Add(currentLine);
-				}
-
-				return resultLines;
-			}
-
-			//读取背景
-			using var background = SKBitmap.Decode(backgroudPath);
-			int imageWidth = background.Width;
-			int imageHeight = background.Height;
-
-			//创建画布
-			using var surface = SKSurface.Create(new SKImageInfo(imageWidth, imageHeight));
-			var canvas = surface.Canvas;
-			canvas.Clear();
-			canvas.DrawBitmap(background, 0, 0);
-
-			var blurRect = new SKRect(
-					padding,
-					padding,
-					imageWidth - padding,
-					imageHeight - padding
-				);
-
-			//创建毛玻璃效果区域
-			using var cropped = new SKBitmap((int)blurRect.Width, (int)blurRect.Height);
-			using (var croppedCanvas = new SKCanvas(cropped))
-			{
-				croppedCanvas.DrawBitmap(background, blurRect, new SKRect(0, 0, blurRect.Width, blurRect.Height));
-			}
-
-			//创建模糊画笔
-			var blurFilter = SKImageFilter.CreateBlur(10, 10); // 模糊程度
-			using var blurPaint = new SKPaint
-			{
-				ImageFilter = blurFilter
-			};
-
-			//模糊
-			var roundRect = new SKRoundRect(blurRect, cornerRadius, cornerRadius);
-			canvas.Save();
-			canvas.ClipRoundRect(roundRect, antialias: true);
-			canvas.DrawBitmap(cropped, blurRect.Left, blurRect.Top, blurPaint);
-			canvas.Restore();
-
-			var overlayPaint = new SKPaint
-			{
-				Color = new SKColor(255, 255, 255, 100)
-			};
-			canvas.DrawRoundRect(roundRect, overlayPaint);
-
-			//制作笔
-			var fonts = fontPaths.Select(f => new SKFont(SKTypeface.FromFile(f), fontSize) { Edging = SKFontEdging.Antialias }).ToList();
-
-			var textPaint = new SKPaint
-			{
-				IsAntialias = true,
-				Color = SKColors.Black
-			};
-			var strokePaint = new SKPaint
-			{
-				IsStroke = true,        // 仅描边
-				StrokeWidth = strokeWidth,
-				Color = SKColor.Parse("fad9f4"),
-				IsAntialias = true,
-			};
-
-			//贴上文字
-			float textX = blurRect.Left + innerHorizontalPadding;
-			float lineHeight = fonts[0].Spacing;
-			var textLines = WrapText(text, fonts[0], textPaint, blurRect.Width - innerHorizontalPadding * 2);
-			//计算垂直居中效果
-			var metrics = fonts[0].Metrics;
-			float textY = blurRect.MidY - ((metrics.Ascent + metrics.Descent) + (textLines.Count - 1) * lineHeight) / 2;
-			foreach (var line in textLines)
-			{
-				bool HasGlyph(SKTypeface typeface, char c)
-				{
-					// SkiaSharp 没有直接接口判断字符是否存在
-					// 但可通过测量字符对应的字形ID是否为0来判断
-					try
-					{
-						ushort glyphId = typeface.GetGlyphs(new[] { c })[0];
-						return glyphId != 0;
-					}
-					catch (Exception)
-					{
-						return false;
-					}
-
-				}
-				float x = 0;
-				foreach (char c in line)
-				{
-					// 判断主字体是否支持字符
-					SKFont availableFont = fonts.FirstOrDefault(f => HasGlyph(f.Typeface, c)) ?? fonts[0];
-					string s = c.ToString();
-					// 测量字符宽度，用于计算绘制起点
-					float charWidth = availableFont.MeasureText(s);
-
-					// 绘制字符
-					//canvas.DrawText(s, textX + x, textY, availableFont, strokePaint);
-					canvas.DrawText(s, textX + x, textY, availableFont, textPaint);
-					// 递增X坐标，准备绘制下一个字符
-					x += charWidth;
-				}
-
-				textY += lineHeight;
-			}
-
-			canvas.Save(); // 保存主画布状态
-
-			//添加头像
-			using var icon = SKBitmap.Decode(iconStream);
-			using var circlePath = new SKPath();
-			var iconX = blurRect.Right - innerHorizontalPadding - iconDiameter / 2f;
-			var iconY = blurRect.Top + innerHorizontalPadding + iconDiameter / 2f;
-			circlePath.AddCircle(iconX, iconY, iconDiameter / 2f);
-			canvas.ClipPath(circlePath, SKClipOperation.Intersect, true);
-
-			// 计算缩放比
-			var scale = Math.Min((float)iconDiameter / icon.Width, (float)iconDiameter / icon.Height);
-			var scaledWidth = icon.Width * scale;
-			var scaledHeight = icon.Height * scale;
-
-			var destRectX = iconX - scaledWidth / 2;
-			var destRectY = iconY - scaledHeight / 2;
-
-			// 绘制缩放后的图片到圆形区域
-			var destRect = new SKRect(destRectX, destRectY, destRectX + scaledWidth, destRectY + scaledHeight);
-			canvas.DrawBitmap(icon, destRect);
-			canvas.Restore();
-
-			//添加生成时间
-			var time = "Create By MoBot :" + DateTimeOffset.Now.ToString("u");
-			canvas.DrawText(time, blurRect.Right - innerHorizontalPadding - fonts[0].MeasureText(time), blurRect.Bottom - innerVerticalPadding, fonts[0], textPaint);
-
-			using var image = surface.Snapshot(); // 从画布截图
-			using var data = image.Encode(SKEncodedImageFormat.Png, 100); // 编码为 PNG
-			string base64 = Convert.ToBase64String(data.ToArray());
-
-#if DEBUG
-			File.WriteAllBytes("output.png", data.ToArray());
-#endif
-
-			return base64;
 		}
 
 		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName, int duration = 60)

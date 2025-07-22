@@ -14,9 +14,7 @@ using MoBot.Handle.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using Serilog.Enrichers.WithCaller;
 using Serilog.Sinks.SystemConsole.Themes;
-using SkiaSharp;
 using System.Collections.Specialized;
 using System.Web;
 

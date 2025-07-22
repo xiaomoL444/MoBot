@@ -1,0 +1,131 @@
+<template>
+  <div :class="['contain', 'center-flex']">
+    <img class="background" src="../assets/TaskStatus/background.png">
+    <div :class="['glass-effect']">
+      <div :class="['task-status', 'center-flex']">
+        {{ task_info }}
+      </div>
+      <img class="icon" src="../assets/TaskStatus/icon.png">
+      <div :class="['tip', 'center']">
+        Create by Mobot at {{create_time}}
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+@font-face {
+  font-family: 'GothFont';
+  src: url('../assets/fonts/Goth.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SegUIVar';
+  src: url('../assets/fonts/SegUIVar.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'msyh';
+  src: url('../assets/fonts/msyh.ttc') format('truetype');
+}
+
+/* .font-family{
+  font-family: 'GothFont','SegUIVar','msyh';
+} */
+
+img {
+  width: 100%;
+  height: auto;
+}
+
+.center-flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.contain {
+  font-family: 'GothFont', 'SegUIVar', 'msyh';
+  height: 100vh;
+  /* 使父容器的高度占满整个视口 */
+}
+
+.background {
+  position: absolute;
+}
+
+.glass-effect {
+  position: absolute;
+  width: 95%;
+  height: 91.6%;
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.3921);
+  /* 半透明白色背景 */
+  backdrop-filter: blur(10px);
+  /* 高斯模糊 */
+  border-radius: 35px;
+}
+
+.task-status {
+  position: relative;
+  padding-left: 2vw;
+  font-size: 2.35vw;
+  white-space: pre-line;
+  /* 允许换行符生效 */
+}
+
+.icon {
+  position: absolute;
+  top: 1.5vw;
+  right: 1.5vw;
+  width: 8vw;
+  height: 8vw;
+
+  border-radius: 100%;
+}
+
+.tip {
+  position: absolute;
+  bottom: 3vw;
+  right: 3vw;
+  font-size: 2vw;
+}
+</style>
+
+<script setup>
+
+import { ref } from 'vue';
+
+const task_info = ref(`[戀祈]
+新人任务：
+ ♪ 分区开播满60分钟且直播间发送弹幕2人：原石*50(已领取)
+每日任务：
+ ♪ 当日开播满60分钟：精锻用魔矿*5(未完成)
+ ♪ 当日直播间送牛哇牛哇”满2人：大英雄的经验*2(未完成)
+ ♪ 当日直播间弹幕数满6条：冒险家的经验*6(未完成)
+ ♪ 当日直播间至少有1名用户观看满10分钟：摩拉*11111(未完成)
+完成“每日直播任务” ————完成天数[5]
+ ♪ 原石*200(已领取)
+ ♪ 原石*600(已完成但未领取)
+ ♪ 原石*1000(未完成)
+ ♪ 原石*1000(未完成)
+ ♪ 原石*1000(未完成)
+ ♪ 原石*1000(未完成)`);
+
+const create_time = ref(formatDate(new Date(), 'Y-M-D H:m:s'));
+
+function formatDate(date, format) {
+  const map = {
+    'Y': date.getFullYear(),          // 年
+    'M': String(date.getMonth() + 1).padStart(2, '0'),  // 月，注意 JavaScript 中的月份从 0 开始，所以加 1
+    'D': String(date.getDate()).padStart(2, '0'),      // 日
+    'H': String(date.getHours()).padStart(2, '0'),     // 时
+    'm': String(date.getMinutes()).padStart(2, '0'),   // 分
+    's': String(date.getSeconds()).padStart(2, '0'),   // 秒
+  };
+
+  return format.replace(/Y|M|D|H|m|s/g, (match) => map[match]);
+}
+
+
+</script>
