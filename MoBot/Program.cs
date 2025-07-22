@@ -1,4 +1,5 @@
 ﻿using BilibiliLive.Handle;
+using Destructurama;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,8 @@ string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Call
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
-	.Destructure.ToMaximumStringLength(50) // 限制字符串属性长度为100
+	.Destructure.ToMaximumStringLength(100) // 限制字符串属性长度为100
+	.Destructure.JsonNetTypes()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
 	.WriteTo.File("./logs/log-.txt", outputTemplate: outputTemplate, rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)

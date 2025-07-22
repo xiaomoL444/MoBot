@@ -12,6 +12,7 @@ using MoBot.Handle;
 using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Serilog.Enrichers.WithCaller;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -19,12 +20,14 @@ using SkiaSharp;
 using System.Collections.Specialized;
 using System.Web;
 
+using Destructurama;
 
 string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} : {Message:lj}{NewLine}{Exception}";
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
-	.Destructure.ToMaximumStringLength(50) // 限制字符串属性长度为100
+	.Destructure.ToMaximumStringLength(100) // 限制字符串属性长度为100
+	.Destructure.JsonNetTypes()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
 	.WriteTo.File("./logs/log-.txt", outputTemplate: outputTemplate, rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
