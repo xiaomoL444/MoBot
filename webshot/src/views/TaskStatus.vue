@@ -1,13 +1,13 @@
 <template>
   <div :class="['contain', 'center-flex']">
-    <img class="background" src="../assets/TaskStatus/background.png">
+    <img class="background" :src="bg">
     <div :class="['glass-effect']">
       <div :class="['task-status', 'center-flex']">
         {{ task_info }}
       </div>
-      <img class="icon" src="../assets/TaskStatus/icon.png">
+      <img class="icon" :src="face">
       <div :class="['tip', 'center']">
-        Create by Mobot at {{create_time}}
+        Create by Mobot at {{ create_time }}
       </div>
     </div>
   </div>
@@ -95,22 +95,18 @@ img {
 <script setup>
 
 import { ref } from 'vue';
+import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
+import axios from 'axios'
 
-const task_info = ref(`[戀祈]
-新人任务：
- ♪ 分区开播满60分钟且直播间发送弹幕2人：原石*50(已领取)
-每日任务：
- ♪ 当日开播满60分钟：精锻用魔矿*5(未完成)
- ♪ 当日直播间送牛哇牛哇”满2人：大英雄的经验*2(未完成)
- ♪ 当日直播间弹幕数满6条：冒险家的经验*6(未完成)
- ♪ 当日直播间至少有1名用户观看满10分钟：摩拉*11111(未完成)
-完成“每日直播任务” ————完成天数[5]
- ♪ 原石*200(已领取)
- ♪ 原石*600(已完成但未领取)
- ♪ 原石*1000(未完成)
- ♪ 原石*1000(未完成)
- ♪ 原石*1000(未完成)
- ♪ 原石*1000(未完成)`);
+// 获取当前路由信息
+const route = useRoute()
+
+// 获取路径参数
+// const bg = computed(() => route.params.bg)
+const bg = ref(require("../assets/TaskStatus/background.png"));
+const face = ref(require("../assets/TaskStatus/icon.png"));
+const task_info = ref(`task_info`);
 
 const create_time = ref(formatDate(new Date(), 'Y-M-D H:m:s'));
 
@@ -126,6 +122,19 @@ function formatDate(date, format) {
 
   return format.replace(/Y|M|D|H|m|s/g, (match) => map[match]);
 }
-
+onMounted(() => {
+  var id = route.params.id;
+  if (id == undefined) { return; }
+  axios.get('https://localhost:5416?id=' + id)
+    .then(response => {
+      if (response == undefined) { return; }
+      bg.value = response.bg;
+      face.value = response.face;
+      task_info.value = response.task_info;
+    })
+    .catch(error => {
+      console.error('请求出错：', error)
+    })
+});
 
 </script>

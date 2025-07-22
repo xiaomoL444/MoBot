@@ -47,7 +47,11 @@ namespace BilibiliLive.Handle
 			{
 				_logger.LogInformation("浏览器已存在");
 			}
-			_logger.LogDebug("浏览器地址{paths}", string.Join(",", browserFetcher.GetInstalledBrowsers().Select(s=>s.GetExecutablePath())));
+			_logger.LogDebug("浏览器地址{paths}", string.Join(",", browserFetcher.GetInstalledBrowsers().Select(s => s.GetExecutablePath())));
+
+			//开启http伺服器给webshot传数据
+			HttpServer.Start();
+
 			return;
 		}
 		public Task<bool> CanHandleAsync(Group message)
@@ -236,9 +240,21 @@ namespace BilibiliLive.Handle
 完成“每日直播任务” ————完成天数[{liveRes.Data.List[5].AccumulativeCount}]
 {string.Join("\n", liveRes.Data.List[5].AccumulativeCheckPoints.Select(s => $"{startChar}{s.AwardName}({s.Status})"))}";
 
-				var image = await HttpClient.SendAsync(new(HttpMethod.Get, userInfo.Data.Face));
+				var icon = await HttpClient.SendAsync(new(HttpMethod.Get, userInfo.Data.Face));
 
-				var imageStream = await image.Content.ReadAsStreamAsync();
+				var iconBase64 = "data:image/png;base64," + Convert.ToBase64String(await icon.Content.ReadAsByteArrayAsync());
+				var background = "data:image/png;base64," + Convert.ToBase64String(File.ReadAllBytes("./Asserts/images/MyLover.png"));
+
+				string uuid = Guid.NewGuid().ToString();
+				var content = new
+				{
+					iconBase64,
+					background,
+					text
+				}
+			;
+				_logger.LogDebug("设置http数据{content}", new { uuid, content });
+				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
 				//准备绘画
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
