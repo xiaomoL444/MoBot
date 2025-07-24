@@ -89,7 +89,7 @@ namespace MoBot.Handle.Net
 			string uuid = Guid.NewGuid().ToString();
 			_echoResult.Add(uuid, echoPacket);
 			string msg = JsonConvert.SerializeObject(new ActionPacketReq() { Action = action, Echo = uuid, Params = message });
-			_logger.LogInformation("发送消息：{@msg}", msg.TryPraseToJson());
+			_logger.LogInformation("发送消息：{@msg}", msg);
 
 			ws.Send(msg);
 

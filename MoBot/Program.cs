@@ -10,6 +10,7 @@ using MoBot.Core.Models;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
+using MoBot.Handle.DestructuringPolicy;
 using MoBot.Handle.Net;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -22,6 +23,7 @@ string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Call
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
 	.Destructure.ToMaximumStringLength(100) // 限制字符串属性长度为100
+	.Destructure.With<TryParseJsonDestructuringPolicy>()
 	.Destructure.JsonNetTypes()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
@@ -81,6 +83,7 @@ try
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
 	BilibiliLive.Tool.GlobalLogger.LoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+	BilibiliLive.Tool.GlobalDataStorage.DataStorage = host.Services.GetRequiredService<IDataStorage>();
 	MoBotClient.Initial();
 
 	while (true) ;

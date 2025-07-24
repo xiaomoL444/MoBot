@@ -36,20 +36,6 @@ namespace BilibiliLive.Handle
 
 		public async Task Initial()
 		{
-			//初始化浏览器
-			var browserFetcher = new BrowserFetcher();
-			if (browserFetcher.GetInstalledBrowsers().ToList().Count <= 0)
-			{
-				_logger.LogWarning("浏览器未下载，等待安装中");
-				await browserFetcher.DownloadAsync();
-				_logger.LogWarning("浏览器下载完成");
-			}
-			else
-			{
-				_logger.LogInformation("浏览器已存在");
-			}
-			_logger.LogDebug("浏览器地址{paths}", string.Join(",", browserFetcher.GetInstalledBrowsers().Select(s => s.GetExecutablePath())));
-
 			//开启http伺服器给webshot传数据
 			HttpServer.Start();
 
@@ -256,27 +242,12 @@ namespace BilibiliLive.Handle
 			;
 				_logger.LogDebug("设置http数据{@content}", new { uuid, content });
 				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
+
 				//准备绘画
+				string path = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={uuid}");
 
-				await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-				{
-					Headless = true,
-					Args = ["--no-sandbox"],
-					DumpIO = true// 打开调试输出
-				});
-				await using var page = await browser.NewPageAsync();
-				await page.GoToAsync($"{Webshot.GetIPAddress()}/TaskStatus?id={uuid}", WaitUntilNavigation.Networkidle2);
-				var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
-				await page.SetViewportAsync(new ViewPortOptions
-				{
-					Width = 2560,
-					Height = 1440
-				});
-				await page.WaitForFunctionAsync("() => window.appLoaded === true");
-				await page.ScreenshotAsync(path);
-
-				var base64 = Convert.ToBase64String( File.ReadAllBytes(path));
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://"+ base64).Build());
+				var base64 = Convert.ToBase64String(File.ReadAllBytes(path));
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
 				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());

@@ -20,14 +20,14 @@ namespace BilibiliLive.Tool
 		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(HttpServer));
 		private static Dictionary<string, string> _contents = new();
 		private static object _lock = new();
+
 		public static void Start()
 		{
+
 			// 创建一个 HttpListener 实例
 			HttpListener listener = new HttpListener();
-
 			// 指定监听的 URL，通常是 "http://localhost:端口号/"
 			listener.Prefixes.Add("http://localhost:5416/");
-
 			// 启动监听器
 			listener.Start();
 			_logger.LogInformation("服务器正在监听 http://localhost:5416/");
@@ -83,7 +83,7 @@ namespace BilibiliLive.Tool
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", responseMessage.TryPraseToJson());
+				_logger.LogDebug("已响应请应：{@result}", responseMessage);
 			}
 			catch (Exception ex)
 			{
@@ -97,7 +97,7 @@ namespace BilibiliLive.Tool
 			{
 				if (_contents.ContainsValue(uuid))
 				{
-					_logger.LogWarning("存在键值配对{key},{@value}", uuid, content.TryPraseToJson());
+					_logger.LogWarning("存在键值配对{key},{@value}", uuid, content);
 					return;
 				}
 				_contents.Add(uuid, content);
@@ -106,7 +106,7 @@ namespace BilibiliLive.Tool
 					await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
 					if (!_contents.ContainsKey(uuid))
 					{
-						_logger.LogWarning("键值配对不存在{key},{@value}", uuid, content.TryPraseToJson());
+						_logger.LogWarning("键值配对不存在{key},{@value}", uuid, content);
 						return;
 					}
 					_contents.Remove(uuid);
