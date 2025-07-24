@@ -95,9 +95,8 @@ img {
 
 <script setup>
 
-import { ref } from 'vue';
 import { useRoute } from 'vue-router'
-import { onMounted } from 'vue'
+import { ref,onMounted,nextTick } from 'vue'
 import axios from 'axios'
 
 // 获取当前路由信息
@@ -134,9 +133,9 @@ onMounted(() => {
       bg.value = response.data.background;
       face.value = response.data.iconBase64;
       task_info.value = response.data.text;
-      setTimeout(() => {
+      nextTick(() => {
         window.appLoaded = true; // 模拟加载完成
-      }, 0);
+      });
     })
     .catch(error => {
       console.error('请求出错：', error)
