@@ -1,11 +1,11 @@
 <template>
   <div :class="['contain', 'center-flex']">
-    <img class="background" :src="bg">
+    <img class="background" :src="img_list.bg" @load="OnImageLoad">
     <div :class="['glass-effect']">
       <div :class="['task-status', 'center-flex']">
         {{ task_info }}
       </div>
-      <img class="icon" :src="face">
+      <img class="icon" :src="img_list.face" @load="OnImageLoad">
       <div :class="['tip', 'center']">
         Create by Mobot at {{ create_time }}
       </div>
@@ -104,11 +104,16 @@ const route = useRoute()
 
 // 获取路径参数
 // const bg = computed(() => route.params.bg)
-const bg = ref(require("../assets/TaskStatus/background.png"));
-const face = ref(require("../assets/TaskStatus/icon.png"));
+const img_list = ref({
+  bg: require("../assets/TaskStatus/background.png"),
+  face: require("../assets/TaskStatus/icon.png")
+})
+var isChange = false;
 const task_info = ref(`读取中`);
 
 const create_time = ref(formatDate(new Date(), 'Y-M-D H:m:s'));
+
+var image_load_count = 0;
 
 function formatDate(date, format) {
   const map = {
@@ -130,16 +135,25 @@ onMounted(() => {
   axios.get('http://localhost:5416?id=' + id)
     .then(async response => {
       if (response == undefined) { return; }
-      bg.value = response.data.background;
-      face.value = response.data.face;
+      img_list.value.bg = response.data.background;
+      img_list.value.face = response.data.face;
+      isChange = true;
       task_info.value = response.data.text;
-      await nextTick();
-      setTimeout(() => { window.appLoaded = true; }, 0);
-
-})
-  .catch(error => {
-    console.error('请求出错：', error)
-  })
+    })
+    .catch(error => {
+      console.error('请求出错：', error)
+    })
 });
 
+async function OnImageLoad() {
+  if (isChange == false) return;
+  image_load_count++;
+  console.log("image load:" + image_load_count);
+  if (image_load_count == Object.keys(img_list.value).length) {
+    console.log("load finished!");
+    nextTick();
+    console.log("Dom finished!")
+    window.appLoaded = true;
+  }
+}
 </script>

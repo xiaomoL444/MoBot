@@ -68,7 +68,7 @@ namespace BilibiliLive.Tool
 		/// <param name="screenshotOptions">截图的额外功能</param>
 		/// <param name="waitForFunc">等待指令</param>
 		/// <param name="cookieParam">cookie(我自己一般用不到（）)</param>
-		/// <returns>图片地址</returns>
+		/// <returns>图片base64</returns>
 		public static async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
 		{
 			if (_browser.Process.HasExited)
@@ -77,18 +77,17 @@ namespace BilibiliLive.Tool
 				StartNewChrome();
 			}
 			await using var page = await _browser.NewPageAsync();
-			await page.GoToAsync(url, WaitUntilNavigation.Networkidle2);
+			await page.GoToAsync(url, WaitUntilNavigation.Networkidle0);
 			string uuid = Guid.NewGuid().ToString();
-			var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
 			await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
 			{
 				Width = 2560,
 				Height = 1440
 			});
-			_logger.LogDebug("正在截图网页：{url}，保存地址：{path}", url, path);
+			_logger.LogDebug("正在截图网页：{url}",url);
 			await page.WaitForFunctionAsync(waitForFunc);
-			await page.ScreenshotAsync(path, screenshotOptions ?? new());
-			return path;
+			var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
+			return base64;
 		}
 	}
 }

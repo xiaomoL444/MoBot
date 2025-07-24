@@ -242,9 +242,8 @@ namespace BilibiliLive.Handle
 				HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Asserts/images/MyLover.png"));
 
 				//准备绘画
-				string path = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
+				string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
 
-				var base64 = Convert.ToBase64String(File.ReadAllBytes(path));
 				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
