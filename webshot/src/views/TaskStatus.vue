@@ -96,7 +96,7 @@ img {
 <script setup>
 
 import { useRoute } from 'vue-router'
-import { ref,onMounted,nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 
 // 获取当前路由信息
@@ -128,18 +128,18 @@ onMounted(() => {
   console.log(id);
   if (id == undefined) { return; }
   axios.get('http://localhost:5416?id=' + id)
-    .then(response => {
+    .then(async response => {
       if (response == undefined) { return; }
       bg.value = response.data.background;
-      face.value = response.data.iconBase64;
+      face.value = response.data.face;
       task_info.value = response.data.text;
-      nextTick(() => {
-        window.appLoaded = true; // 模拟加载完成
-      });
-    })
-    .catch(error => {
-      console.error('请求出错：', error)
-    })
+      await nextTick();
+      setTimeout(() => { window.appLoaded = true; }, 0);
+
+})
+  .catch(error => {
+    console.error('请求出错：', error)
+  })
 });
 
 </script>

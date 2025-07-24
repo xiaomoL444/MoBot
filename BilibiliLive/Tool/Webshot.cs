@@ -26,7 +26,12 @@ namespace BilibiliLive.Tool
 
 		static Webshot()
 		{
-			_logger.LogDebug("实例化一次");
+			StartNewChrome();
+		}
+
+		static void StartNewChrome()
+		{
+			_logger.LogDebug("创建Chorme实例");
 			var chromePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ChromePathWindow : ChromePathLinux;
 			if (!File.Exists(chromePath))
 			{
@@ -37,7 +42,7 @@ namespace BilibiliLive.Tool
 			_browser = Puppeteer.LaunchAsync(new LaunchOptions
 			{
 				ExecutablePath = chromePath,
-				Headless = true,
+				Headless = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? false : true,
 				Args = [ "--no-sandbox",
 	"--disable-gpu",
 	"--disable-dev-shm-usage",
@@ -53,8 +58,6 @@ namespace BilibiliLive.Tool
 	"--disable-dbus"],
 				DumpIO = true// 打开调试输出
 			}).Result;
-
-
 		}
 
 		/// <summary>
@@ -68,8 +71,13 @@ namespace BilibiliLive.Tool
 		/// <returns>图片地址</returns>
 		public static async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
 		{
+			if (_browser.Process.HasExited)
+			{
+				_logger.LogWarning("Chrome被意外关闭，重新启动");
+				StartNewChrome();
+			}
 			await using var page = await _browser.NewPageAsync();
-			await page.GoToAsync(url);
+			await page.GoToAsync(url, WaitUntilNavigation.Networkidle2);
 			string uuid = Guid.NewGuid().ToString();
 			var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
 			await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions

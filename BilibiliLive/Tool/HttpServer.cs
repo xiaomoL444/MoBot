@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using BilibiliLive.Models;
+using Microsoft.Extensions.Logging;
 using MoBot.Handle.Extensions;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
@@ -18,8 +19,10 @@ namespace BilibiliLive.Tool
 	public static class HttpServer
 	{
 		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(HttpServer));
-		private static Dictionary<string, string> _contents = new();
+		private static Dictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
 		private static object _lock = new();
+
+		private const string _ipAddress = "http://localhost:5416";
 
 		public static void Start()
 		{
@@ -27,10 +30,10 @@ namespace BilibiliLive.Tool
 			// 创建一个 HttpListener 实例
 			HttpListener listener = new HttpListener();
 			// 指定监听的 URL，通常是 "http://localhost:端口号/"
-			listener.Prefixes.Add("http://localhost:5416/");
+			listener.Prefixes.Add($"{_ipAddress}/");
 			// 启动监听器
 			listener.Start();
-			_logger.LogInformation("服务器正在监听 http://localhost:5416/");
+			_logger.LogInformation($"服务器正在监听 {_ipAddress}/");
 
 			_ = Task.Run(() =>
 			{
@@ -50,40 +53,44 @@ namespace BilibiliLive.Tool
 						//key不存在
 						if (!queryParams.AllKeys.Any(q => q == "id"))
 						{
-							Response(response, HttpStatusCode.BadRequest, "{}");
+							Response(response, HttpStatusCode.BadRequest, HttpServerContentType.TextPlain, @"{""msg"":""key was not found""}");
 							continue;
 						}
 						string id = queryParams["id"];
 						if (!_contents.ContainsKey(id))
 						{
 							_logger.LogError("键不存在！{key}", id);
-							Response(response, HttpStatusCode.NotFound, "{}");
+							Response(response, HttpStatusCode.NotFound, HttpServerContentType.TextPlain, @"{""msg"":""value does not exist""}");
 							continue;
 						}
-						Response(response, HttpStatusCode.OK, _contents[id]);
+						Response(response, HttpStatusCode.OK, _contents[id].contentType, _contents[id].content);
 					}
 				}
 			});
 		}
-		static void Response(HttpListenerResponse response, HttpStatusCode httpStatus, string message)
+		static void Response(HttpListenerResponse response, HttpStatusCode httpStatus, HttpServerContentType contentType, object message)
 		{
 			// 设置响应头和状态
-			response.ContentType = "text/plain";
+			response.ContentType = GetContentType(contentType);
 			response.StatusCode = (int)httpStatus;
 
 			try
 			{
-
+				byte[] buffer;
 				// 编写响应内容
-				string responseMessage = message;
-				byte[] buffer = Encoding.UTF8.GetBytes(responseMessage);
+				buffer = (int)contentType switch
+				{
+					(>= 101 and <= 200) => Encoding.UTF8.GetBytes((string)message),
+					(>= 201 and <= 300) => (byte[])message
+				};
+
 
 				// 写入响应
 				response.ContentLength64 = buffer.Length;
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", responseMessage);
+				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer) : contentType);
 			}
 			catch (Exception ex)
 			{
@@ -91,18 +98,22 @@ namespace BilibiliLive.Tool
 			}
 
 		}
-		public static void SetNewContent(string uuid, string content)
+		public static void SetNewContent(string uuid, HttpServerContentType contentType, object content)
 		{
 			lock (_lock)
 			{
-				if (_contents.ContainsValue(uuid))
+				if (_contents.ContainsKey(uuid))
 				{
 					_logger.LogWarning("存在键值配对{key},{@value}", uuid, content);
 					return;
 				}
-				_contents.Add(uuid, content);
+				_contents.Add(uuid, new(contentType, content));
+				_logger.LogDebug("设置http数据{@content}", new { uuid, contentType, content });
 				_ = Task.Run(async () =>
 				{
+#if DEBUG
+					return;
+#endif
 					await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
 					if (!_contents.ContainsKey(uuid))
 					{
@@ -112,6 +123,20 @@ namespace BilibiliLive.Tool
 					_contents.Remove(uuid);
 				});
 			}
+		}
+
+		public static string GetIPAddress()
+		{
+			return _ipAddress;
+		}
+
+		private static string GetContentType(HttpServerContentType contentType)
+		{
+			return contentType switch
+			{
+				HttpServerContentType.TextPlain => "text/plain",
+				HttpServerContentType.ImagePng => "image/png"
+			};
 		}
 	}
 }

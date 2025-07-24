@@ -229,22 +229,20 @@ namespace BilibiliLive.Handle
 
 				var icon = await HttpClient.SendAsync(new(HttpMethod.Get, userInfo.Data.Face));
 
-				var iconBase64 = "data:image/png;base64," + Convert.ToBase64String(await icon.Content.ReadAsByteArrayAsync());
-				var background = "data:image/png;base64," + Convert.ToBase64String(File.ReadAllBytes("./Asserts/images/MyLover.png"));
-
-				string uuid = Guid.NewGuid().ToString();
-				var content = new
+				string dataUuid = Guid.NewGuid().ToString();
+				string backgroundUuid = Guid.NewGuid().ToString();
+				string faceUuid = Guid.NewGuid().ToString();
+				HttpServer.SetNewContent(dataUuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
 				{
-					iconBase64,
-					background,
-					text
-				}
-			;
-				_logger.LogDebug("设置http数据{@content}", new { uuid, content });
-				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
+					text = text,
+					face = $"{HttpServer.GetIPAddress()}?id={faceUuid}",
+					background = $"{HttpServer.GetIPAddress()}?id={backgroundUuid}"
+				}));
+				HttpServer.SetNewContent(faceUuid, HttpServerContentType.ImagePng, await icon.Content.ReadAsByteArrayAsync());
+				HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Asserts/images/MyLover.png"));
 
 				//准备绘画
-				string path = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={uuid}");
+				string path = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
 
 				var base64 = Convert.ToBase64String(File.ReadAllBytes(path));
 				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
