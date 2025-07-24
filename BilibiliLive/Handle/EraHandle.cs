@@ -1,4 +1,5 @@
 ﻿using BilibiliLive.Constant;
+using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
@@ -215,17 +216,17 @@ namespace BilibiliLive.Handle
 			foreach (var account in accountConfig.Users)
 			{
 				var userCredential = account.UserCredential;
-				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
+				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 
 				//直播任务
-				var liveRes = await GetTaskInfo(userCredential, eraConfig.LiveTaskIDs);
+				var liveRes = await UserInteraction.GetTaskInfo(userCredential, eraConfig.LiveTaskIDs);
 				if (liveRes is not { Code: 0 })
 				{
 					_logger.LogError("获取{user}直播任务信息错误CODE:{code}", userCredential.DedeUserID, liveRes?.Code);
 				}
 
 				//看播任务
-				var viewRes = await GetTaskInfo(userCredential, eraConfig.ViewTaskIDs);
+				var viewRes = await UserInteraction.GetTaskInfo(userCredential, eraConfig.ViewTaskIDs);
 				if (viewRes is not { Code: 0 })
 				{
 					_logger.LogError("获取{user}看播任务信息错误CODE:{code}", userCredential.DedeUserID, viewRes?.Code);
@@ -257,9 +258,14 @@ namespace BilibiliLive.Handle
 				HttpServer.SetNewContent(uuid, JsonConvert.SerializeObject(content));
 				//准备绘画
 
-				await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = false });
+				await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+				{
+					Headless = true,
+					Args = ["--no-sandbox"],
+					DumpIO = true// 打开调试输出
+				});
 				await using var page = await browser.NewPageAsync();
-				await page.GoToAsync($"http://localhost:8080/TaskStatus?id={uuid}", WaitUntilNavigation.Networkidle2);
+				await page.GoToAsync($"{Webshot.GetIPAddress()}/TaskStatus?id={uuid}", WaitUntilNavigation.Networkidle2);
 				var path = $"{_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)}/{uuid}.png";
 				await page.SetViewportAsync(new ViewPortOptions
 				{
@@ -269,7 +275,8 @@ namespace BilibiliLive.Handle
 				await page.WaitForFunctionAsync("() => window.appLoaded === true");
 				await page.ScreenshotAsync(path);
 
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image(path).Build());
+				var base64 = Convert.ToBase64String( File.ReadAllBytes(path));
+				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://"+ base64).Build());
 				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
 
 				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
@@ -280,39 +287,6 @@ namespace BilibiliLive.Handle
 
 
 			return;
-		}
-
-		//获取激励计划的任务
-		async Task<TaskInfoRsp> GetTaskInfo(UserCredential userCredential, List<string> taskIds)
-		{
-			using var request = new HttpRequestMessage(HttpMethod.Get, $"{Constants.GetEraTask}?task_ids={String.Join(",", taskIds)}");
-			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
-			using var response = await HttpClient.SendAsync(request);
-			var responseString = await response.Content.ReadAsStringAsync();
-			_logger.LogDebug("获取{user}任务：{@taskID}的任务结果{Info}", userCredential.DedeUserID, taskIds, responseString);
-
-			return JsonConvert.DeserializeObject<TaskInfoRsp>(responseString);
-		}
-
-		async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName, int duration = 60)
-		{
-			Dictionary<string, string> body = new() {
-				{ "task_id", taskID },
-				{ "activity_id", activityID },
-				{ "activity_name", activityName },
-				{ "task_name", taskName },
-				{ "reward_name", rewaredName },
-				{ "gaia_vtoken", "" },//默认为空
-				{ "receive_from", "missionPage" },
-				{ "csrf", userCredential.Bili_Jct },
-			};
-			var wbi = BilibiliApiTool.GetWbi(new());
-			using var request = new HttpRequestMessage(HttpMethod.Post, $"{Constants.ReceiveAward}?{wbi}");
-			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
-			request.Content = new FormUrlEncodedContent(body);
-
-			var result = HttpClient.SendAsync(request);
-			_logger.LogInformation("用户{user}领取的任务id：{}活动id：{}活动名称：{}任务名称：{}奖励名称：{}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
 		}
 	}
 }

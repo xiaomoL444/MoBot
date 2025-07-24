@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BilibiliLive.Models
 {
-	internal class TaskInfoRsp
+	public class TaskInfoRsp
 	{
 		[JsonProperty("code")]
 		public int Code { get; set; } = 0;

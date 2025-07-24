@@ -6,6 +6,7 @@ using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
+using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -53,7 +54,7 @@ namespace MoBot.Handle.Net
 						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(e.Data, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
 
-						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, e.Data);
+						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, json);
 
 						await _moBotClient.RouteAsync(eventJson);
 						return;
@@ -62,13 +63,13 @@ namespace MoBot.Handle.Net
 					if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 					{
 						var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(e.Data)!;
-						_logger.LogInformation("收到api回复：{@commond}", e.Data);
+						_logger.LogInformation("收到api回复：{@commond}", json);
 						_echoResult[actionJson.Echo].SetResult(actionJson);
 						_echoResult.Remove(actionJson.Echo);
 						return;
 					}
 
-					_logger.LogWarning("收到未知消息：{commond}", e.Data);
+					_logger.LogWarning("收到未知消息：{@commond}", json);
 
 				};
 				ws.Connect();
@@ -88,7 +89,7 @@ namespace MoBot.Handle.Net
 			string uuid = Guid.NewGuid().ToString();
 			_echoResult.Add(uuid, echoPacket);
 			string msg = JsonConvert.SerializeObject(new ActionPacketReq() { Action = action, Echo = uuid, Params = message });
-			_logger.LogInformation("发送消息：{@msg}", msg);
+			_logger.LogInformation("发送消息：{@msg}", msg.TryPraseToJson());
 
 			ws.Send(msg);
 

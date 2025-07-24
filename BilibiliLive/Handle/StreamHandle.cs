@@ -1,4 +1,5 @@
 ﻿using BilibiliLive.Constant;
+using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
@@ -236,7 +237,7 @@ namespace BilibiliLive.Handle
 					return;
 				}
 				var userCredential = account.UserCredential;
-				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
+				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 				var session = _sessions.FirstOrDefault(q => q.UserCredential.DedeUserID == userCredential.DedeUserID);
 				if (session is not null)
 				{
@@ -415,7 +416,7 @@ namespace BilibiliLive.Handle
 			foreach (var session in _sessions_copy)
 			{
 				_logger.LogInformation("关闭{user}的直播中", session.UserCredential.DedeUserID);
-				var userInfo = await BilibiliApiTool.GetUserInfo(session.UserCredential);
+				var userInfo = await UserInteraction.GetUserInfo(session.UserCredential);
 				msgChain.Text($"[{userInfo.Data.Name}]:");
 
 				bool isSessionStop = await session.StopAsync();
@@ -498,8 +499,8 @@ namespace BilibiliLive.Handle
 			msgChain.Text($"串流程序状态：{((_childProcess == null || _childProcess.HasExited) ? "已退出或不存在（请及时关闭推流）" : "Alive! >w<")}\n");
 			foreach (var session in _sessions)
 			{
-				var userInfo = await BilibiliApiTool.GetUserInfo(session.UserCredential);
-				var userLiveRoomInfo = await BilibiliApiTool.GetUserRoomInfo(session.UserCredential.DedeUserID);
+				var userInfo = await UserInteraction.GetUserInfo(session.UserCredential);
+				var userLiveRoomInfo = await UserInteraction.GetUserRoomInfo(session.UserCredential.DedeUserID);
 				msgChain.Text($"[{userInfo.Data.Name}]：会话：{(session.IsLive ? "Alive! >w<" : "已退出")}，直播间(未做)：{(userLiveRoomInfo.Data.LiveStatus == 0 ? "未开播" : "已开播")}");
 				msgChain.Text("\n");
 			}
@@ -514,7 +515,7 @@ namespace BilibiliLive.Handle
 			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			//发送礼物
 			var userCredential = account.Users[0].UserCredential;
-			await BilibiliApiTool.SendLiveGift(userCredential, "127835421", "8895169", "31039");
+			await UserInteraction.SendLiveGift(userCredential, "127835421", "8895169", "31039");
 		}
 
 		/// <summary>
@@ -562,7 +563,7 @@ namespace BilibiliLive.Handle
 			{
 				//挨个获取roomID和rtmp_url
 
-				var getLiveRoomData = await BilibiliApiTool.GetUserRoomInfo(userCredential.DedeUserID);
+				var getLiveRoomData = await UserInteraction.GetUserRoomInfo(userCredential.DedeUserID);
 
 				//校验直播信息是否正确
 				if (getLiveRoomData is not { Code: 0 })
@@ -587,7 +588,7 @@ namespace BilibiliLive.Handle
 				};
 				var app_key = "aae92bc66f3edfab";
 				var app_sec = "af125a0d5279fd576c1b4418a3e8276d";
-				param = BilibiliApiTool.AppSign(param, app_key, app_sec);
+				param = UserInteraction.AppSign(param, app_key, app_sec);
 				startliveRequest.Content = new FormUrlEncodedContent(param);
 				var startliveResponse = await HttpClient.SendAsync(startliveRequest);
 				var startliveResponseString = await startliveResponse.Content.ReadAsStringAsync();
@@ -640,7 +641,7 @@ namespace BilibiliLive.Handle
 					return new Error<string>("不存在用户会话");
 				}
 				//其实换成获取用户个人信息就可以获取直播间
-				var userData = await BilibiliApiTool.GetUserInfo(userCredential);
+				var userData = await UserInteraction.GetUserInfo(userCredential);
 				var roomID = userData.Data.LiveRoom.RoomId;
 
 				var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={roomID}&csrf={userCredential.Bili_Jct}&platform={session.Platform}");

@@ -55,7 +55,14 @@ namespace MoBot.Handle
 				var initMethod = type.GetMethod("Initial");
 				foreach (var service in services)
 				{
-					initMethod?.Invoke(service, null);
+					try
+					{
+						initMethod?.Invoke(service, null);
+					}
+					catch (Exception ex)
+					{
+						_logger.LogError(ex, "初始化失败{name}", type.Name);
+					}
 				}
 			}
 		}

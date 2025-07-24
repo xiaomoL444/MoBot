@@ -1,4 +1,5 @@
 ﻿using BilibiliLive.Constant;
+using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
@@ -91,7 +92,7 @@ namespace BilibiliLive.Handle
 			for (int i = 0; i < accountConfig.Users.Count; i++)
 			{
 				var userCredential = accountConfig.Users[i].UserCredential;
-				var userInfo = await BilibiliApiTool.GetUserInfo(userCredential);
+				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 
 				try
 				{

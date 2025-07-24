@@ -14,6 +14,8 @@ namespace BilibiliLive.Constant
 		public const string AccountFile = "account";
 		public const string EraFile = "era";
 
+		public const string UserAgent = "";//user-agent
+
 		#region 登录API
 		public const string BilibiliWebSignQRcodeGenerataApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";//B站的web端扫码链接生成api
 		public const string BilibiliWebSignQRcodePollApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll";//B站的web端扫码轮询是否登录成功
@@ -25,6 +27,7 @@ namespace BilibiliLive.Constant
 		public const string BilibiliGetRoomInfoOld = "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld";//获取用户对应的直播间状态（主要是为了获取roomID）
 		public const string GetLivehimeVersion = "https://api.live.bilibili.com/xlive/app-blink/v1/liveVersionInfo/getHomePageLiveVersion";//获取直播姬版本信息
 		public const string SendGift = "https://api.live.bilibili.com/xlive/revenue/v1/gift/sendGold";//发送礼物
+		public const string SendDanmaku = "https://api.live.bilibili.com/msg/send";//发送弹幕消息
 		#endregion
 
 		#region 用户API

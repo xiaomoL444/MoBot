@@ -46,7 +46,7 @@ namespace MoBot.Handle.DataStorage
 		public string GetPath(DirectoryType directoryType, string pluginName = "")
 		{
 			pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-			return Path.Combine(GetDirectoryName(directoryType), pluginName);
+			return "./" + Path.Combine(GetDirectoryName(directoryType), pluginName);
 		}
 		private string GetDirectoryName(DirectoryType directoryType)
 		{

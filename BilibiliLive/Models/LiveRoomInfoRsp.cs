@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BilibiliLive.Models
 {
-	internal class LiveRoomInfoRsp
+	public class LiveRoomInfoRsp
 	{
 		/// <summary>
 		/// 返回码：
