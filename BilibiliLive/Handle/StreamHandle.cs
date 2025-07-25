@@ -54,7 +54,7 @@ namespace BilibiliLive.Handle
 		{
 			IsLive = true;
 			//主ffmpeg程序
-			var args = $"-fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://239.0.0.1:11111 -c copy -f flv \"{_rtmp}\"";
+			var args = $"-loglevel warning -fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://239.0.0.1:11111 -c copy -f flv \"{_rtmp}\"";
 			_logger.LogDebug("{uid}直播会话程序参数{args}", UserCredential.DedeUserID, args);
 			_process = new Process
 			{
@@ -70,18 +70,18 @@ namespace BilibiliLive.Handle
 				},
 				EnableRaisingEvents = true
 			};
-			_process.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_main] {info}", e.Data); };
-			_process.ErrorDataReceived += (s, e) => { if (string.IsNullOrEmpty(e.Data)) return; _logger.LogDebug("[ffmpeg_main] {info}", e.Data); };
+			_process.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[{uid}直播会话] {info}", UserCredential.DedeUserID, e.Data); };
+			_process.ErrorDataReceived += (s, e) => { if (string.IsNullOrEmpty(e.Data)) return; _logger.LogDebug("[{uid}直播会话] {info}", UserCredential.DedeUserID, e.Data); };
 			_process.Exited += (s, e) =>
 			{
 				IsLive = false;
 				ExitState = new($"{_process.ExitCode}", $"退出码：{_process.ExitCode}");
 				if (_process.ExitCode == 0)
 				{
-					_logger.LogInformation("{uid}直播会话手动退出", UserCredential.DedeUserID);
+					_logger.LogInformation("[{uid}]直播会话手动退出", UserCredential.DedeUserID);
 					return;
 				}
-				_logger.LogError("{uid}直播会话异常退出，CODE:{exit_code}", UserCredential.DedeUserID, _process.ExitCode);
+				_logger.LogError("[{uid}]直播会话异常退出，CODE:{exit_code}", UserCredential.DedeUserID, _process.ExitCode);
 				FailCallback();
 
 				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("主程序退出出现了一些异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
@@ -318,7 +318,7 @@ namespace BilibiliLive.Handle
 								num++;
 								continue;
 							}
-							var child_args = $"-re -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://239.0.0.1:11111";
+							var child_args = $"-re -loglevel warning -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://239.0.0.1:11111";
 							_logger.LogDebug("ffmpeg子程序参数{args}", child_args);
 							_childProcess = new Process
 							{
