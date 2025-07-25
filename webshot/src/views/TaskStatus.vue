@@ -105,11 +105,11 @@ const route = useRoute()
 // 获取路径参数
 // const bg = computed(() => route.params.bg)
 const img_list = ref({
-  bg: require("../assets/TaskStatus/background.png"),
-  face: require("../assets/TaskStatus/icon.png")
+  bg: '',
+  face: ''
 })
 var isChange = false;
-const task_info = ref(`读取中`);
+const task_info = ref('');
 
 const create_time = ref(formatDate(new Date(), 'Y-M-D H:m:s'));
 
@@ -131,7 +131,7 @@ onMounted(() => {
   window.appLoaded = false;
   var id = route.query.id;
   console.log(id);
-  if (id == undefined) { return; }
+  if (id == undefined) { showDefaultmsg(); return; }
   axios.get('http://localhost:5416?id=' + id)
     .then(async response => {
       if (response == undefined) { return; }
@@ -141,9 +141,16 @@ onMounted(() => {
       task_info.value = response.data.text;
     })
     .catch(error => {
+      showDefaultmsg();
       console.error('请求出错：', error)
     })
 });
+
+function showDefaultmsg() {
+  img_list.value.bg = require("../assets/TaskStatus/background.png");
+  img_list.value.face = require("../assets/TaskStatus/icon.png");
+  task_info.value = '读取中';
+}
 
 async function OnImageLoad() {
   if (isChange == false) return;

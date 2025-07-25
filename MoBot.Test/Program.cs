@@ -13,7 +13,6 @@ using MoBot.Core.Models;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
-using MoBot.Handle.DestructuringPolicy;
 using MoBot.Handle.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,7 +26,6 @@ string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} : {Me
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
 	.Destructure.ToMaximumStringLength(100) // 限制字符串属性长度为100
-	.Destructure.With<TryParseJsonDestructuringPolicy>()
 	.Destructure.JsonNetTypes()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)

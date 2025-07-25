@@ -49,7 +49,7 @@ namespace MoBot.Handle.Net
 						{
 							var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(commond, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
-							_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, commond);
+							_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, json);
 
 							_moBotClient.RouteAsync(eventJson);
 							continue;
@@ -58,11 +58,11 @@ namespace MoBot.Handle.Net
 						if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 						{
 							var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(commond)!;
-							_logger.LogInformation("收到api回复：{@commond}", commond);
+							_logger.LogInformation("收到api回复：{@commond}", json);
 							continue;
 						}
 
-						_logger.LogWarning("收到未知消息：{@commond}", commond);
+						_logger.LogWarning("收到未知消息：{@commond}", json);
 					}
 					catch (Exception ex)
 					{

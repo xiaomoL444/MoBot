@@ -77,8 +77,7 @@ namespace BilibiliLive.Tool
 				StartNewChrome();
 			}
 			await using var page = await _browser.NewPageAsync();
-			await page.GoToAsync(url, WaitUntilNavigation.Networkidle0);
-			string uuid = Guid.NewGuid().ToString();
+			await page.GoToAsync(url);
 			await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
 			{
 				Width = 2560,
@@ -87,6 +86,7 @@ namespace BilibiliLive.Tool
 			_logger.LogDebug("正在截图网页：{url}",url);
 			await page.WaitForFunctionAsync(waitForFunc);
 			var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
+			_logger.LogDebug("截图完成");
 			return base64;
 		}
 	}

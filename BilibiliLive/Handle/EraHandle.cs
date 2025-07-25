@@ -242,14 +242,11 @@ namespace BilibiliLive.Handle
 				HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Asserts/images/MyLover.png"));
 
 				//准备绘画
-				string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
-
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
-				//var base64 = DrawImage("./Asserts/images/MyLover.png", text, imageStream);
-
-				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
-
-				//File.Delete(filePath);
+				_ = Task.Run(async () =>
+				{
+					string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
+					await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
+				});
 			}
 
 
