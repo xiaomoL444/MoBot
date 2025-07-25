@@ -198,12 +198,12 @@ namespace BilibiliLive.Handle
 			var eraConfig = _dataStorage.Load<EraTaskConfig>(Constants.EraFile);
 
 			//获取任务
-
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("正在获取中...请稍等......").Build());
 			foreach (var account in accountConfig.Users)
 			{
 				if (!account.IsQureyTask)
 				{
-					_logger.LogDebug("{user}未开启查询任务",account.Uid);
+					_logger.LogDebug("{user}未开启查询任务", account.Uid);
 					return;
 				}
 				var userCredential = account.UserCredential;
