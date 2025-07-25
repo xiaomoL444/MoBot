@@ -77,20 +77,28 @@ namespace BilibiliLive.Tool
 				StartNewChrome();
 			}
 			await using var page = await _browser.NewPageAsync();
-			await page.GoToAsync(url);
-			await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
+			try
 			{
-				Width = 2560,
-				Height = 1440
-			});
-			_logger.LogDebug("正在截图网页：{url}",url);
-			await page.WaitForFunctionAsync(waitForFunc);
-			var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
+				await page.GoToAsync(url);
+				await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
+				{
+					Width = 2560,
+					Height = 1440
+				});
+				_logger.LogDebug("正在截图网页：{url}", url);
+				await page.WaitForFunctionAsync(waitForFunc);
+				var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
 #if DEBUG
-			await page.ScreenshotAsync(_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)+"/"+DateTimeOffset.Now.ToUnixTimeMilliseconds()+".png");
+				await page.ScreenshotAsync(_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache) + "/" + DateTimeOffset.Now.ToUnixTimeMilliseconds() + ".png");
 #endif
-			_logger.LogDebug("截图完成");
-			return base64;
+				_logger.LogDebug("截图完成");
+				return base64;
+			}
+			catch (Exception)
+			{
+				return string.Empty;//其实可以返回一张空图片地址
+			}
+
 		}
 	}
 }
