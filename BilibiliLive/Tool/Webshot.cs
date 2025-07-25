@@ -86,6 +86,9 @@ namespace BilibiliLive.Tool
 			_logger.LogDebug("正在截图网页：{url}",url);
 			await page.WaitForFunctionAsync(waitForFunc);
 			var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
+#if DEBUG
+			await page.ScreenshotAsync(_dataStorage.GetPath(MoBot.Core.Models.DirectoryType.Cache)+"/"+DateTimeOffset.Now.ToUnixTimeMilliseconds()+".png");
+#endif
 			_logger.LogDebug("截图完成");
 			return base64;
 		}

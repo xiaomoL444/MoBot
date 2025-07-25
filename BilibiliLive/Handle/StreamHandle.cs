@@ -526,6 +526,25 @@ namespace BilibiliLive.Handle
 
 			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			List<object> datas = new();
+#if DEBUG
+			datas = new() {
+				new{
+					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					name = "Name",
+					info =  "发送弹幕：\r\n ? [戀祈]直播间\r\n ?  点赞成功x3\r\n ?  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ?  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ? [心爱子]直播间\r\n ?  投喂牛蛙成功"
+				},
+				new{
+					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					name = "Name",
+					info =  "发送弹幕：\r\n ? [戀祈]直播间\r\n ?  投喂牛蛙成功"
+				},
+				new{
+					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					name = "Name",
+					info =  "发送弹幕：\r\n发送牛蛙：\r\n ? [戀祈]直播间\r\n ?  投喂牛蛙成功\r\n ? [心爱子]直播间\r\n ?  投喂牛蛙成功"
+				}
+			};
+#else
 			//发送礼物
 			foreach (var user in account.Users)
 			{
@@ -598,12 +617,12 @@ namespace BilibiliLive.Handle
 					info = msg
 				});
 			}
-
+#endif
 			//截图界面
 			string uuid = Guid.NewGuid().ToString();
 			HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, datas);
 
-			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}?id={uuid}");
+			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/GiftLiveStatus?id={uuid}");
 
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}
