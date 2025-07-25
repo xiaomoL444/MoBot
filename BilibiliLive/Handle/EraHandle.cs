@@ -201,6 +201,11 @@ namespace BilibiliLive.Handle
 
 			foreach (var account in accountConfig.Users)
 			{
+				if (!account.IsQureyTask)
+				{
+					_logger.LogDebug("{user}未开启查询任务",account.Uid);
+					return;
+				}
 				var userCredential = account.UserCredential;
 				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 
@@ -227,18 +232,16 @@ namespace BilibiliLive.Handle
 完成“每日直播任务” ————完成天数[{liveRes.Data.List[5].AccumulativeCount}]
 {string.Join("\n", liveRes.Data.List[5].AccumulativeCheckPoints.Select(s => $"{startChar}{s.AwardName}({s.Status})"))}";
 
-				var icon = await HttpClient.SendAsync(new(HttpMethod.Get, userInfo.Data.Face));
-
 				string dataUuid = Guid.NewGuid().ToString();
 				string backgroundUuid = Guid.NewGuid().ToString();
 				string faceUuid = Guid.NewGuid().ToString();
 				HttpServer.SetNewContent(dataUuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
 				{
 					text = text,
-					face = $"{HttpServer.GetIPAddress()}?id={faceUuid}",
+					face = userInfo.Data.Face,
 					background = $"{HttpServer.GetIPAddress()}?id={backgroundUuid}"
 				}));
-				HttpServer.SetNewContent(faceUuid, HttpServerContentType.ImagePng, await icon.Content.ReadAsByteArrayAsync());
+				//HttpServer.SetNewContent(faceUuid, HttpServerContentType.ImagePng, await icon.Content.ReadAsByteArrayAsync());
 				HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Asserts/images/MyLover.png"));
 
 				//准备绘画

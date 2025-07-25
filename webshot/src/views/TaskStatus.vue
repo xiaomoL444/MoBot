@@ -1,4 +1,7 @@
 <template>
+  <html>
+  <meta name="referrer" content="no-referrer">
+  </html>
   <div :class="['contain', 'center-flex']">
     <img class="background" :src="img_list.bg" @load="OnImageLoad">
     <div :class="['glass-effect']">

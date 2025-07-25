@@ -33,6 +33,12 @@ namespace BilibiliLive.Models
 			public bool IsStartLive { get; set; } = false;
 
 			/// <summary>
+			/// 是否是要查询激励计划
+			/// </summary>
+			[JsonProperty("is_query_task")]
+			public bool IsQureyTask { get; set; } = false;
+
+			/// <summary>
 			/// 发送给哪个用户的直播礼物
 			/// </summary>
 			[JsonProperty("gift_users")]
