@@ -151,7 +151,7 @@ namespace BilibiliLive.Handle
 			new(LiveDanmukuType.Text, "UpUp我喜欢你"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_比心]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_遨游]"),
-			new(LiveDanmukuType.Emotion,"upower_upower_[崩坏3·光辉矢愿_回眸]"),
+			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_回眸]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3_吃咸鱼]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏：星穹铁道_心]")
 		};
@@ -522,35 +522,90 @@ namespace BilibiliLive.Handle
 
 		async void FinishGiftTask(Group group)
 		{
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
+
 			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			List<object> datas = new();
 			//发送礼物
 			foreach (var user in account.Users)
 			{
-				var userInfo = await UserInteraction.GetUserRoomInfo(user.Uid);
-				var userCredential = user.UserCredential;
-				var sendUserDanmukuRooms = user.SendUserDanmuku.Select(s => UserInteraction.GetUserRoomInfo(s).Result);//准备给哪些用户发送弹幕的直播间
 
-				foreach (var room in sendUserDanmukuRooms)
+				var userCredential = user.UserCredential;
+				var userInfo = await UserInteraction.GetUserInfo(userCredential);
+
+				string msg = string.Empty;
+				//发送弹幕
+				if (user.SendUserDanmuku.Count != 0)
+					msg += "发送弹幕：\n";
+				foreach (var uid in user.SendUserDanmuku)
 				{
+					var danmukuUserInfo = await UserInteraction.GetUserInfo(account.Users.FirstOrDefault(q => q.Uid == uid).UserCredential);
+					var room = danmukuUserInfo.Data.LiveRoom.RoomId;
+					List<(int code, string msg)> danmukuResult = new();
 					//发送六次弹幕
 					for (int time = 0; time < 6; time++)
 					{
 						var danmuku = _danmukus[Random.Shared.Next(0, _danmukus.Count)];
 						_logger.LogDebug("{senduser}给{room}发送弹幕{@danmuku}", user.Uid, room, danmuku);
-						await Task.Delay(Random.Shared.Next(500, 1000));
-						var match = await UserInteraction.SendDanmuka(userCredential, room.Data.RoomId.ToString(), danmuku.danmukuType, danmuku.msg);
+						await Task.Delay(Random.Shared.Next(1500, 2000));
+						var match = await UserInteraction.SendDanmuka(userCredential, room.ToString(), danmuku.danmukuType, danmuku.msg);
 						match.Switch(
 							None =>
 						{
+							danmukuResult.Add(new(0, "点赞成功"));
 						}, Error =>
 						{
+							danmukuResult.Add(new(Error.Value.code, Error.Value.msg));
 						});
 					}
-
+					//点赞结束，汇总
+					msg += @$" ♪ [{danmukuUserInfo.Data.Name}]直播间
+ ♫  {string.Join("\n ♬  ", danmukuResult.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"))}
+";
 				}
-				//await UserInteraction.SendLiveGift(userCredential, "127835421", "8895169", "31039");
+
+				//发送牛蛙
+				if (user.GiftUsers.Count != 0)
+					msg += "发送牛蛙：\n";
+				foreach (var uid in user.GiftUsers)
+				{
+					var targetUserInfo = await UserInteraction.GetUserInfo(account.Users.FirstOrDefault(q => q.Uid == uid).UserCredential);
+					var room = targetUserInfo.Data.LiveRoom.RoomId;
+					(int code, string msg) result = new();
+
+					await Task.Delay(Random.Shared.Next(500, 1000))
+						;
+					var match = await UserInteraction.SendLiveGift(userCredential, uid, room.ToString(), "31039");
+					match.Switch(
+						None =>
+						{
+							result = (0, "投喂牛蛙成功");
+						}, Error =>
+						{
+							result = (Error.Value.code, Error.Value.msg);
+						});
+
+					//点赞结束，汇总
+					msg += @$" ♪ [{targetUserInfo.Data.Name}]直播间
+ ♫  {result.msg}
+";
+				}
+
+				datas.Add(new
+				{
+					face = userInfo.Data.Face,
+					name = userInfo.Data.Name,
+					info = msg
+				});
 			}
 
+			//截图界面
+			string uuid = Guid.NewGuid().ToString();
+			HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, datas);
+
+			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}?id={uuid}");
+
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}
 
 		/// <summary>

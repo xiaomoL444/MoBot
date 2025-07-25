@@ -1,6 +1,10 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Models;
 using Microsoft.Extensions.Logging;
+using MoBot.Handle.Extensions;
+using Newtonsoft.Json.Linq;
+using OneOf;
+using OneOf.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +26,7 @@ namespace BilibiliLive.Interaction
 		/// <param name="price">价格？什么价格，总之0是免费，牛蛙是100</param>
 		/// <param name="storm_beat_id">连击数</param>
 		/// <returns></returns>
-		public static async Task SendLiveGift(
+		public static async Task<OneOf<None, Error<(int code, string msg)>>> SendLiveGift(
 			UserCredential userCredential,
 			string targetUid,
 			string roomID,
@@ -60,7 +64,14 @@ namespace BilibiliLive.Interaction
 			var sendGiftResponse = await Tool.HttpClient.SendAsync(sendGiftRequest);
 			var sendGiftResponseString = await sendGiftResponse.Content.ReadAsStringAsync();
 
-			_logger.LogDebug("赠送礼物消息：{res}", sendGiftResponseString);
+			_logger.LogDebug("赠送礼物消息：{@res}", sendGiftResponseString.TryPraseToJson());
+
+			var json = JObject.Parse(sendGiftResponseString);
+			if (((int)json["code"]) == 0)
+			{
+				return new None();
+			}
+			return new Error<(int code, string msg)>(new((int)json["code"], (string)json["msg"]));
 		}
 	}
 }
