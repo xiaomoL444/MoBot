@@ -17,21 +17,6 @@
 </template>
 
 <style scoped>
-@font-face {
-  font-family: 'GothFont';
-  src: url('../assets/fonts/Goth.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'SegUIVar';
-  src: url('../assets/fonts/SegUIVar.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'msyh';
-  src: url('../assets/fonts/msyh.ttc') format('truetype');
-}
-
 /* .font-family{
   font-family: 'GothFont','SegUIVar','msyh';
 } */
@@ -48,7 +33,6 @@ img {
 }
 
 .contain {
-  font-family: 'GothFont', 'SegUIVar', 'msyh';
   height: 100vh;
   /* 使父容器的高度占满整个视口 */
 }
