@@ -59,7 +59,6 @@ img {
   font-size: 2.35vw;
   /* 允许换行符生效 */
   white-space: pre;
-
 }
 
 .icon {

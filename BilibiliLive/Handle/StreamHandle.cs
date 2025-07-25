@@ -529,19 +529,19 @@ namespace BilibiliLive.Handle
 #if DEBUG
 			datas = new() {
 				new{
-					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
 					name = "Name",
-					info =  "发送弹幕：\r\n ? [戀祈]直播间\r\n ?  点赞成功x3\r\n ?  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ?  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ? [心爱子]直播间\r\n ?  投喂牛蛙成功"
+					info =  "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  点赞成功x3\r\n ♫  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ♫  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功"
 				},
 				new{
-					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
 					name = "Name",
-					info =  "发送弹幕：\r\n ? [戀祈]直播间\r\n ?  投喂牛蛙成功"
+					info =  "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  投喂牛蛙成功"
 				},
 				new{
-					face = "i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
+					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
 					name = "Name",
-					info =  "发送弹幕：\r\n发送牛蛙：\r\n ? [戀祈]直播间\r\n ?  投喂牛蛙成功\r\n ? [心爱子]直播间\r\n ?  投喂牛蛙成功"
+					info =  "发送弹幕：\r\n发送牛蛙：\r\n ♪ [戀祈]直播间\r\n ♫  投喂牛蛙成功\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功"
 				}
 			};
 #else
@@ -579,7 +579,7 @@ namespace BilibiliLive.Handle
 					}
 					//点赞结束，汇总
 					msg += @$" ♪ [{danmukuUserInfo.Data.Name}]直播间
- ♫  {string.Join("\n ♬  ", danmukuResult.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"))}
+    ♫  {string.Join("\n ♬  ", danmukuResult.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"))}
 ";
 				}
 
@@ -606,7 +606,7 @@ namespace BilibiliLive.Handle
 
 					//点赞结束，汇总
 					msg += @$" ♪ [{targetUserInfo.Data.Name}]直播间
- ♫  {result.msg}
+    ♫  {result.msg}
 ";
 				}
 
@@ -620,7 +620,11 @@ namespace BilibiliLive.Handle
 #endif
 			//截图界面
 			string uuid = Guid.NewGuid().ToString();
-			HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, datas);
+			HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
+			{
+				data = datas,
+				background = ""
+			}));
 
 			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/GiftLiveStatus?id={uuid}");
 

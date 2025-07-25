@@ -92,7 +92,7 @@ namespace BilibiliLive.Tool
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer) : contentType);
+				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer).TryPraseToJson(): contentType);
 			}
 			catch (Exception ex)
 			{

@@ -8,11 +8,17 @@
         <img class="background" :src="bg" @load="OnImageLoad">
         <div :class="['flex-contain']">
             <div v-for="data in datas" :key="data" :class="['glass-effect', 'item']">
+                <div :class="['name']">{{ data.name }}</div>
                 <div :class="['task-status']">
                     {{ data.info }}
                 </div>
                 <img class="icon" :src="data.face" @load="OnImageLoad">
-                <div :class="['tip', 'center']">
+
+            </div>
+        </div>
+        <div :class="['tip-contain']">
+            <div :class="['glass-effect', 'tip']">
+                <div>
                     Create by Mobot at {{ create_time }}
                 </div>
             </div>
@@ -31,18 +37,42 @@ img {
 
 .contain {
     height: 100vh;
-
+    display: flex;
+    flex-direction: column;
 }
 
 .flex-contain {
-    position: absolute;
+    /* position: absolute; */
+    flex: auto;
     display: flex;
-    padding: 10px;
+    padding: 2vw;
     /* 留白 */
     box-sizing: border-box;
     gap: 1vw;
     width: 100%;
-    height: 100%;
+    height: 90%;
+}
+
+.tip-contain{
+    /* position: absolute; */
+    flex: auto;
+    display: flex;
+    /* padding: 10px; */
+    /* 留白 */
+    box-sizing: border-box;
+    justify-content: center;
+}
+
+.tip {
+    height: 4vw;
+    width: 50vw;
+    justify-content: center;
+    align-items: center;
+    /* position: relative; */
+    font-size: 2vw;
+    /* text-align: center; */
+    display: flex;
+    box-sizing: border-box;
 }
 
 .item {
@@ -56,12 +86,21 @@ img {
     position: absolute;
 }
 
+.name {
+    padding-top: 2vw;
+    position: relative;
+    padding-left: 2vw;
+    font-size: 2.75vw;
+}
+
 .task-status {
     position: relative;
+    padding-top: 2vw;
     padding-left: 2vw;
     font-size: 2.35vw;
     /* 允许换行符生效 */
-
+    white-space: pre-line;
+    word-wrap: break-word;
 }
 
 .icon {
@@ -72,13 +111,6 @@ img {
     height: 10vw;
 
     border-radius: 100%;
-}
-
-.tip {
-    position: absolute;
-    bottom: 3vw;
-    right: 3vw;
-    font-size: 2vw;
 }
 </style>
 
@@ -118,7 +150,10 @@ onMounted(() => {
     axios.get('http://localhost:5416?id=' + id)
         .then(async response => {
             if (response == undefined) { return; }
-            bg.value = response.data.background;
+            // bg.value = response.data.background;
+            bg.value = require('../assets/GiftLiveStatus/background.jpg');
+
+            console.log(response.data);
             datas.value = response.data.data;
         })
         .catch(error => {
