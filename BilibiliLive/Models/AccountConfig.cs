@@ -43,6 +43,12 @@ namespace BilibiliLive.Models
 			/// </summary>
 			[JsonProperty("view_live_users")]
 			public List<string> ViewLiveUsers { get; set; } = new();
+
+			/// <summary>
+			/// 给哪些用户发送弹幕
+			/// </summary>
+			[JsonProperty("send_user_danmuku")]
+			public List<string> SendUserDanmuku { get; set; } = new();
 		}
 	}
 }

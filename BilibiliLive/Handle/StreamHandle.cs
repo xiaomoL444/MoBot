@@ -1,6 +1,7 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
+using BilibiliLive.Models.Live;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
@@ -145,6 +146,15 @@ namespace BilibiliLive.Handle
 #endif
 
 		private string streamOpenTime = "";//开启直播的时间，用来记录Data
+
+		private List<(LiveDanmukuType danmukuType, string msg)> _danmukus = new(){
+			new(LiveDanmukuType.Text, "UpUp我喜欢你"),
+			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_比心]"),
+			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_遨游]"),
+			new(LiveDanmukuType.Emotion,"upower_upower_[崩坏3·光辉矢愿_回眸]"),
+			new(LiveDanmukuType.Emotion,"upower_[崩坏3_吃咸鱼]"),
+			new(LiveDanmukuType.Emotion,"upower_[崩坏：星穹铁道_心]")
+		};
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -514,8 +524,33 @@ namespace BilibiliLive.Handle
 		{
 			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			//发送礼物
-			var userCredential = account.Users[0].UserCredential;
-			await UserInteraction.SendLiveGift(userCredential, "127835421", "8895169", "31039");
+			foreach (var user in account.Users)
+			{
+				var userInfo = await UserInteraction.GetUserRoomInfo(user.Uid);
+				var userCredential = user.UserCredential;
+				var sendUserDanmukuRooms = user.SendUserDanmuku.Select(s => UserInteraction.GetUserRoomInfo(s).Result);//准备给哪些用户发送弹幕的直播间
+
+				foreach (var room in sendUserDanmukuRooms)
+				{
+					//发送六次弹幕
+					for (int time = 0; time < 6; time++)
+					{
+						var danmuku = _danmukus[Random.Shared.Next(0, _danmukus.Count)];
+						_logger.LogDebug("{senduser}给{room}发送弹幕{@danmuku}", user.Uid, room, danmuku);
+						await Task.Delay(Random.Shared.Next(500, 1000));
+						var match = await UserInteraction.SendDanmuka(userCredential, room.Data.RoomId.ToString(), danmuku.danmukuType, danmuku.msg);
+						match.Switch(
+							None =>
+						{
+						}, Error =>
+						{
+						});
+					}
+
+				}
+				//await UserInteraction.SendLiveGift(userCredential, "127835421", "8895169", "31039");
+			}
+
 		}
 
 		/// <summary>

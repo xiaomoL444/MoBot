@@ -91,13 +91,17 @@ namespace BilibiliLive.Handle
 			var msgChain = MessageChainBuilder.Create().Text("末酱为勾修金sama找到了的用户\n");
 			for (int i = 0; i < accountConfig.Users.Count; i++)
 			{
-				var userCredential = accountConfig.Users[i].UserCredential;
+				var user = accountConfig.Users[i];
+				var userCredential = user.UserCredential;
 				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 
 				try
 				{
-					msgChain.Text($"[{i}][{userInfo.Data.Name}]:{(userInfo.Data.LiveRoom.RoomStatus == 0 ? "未开通直播间" : "已开通直播间")}");
-					msgChain.Text("\n");
+					msgChain.Text($"[{i}][{userInfo.Data.Name}]:{(userInfo.Data is not { LiveRoom.RoomStatus: 0 } ? "未开通直播间" : "已开通直播间")}").Text("\n");
+					msgChain.Text("是否开启直播：" + (user.IsStartLive ? "是" : "否")).Text("\n");
+					msgChain.Text("送给用户礼物：" + string.Join(",", user.GiftUsers)).Text("\n");
+					msgChain.Text("观看用户直播：" + string.Join(",", user.ViewLiveUsers)).Text("\n");
+					msgChain.Text("发送用户弹幕：" + string.Join(",", user.SendUserDanmuku)).Text("\n");
 				}
 				catch (Exception ex)
 				{
