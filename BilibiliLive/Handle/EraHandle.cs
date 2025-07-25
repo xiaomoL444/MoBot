@@ -19,7 +19,7 @@ namespace BilibiliLive.Handle
 {
 	public class EraHandle : IMessageHandle<Group>
 	{
-		private List<string> commands = ["/更新激励计划", "/查询任务"];
+		private List<string> commands = ["/更新激励计划", "/查询任务", "/领取当日奖励"];
 
 		private readonly ILogger<StreamHandle> _logger;
 		private readonly IDataStorage _dataStorage;
@@ -60,6 +60,9 @@ namespace BilibiliLive.Handle
 					break;
 				case "/查询任务":
 					await QueryTasks(message);
+					break;
+				case "/领取当日奖励":
+					await ReceiveDailyEraAward(message);
 					break;
 				default:
 					break;
@@ -255,6 +258,25 @@ namespace BilibiliLive.Handle
 
 
 			return;
+		}
+
+		async Task ReceiveDailyEraAward(Group group)
+		{
+			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			var eraConfig = _dataStorage.Load<EraTaskConfig>(Constants.EraFile);
+
+			foreach (var user in accountConfig.Users)
+			{
+				if (!user.IsQureyTask) continue;
+				for (int i = 1; i < 5; i++)
+				{
+					var taskID = eraConfig.LiveTaskIDs[i];
+					var taskInfo = (await UserInteraction.GetTaskInfo(user.UserCredential, new() { taskID })).Data.List[0];
+					await UserInteraction.ReceiveAward(user.UserCredential, taskID, eraConfig.ActivityID, eraConfig.TaskTitle, taskInfo.TaskName, taskInfo.CheckPoints[0].AwardName);
+					await Task.Delay(Random.Shared.Next(1000, 1500));
+				}
+			}
+			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text($"领取成功啦~请输入/查询任务查看领取状态").Build());
 		}
 	}
 }

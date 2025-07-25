@@ -29,7 +29,7 @@ namespace BilibiliLive.Interaction
 			request.Content = new FormUrlEncodedContent(body);
 
 			var result = Tool.HttpClient.SendAsync(request);
-			_logger.LogInformation("用户{user}领取的任务id：{}活动id：{}活动名称：{}任务名称：{}奖励名称：{}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
+			_logger.LogInformation("用户{user}领取的任务id：{taskid}活动id：{activityid}活动名称：{activityname}任务名称：{taskname}奖励名称：{awardname}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
 		}
 	}
 }

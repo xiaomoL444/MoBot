@@ -173,7 +173,7 @@ namespace BilibiliLive.Handle
 		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流") || message.IsMsg("/推流状态") || message.IsMsg("/投喂任务"))) return Task.FromResult(true);
+			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流") || message.IsMsg("/推流状态") || message.IsMsg("/投喂任务") || message.IsMsg("/观看直播"))) return Task.FromResult(true);
 
 			return Task.FromResult(false);
 		}
@@ -194,6 +194,9 @@ namespace BilibiliLive.Handle
 					break;
 				case "/投喂任务":
 					FinishGiftTask(message);
+					break;
+				case "/观看直播":
+					WatchStream(message);
 					break;
 			}
 			return Task.CompletedTask;
@@ -631,6 +634,25 @@ namespace BilibiliLive.Handle
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}
 
+		async void WatchStream(Group group)
+		{
+			_logger.LogDebug("观看直播");
+
+
+			//方法一，登录心跳上报
+			_ = Task.Run(async () =>
+			{
+				while (true)
+				{
+					var msg = new HttpRequestMessage(HttpMethod.Get, "https://live-trace.bilibili.com/xlive/rdata-interface/v1/heartbeat/webHeartBeat?hb=NjB8MTk1NDM1MjgzN3wxfDI3MDA3&pf=web");
+					msg.Headers.Add("cookie", "SESSDATA=bd76641f,1768761583,80ae4*71CjC4CZLm9xvLYZUUvcjxYkejrop1I5CzejXf-m2TcpZk6zcQbwg5djkNgfBUQKOwZ5MSVng2bWViLWprclhTSWtTdnhRSVo2eFh3aExySm1meDNiMmRjUFBEMGpMMTJYTjZUNkFLLWN5Z3BVVmMxbmtVUEF2OGxOTXpMbTR0TGxWdVhEaFQ2ZDJRIIEC");
+					var response = await HttpClient.SendAsync(msg);
+					_logger.LogDebug((await response.Content.ReadAsStringAsync()));
+					await Task.Delay(60 * 1000);
+				}
+
+			});
+		}
 		/// <summary>
 		/// 获得视频长度
 		/// </summary>
