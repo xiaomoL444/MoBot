@@ -4,6 +4,7 @@ using MoBot.Handle.Extensions;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,7 +20,7 @@ namespace BilibiliLive.Tool
 	public static class HttpServer
 	{
 		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(HttpServer));
-		private static Dictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
+		private static ConcurrentDictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
 		private static object _lock = new();
 
 		private const string _ipAddress = "http://localhost:5416";
@@ -57,13 +58,14 @@ namespace BilibiliLive.Tool
 							continue;
 						}
 						string id = queryParams["id"];
-						if (!_contents.ContainsKey(id))
+						(HttpServerContentType contentType, object content) value;
+						if (!_contents.TryGetValue(id, out value))
 						{
 							_logger.LogError("键不存在！{key}", id);
 							Response(response, HttpStatusCode.NotFound, HttpServerContentType.TextPlain, @"{""msg"":""value does not exist""}");
 							continue;
 						}
-						Response(response, HttpStatusCode.OK, _contents[id].contentType, _contents[id].content);
+						Response(response, HttpStatusCode.OK, value.contentType, value.content);
 					}
 				}
 			});
@@ -100,29 +102,28 @@ namespace BilibiliLive.Tool
 		}
 		public static void SetNewContent(string uuid, HttpServerContentType contentType, object content)
 		{
-			lock (_lock)
+			(HttpServerContentType contentType, object content) value;
+			if (_contents.ContainsKey(uuid))
 			{
-				if (_contents.ContainsKey(uuid))
+				_logger.LogWarning("存在键值配对{key},{@value}", uuid, content);
+				return;
+			}
+			_contents.TryAdd(uuid, new(contentType, content));
+			_logger.LogDebug("设置http数据{@content}", new { uuid, contentType, content });
+			_ = Task.Run(async () =>
+			{
+#if DEBUG
+				return;
+#endif
+				await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
+				if (!_contents.TryGetValue(uuid, out value))
 				{
-					_logger.LogWarning("存在键值配对{key},{@value}", uuid, content);
+					_logger.LogWarning("键值配对不存在{key},{@value}", uuid, content);
 					return;
 				}
-				_contents.Add(uuid, new(contentType, content));
-				_logger.LogDebug("设置http数据{@content}", new { uuid, contentType, content });
-				_ = Task.Run(async () =>
-				{
-#if DEBUG
-					return;
-#endif
-					await Task.Delay(2 * 60 * 1000);//等待两分钟后删除数据
-					if (!_contents.ContainsKey(uuid))
-					{
-						_logger.LogWarning("键值配对不存在{key},{@value}", uuid, content);
-						return;
-					}
-					_contents.Remove(uuid);
-				});
-			}
+				_contents.TryRemove(new(uuid, value));
+			});
+
 		}
 
 		public static string GetIPAddress()
