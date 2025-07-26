@@ -742,7 +742,7 @@ namespace BilibiliLive.Handle
 				background = ""
 			}));
 
-			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/GiftLiveStatus?id={uuid}");
+			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}

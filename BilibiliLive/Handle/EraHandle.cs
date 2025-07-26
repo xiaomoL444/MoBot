@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using Quartz;
 using Quartz.Impl.Matchers;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -101,10 +102,10 @@ namespace BilibiliLive.Handle
 					await Common.ReceiveDailyEraAward(groupID);
 					break;
 				case "/领取看播任务":
-					await Common.ReceiveViewEraAward(groupID);
+					await Common.ReceiveFinallylEraAward(groupID, EraAwardType.View);
 					break;
 				case "/领取直播任务":
-					await Common.ReceiveLiveEraAward(groupID);
+					await Common.ReceiveFinallylEraAward(groupID, EraAwardType.Live);
 					break;
 				default:
 					break;
@@ -331,24 +332,41 @@ namespace BilibiliLive.Handle
 			}
 
 			/// <summary>
-			/// 领取看播奖励
+			/// 领取看播/直播奖励
 			/// </summary>
 			/// <param name="groupID"></param>
 			/// <returns></returns>
-			public static async Task ReceiveViewEraAward(long groupID)
+			public static async Task ReceiveFinallylEraAward(long groupID, EraAwardType awardType)
 			{
 				var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 				var eraConfig = _dataStorage.Load<EraTaskConfig>(Constants.EraFile);
 
+				int userNum = accountConfig.Users.Count;
+				ConcurrentDictionary<string, string> resultDic = new();
+
 				foreach (var user in accountConfig.Users)
 				{
+					if (!user.IsQureyTask)
+					{
+						userNum--;
+						continue;
+					}
+
 					_ = Task.Run(async () =>
 					{
-
-						if (!user.IsQureyTask) return;
-
 						//锁定任务
-						var taskID = eraConfig.ViewTaskIDs[0];
+						string taskID = awardType switch
+						{
+							EraAwardType.Live => eraConfig.LiveTaskIDs[0],
+							EraAwardType.View => eraConfig.ViewTaskIDs[0],
+							_ => "",
+						};
+						if (string.IsNullOrEmpty(taskID))
+						{
+							_logger.LogError("获取的taskID为空！");
+							resultDic.TryAdd(user.Uid, "失败\n获取的taskID为空！");
+							return;
+						}
 						var taskInfo = (await UserInteraction.GetTaskInfo(user.UserCredential, new() { taskID })).Data.List[0];
 
 
@@ -382,90 +400,63 @@ namespace BilibiliLive.Handle
 								break;
 							}
 
-							await Task.Delay(Random.Shared.Next(200, 500));
+							await Task.Delay(awardType switch
+							{
+								EraAwardType.Live => Random.Shared.Next(250, 750),
+								EraAwardType.View => Random.Shared.Next(200, 500),
+							});
 						}
 
 						var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"));
-
+						resultDic.TryAdd(user.Uid, msg);
 						_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, msg);
 					});
 				}
-				//await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Text($"领取成功啦~请输入/查询任务查看领取状态").Build());
-			}
 
-			/// <summary>
-			/// 领取直播奖励
-			/// </summary>
-			/// <param name="groupID"></param>
-			/// <returns></returns>
-			public static async Task ReceiveLiveEraAward(long groupID)
-			{
-				var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
-				var eraConfig = _dataStorage.Load<EraTaskConfig>(Constants.EraFile);
-
-				foreach (var user in accountConfig.Users)
+				//等待数据获取完成
+				_ = Task.Run(async () =>
 				{
-					_ = Task.Run(async () =>
+					bool isWait = true;
+					while (isWait)
 					{
-						try
+						if (resultDic.Count == userNum)
 						{
-							if (!user.IsQureyTask) return;
-							//先锁定任务
-							var taskID = eraConfig.LiveTaskIDs[5];
-							var taskInfo = (await UserInteraction.GetTaskInfo(user.UserCredential, new() { taskID })).Data.List[0];
+							isWait = false;
+							Interlocked.Exchange(ref userNum, 0);
 
-							TaskInfoRsp.TaskInfoData.TaskElement.CheckPointElement targetCheckPoint = null;
-							foreach (var checkPoint in taskInfo.AccumulativeCheckPoints)
+							//编辑图片发送
+
+							List<object> msg = new();
+
+							foreach (var result in resultDic)
 							{
-								if (checkPoint.Status == TaskInfoRsp.TaskInfoData.TaskCompleteStatus.已完成但未领取)
+								var userInfo = await UserInteraction.GetUserInfo(accountConfig.Users.FirstOrDefault(q => q.Uid == result.Key).UserCredential);
+								msg.Add(new
 								{
-									_logger.LogDebug("匹配到{@msg}", checkPoint);
-									targetCheckPoint = checkPoint;
-									break;
-								}
+									face = userInfo.Data.Face,
+									name = userInfo.Data.Name,
+									info = result.Value
+								});
 							}
+							var uuid = Guid.NewGuid().ToString();
+							var json = new { background = "", data = msg };
+							HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(json));
+							var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
-							if (targetCheckPoint == null)
-							{
-								//没有未领取的任务或者是没有完成任务
-								_logger.LogInformation("user[{user}]没有未领取的任务或者是没有完成任务", user.Uid);
-								return;
-							}
-
-
-							List<(int code, string msg)> resultList = new();
-							for (int i = 0; i < 75; i++)
-							{
-								_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
-								var result = await UserInteraction.ReceiveAward(user.UserCredential, targetCheckPoint.Sid, eraConfig.ActivityID, eraConfig.TaskTitle, taskInfo.TaskName, targetCheckPoint.AwardName);
-								resultList.Add(result);
-								if (result.code == 0 || result.code == 75255)
-								{
-									_logger.LogDebug("退出领取，已领取或库存使用完");
-									break;
-								}
-
-								await Task.Delay(Random.Shared.Next(250, 750));
-							}
-
-							var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"));
-
-							_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, msg);
+							await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Image($"base64://{base64}").Build());
 						}
-						catch (Exception ex)
-						{
-							_logger.LogError(ex, "领取{user}的直播奖励出错", user.Uid);
-						}
-					});
-				}
-				//await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Text($"前往控制台查看领取情况").Build());
+						await Task.Delay(1 * 1000);
+					}
+
+				});
+				//await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Text($"领取成功啦~请输入/查询任务查看领取状态").Build());
 			}
 		}
 		class ReceiveViewAwardJob : IJob
 		{
 			public async Task Execute(IJobExecutionContext context)
 			{
-				await Common.ReceiveViewEraAward(Constants.OPGroupID);
+				await Common.ReceiveFinallylEraAward(Constants.OPGroupID, EraAwardType.View);
 				return;
 			}
 		}
@@ -473,7 +464,7 @@ namespace BilibiliLive.Handle
 		{
 			public async Task Execute(IJobExecutionContext context)
 			{
-				await Common.ReceiveLiveEraAward(Constants.OPGroupID);
+				await Common.ReceiveFinallylEraAward(Constants.OPGroupID, EraAwardType.Live);
 				return;
 			}
 		}
