@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BilibiliLive\BilibiliLive.csproj" />
     <ProjectReference Include="..\DailyChat\DailyChat.csproj" />
     <ProjectReference Include="..\DailyPoems\DailyTask.csproj" />
