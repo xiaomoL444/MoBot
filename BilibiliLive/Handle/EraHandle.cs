@@ -292,7 +292,7 @@ namespace BilibiliLive.Handle
 						background = $"{HttpServer.GetIPAddress()}?id={backgroundUuid}"
 					}));
 					//HttpServer.SetNewContent(faceUuid, HttpServerContentType.ImagePng, await icon.Content.ReadAsByteArrayAsync());
-					HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Asserts/images/MyLover.png"));
+					HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, RandomImage.GetBytes());
 
 					//准备绘画
 					_ = Task.Run(async () =>
