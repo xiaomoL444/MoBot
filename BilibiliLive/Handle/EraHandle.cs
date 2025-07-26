@@ -12,6 +12,7 @@ using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
+using Quartz;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -25,21 +26,47 @@ namespace BilibiliLive.Handle
 
 		private readonly ILogger<StreamHandle> _logger;
 		private readonly IDataStorage _dataStorage;
-
+		private readonly IScheduler _scheduler;
 
 		public EraHandle(
 			ILogger<StreamHandle> logger,
-			IDataStorage dataStorage
+			IDataStorage dataStorage,
+			IScheduler scheduler
 			)
 		{
 			_logger = logger;
 			_dataStorage = dataStorage;
+			_scheduler = scheduler;
 		}
 
 		public async Task Initial()
 		{
 			//开启http伺服器给webshot传数据
 			HttpServer.Start();
+
+			//注册领取事件
+			//看播奖励（00:30前触发）
+			var receiveViewAwardJob = JobBuilder.Create<ReceiveViewAwardJob>()
+				//setData
+				.WithIdentity(new JobKey("receiveViewAward", Constants.JobGroup))
+				.Build();
+			var receiveViewAwardTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("default", "DailyTrigger"))
+				.WithCronSchedule("50 29 0 * * ?")
+				.Build();
+			await _scheduler.ScheduleJob(receiveViewAwardJob, receiveViewAwardTrigger);
+			_scheduler.ListenerManager.AddJobListener(new JobFinishedListener);
+
+			var receiveLiveAwardJob = JobBuilder.Create<ReceiveLiveAwardJob>()
+				.WithIdentity(new JobKey("receiveLiveAward", Constants.JobGroup))
+				.Build();
+			var receiveLiveAwardTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("default", "DailyTrigger"))
+				.WithCronSchedule("50 59 0 * * ?")
+				.Build();
+			await _scheduler.ScheduleJob(receiveLiveAwardJob, receiveLiveAwardTrigger);
+
+
 
 			return;
 		}
@@ -371,6 +398,21 @@ namespace BilibiliLive.Handle
 				});
 			}
 			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text($"前往控制台查看领取情况").Build());
+		}
+	}
+
+	class ReceiveViewAwardJob : IJob
+	{
+		public async Task Execute(IJobExecutionContext context)
+		{
+			return;
+		}
+	}
+	class ReceiveLiveAwardJob : IJob
+	{
+		public Task Execute(IJobExecutionContext context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

@@ -16,6 +16,7 @@ namespace BilibiliLive.Constant
 
 		public const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";//user-agent
 
+		public const string JobGroup = "BilibiliLive";
 
 		#region 登录API
 		public const string BilibiliWebSignQRcodeGenerataApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";//B站的web端扫码链接生成api
