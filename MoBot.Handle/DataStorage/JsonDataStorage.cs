@@ -17,7 +17,7 @@ namespace MoBot.Handle.DataStorage
 				{
 					pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "Unknown") : pluginName;
 					string path = GetFilePath(GetDirectoryName(directoryType), pluginName, fileName);
-
+					CreateDirectory(path);
 					if (!File.Exists(path))
 					{
 						//不存在当即创建新的
@@ -46,7 +46,9 @@ namespace MoBot.Handle.DataStorage
 		public string GetPath(DirectoryType directoryType, string pluginName = "")
 		{
 			pluginName = string.IsNullOrEmpty(pluginName) ? (Assembly.GetCallingAssembly().GetName().Name ?? "UnknownPlugin") : pluginName;
-			return "./" + Path.Combine(GetDirectoryName(directoryType), pluginName);
+			var path = "./" + Path.Combine(GetDirectoryName(directoryType), pluginName);
+			CreateDirectory(path);
+			return path;
 		}
 		private string GetDirectoryName(DirectoryType directoryType)
 		{
@@ -61,6 +63,12 @@ namespace MoBot.Handle.DataStorage
 		private string GetFilePath(string basePath, string pluginName, string fileName)
 		{
 			return Path.Combine(basePath, pluginName, $"{fileName}.json");
+		}
+		private void CreateDirectory(string path)
+		{
+			var directory = Path.GetDirectoryName(path);
+			if (!Directory.Exists(directory))
+				Directory.CreateDirectory(directory);
 		}
 	}
 }
