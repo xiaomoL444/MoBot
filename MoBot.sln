@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChat", "DailyChat\Dail
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyChatSettingWinForm", "DailyChatSettingWinForm\DailyChatSettingWinForm.csproj", "{F5A649B3-C600-458A-B13F-02B1D6FE835A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyTask", "DailyPoems\DailyTask.csproj", "{985FC48B-F393-4BF7-84AB-3D47C4585B82}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DailyTask", "DailyTask\DailyTask.csproj", "{985FC48B-F393-4BF7-84AB-3D47C4585B82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoBot.Infra", "MoBot.Infra\MoBot.Infra.csproj", "{EDF956BF-D77B-498A-8EF0-04ED6DB73AC5}"
 EndProject
