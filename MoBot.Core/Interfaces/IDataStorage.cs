@@ -32,6 +32,6 @@ namespace MoBot.Core.Interfaces
 		/// <param name="directoryType"></param>
 		/// <param name="pluginName">插件名，默认为空，则是调用Save的函数所在的插件名作为config路径</param>
 		/// <returns></returns>
-		string GetPath(DirectoryType directoryType, string pluginName = "");
+		string GetDirectory(DirectoryType directoryType, string pluginName = "");
 	}
 }
