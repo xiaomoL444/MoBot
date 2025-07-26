@@ -24,18 +24,20 @@ namespace DailyTask
 	{
 		private ILogger<DailyTaskHandle> _logger;
 		private IDataStorage _dataStorage;
-
+		private ISchedulerFactory _schedulerFactory;
 		private IScheduler scheduler;
 
-		private const string DefaultTriggerGrpup = "Default";
-		private const string DefaultJobGrpup = "Default";
+		private const string DefaultTriggerGrpup = "DailyTaskHandle";
+		private const string DefaultJobGrpup = "DailyTaskHandle";
 
 		public DailyTaskHandle(
 			ILogger<DailyTaskHandle> logger,
-			IDataStorage dataStorage)
+			IDataStorage dataStorage,
+			ISchedulerFactory schedulerFactory)
 		{
 			_logger = logger;
 			_dataStorage = dataStorage;
+			_schedulerFactory = schedulerFactory;
 
 		}
 		public Task<bool> CanHandleAsync(Group group)
@@ -69,11 +71,8 @@ namespace DailyTask
 				return;
 			}
 			//添加定时调度器
-			var schedulerFactory = new StdSchedulerFactory();
-			scheduler =await schedulerFactory.GetScheduler();
-			scheduler.ListenerManager.AddJobListener(new JobFinishedListener(_logger), GroupMatcher<JobKey>.AnyGroup());
-			await scheduler.Start();
-			_logger.LogDebug("定时调度器开启成功");
+			scheduler = await _schedulerFactory.GetScheduler();
+			scheduler.ListenerManager.AddJobListener(new JobFinishedListener(_logger), GroupMatcher<JobKey>.GroupContains(DefaultJobGrpup));
 
 			var DailyPoemsJob = JobBuilder.Create<FetchPoems>()
 				.SetJobData(new JobDataMap() {
