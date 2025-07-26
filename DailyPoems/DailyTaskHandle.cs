@@ -70,7 +70,7 @@ namespace DailyTask
 			}
 			//添加定时调度器
 			var schedulerFactory = new StdSchedulerFactory();
-			scheduler = schedulerFactory.GetScheduler().Result;
+			scheduler =await schedulerFactory.GetScheduler();
 			scheduler.ListenerManager.AddJobListener(new JobFinishedListener(_logger), GroupMatcher<JobKey>.AnyGroup());
 			await scheduler.Start();
 			_logger.LogDebug("定时调度器开启成功");
