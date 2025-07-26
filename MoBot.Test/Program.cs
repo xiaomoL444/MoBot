@@ -25,7 +25,7 @@ string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} : {Me
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
-	.Destructure.ToMaximumStringLength(100) // 限制字符串属性长度为100
+	.Destructure.ToMaximumStringLength(500) // 限制字符串属性长度为100
 	.Destructure.JsonNetTypes()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: outputTemplate, theme: AnsiConsoleTheme.Literate, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)

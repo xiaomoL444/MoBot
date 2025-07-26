@@ -771,7 +771,7 @@ namespace BilibiliLive.Models
 				/// 直播间ID
 				/// </summary>
 				[JsonProperty("roomid")]
-				public int RoomId { get; set; } = 0;
+				public long RoomId { get; set; } = 0;
 
 				/// <summary>
 				/// 轮播状态：0 = 未轮播，1 = 轮播

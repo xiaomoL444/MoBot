@@ -16,6 +16,7 @@ namespace BilibiliLive.Constant
 
 		public const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";//user-agent
 
+
 		#region 登录API
 		public const string BilibiliWebSignQRcodeGenerataApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";//B站的web端扫码链接生成api
 		public const string BilibiliWebSignQRcodePollApi = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll";//B站的web端扫码轮询是否登录成功
@@ -31,6 +32,7 @@ namespace BilibiliLive.Constant
 
 		public const string EHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/E";//直播心跳E回复
 		public const string XHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/X";//直播心跳X回复
+		public const string LiveHeartGenerateSUrl = "http://127.0.0.1:3788";// 生成直播的S加密的链接
 		#endregion
 
 		#region 用户API
