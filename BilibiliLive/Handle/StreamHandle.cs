@@ -147,14 +147,14 @@ namespace BilibiliLive.Handle
 
 		private string streamOpenTime = "";//开启直播的时间，用来记录Data
 
-		private List<(LiveDanmukuType danmukuType, string msg)> _danmukus = new(){
+		private List<(LiveDanmukuType danmukuType, string msg)> _danmukus = [
 			new(LiveDanmukuType.Text, "UpUp我喜欢你"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_比心]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_遨游]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_回眸]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3_吃咸鱼]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏：星穹铁道_心]")
-		};
+		];
 
 		public StreamHandle(
 			ILogger<StreamHandle> logger,
@@ -247,7 +247,7 @@ namespace BilibiliLive.Handle
 				if (!account.IsStartLive)
 				{
 					_logger.LogInformation("{uid}未开启直播选项", account.Uid);
-					return;
+					continue;
 				}
 				var userCredential = account.UserCredential;
 				var userInfo = await UserInteraction.GetUserInfo(userCredential);
@@ -638,17 +638,13 @@ namespace BilibiliLive.Handle
 		{
 			_logger.LogDebug("观看直播");
 
-
-			//方法一，登录心跳上报
 			_ = Task.Run(async () =>
 			{
+				
+				//X登录
 				while (true)
 				{
-					var msg = new HttpRequestMessage(HttpMethod.Get, "https://live-trace.bilibili.com/xlive/rdata-interface/v1/heartbeat/webHeartBeat?hb=NjB8MTk1NDM1MjgzN3wxfDI3MDA3&pf=web");
-					msg.Headers.Add("cookie", "SESSDATA=bd76641f,1768761583,80ae4*71CjC4CZLm9xvLYZUUvcjxYkejrop1I5CzejXf-m2TcpZk6zcQbwg5djkNgfBUQKOwZ5MSVng2bWViLWprclhTSWtTdnhRSVo2eFh3aExySm1meDNiMmRjUFBEMGpMMTJYTjZUNkFLLWN5Z3BVVmMxbmtVUEF2OGxOTXpMbTR0TGxWdVhEaFQ2ZDJRIIEC");
-					var response = await HttpClient.SendAsync(msg);
-					_logger.LogDebug((await response.Content.ReadAsStringAsync()));
-					await Task.Delay(60 * 1000);
+					
 				}
 
 			});

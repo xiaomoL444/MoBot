@@ -28,6 +28,9 @@ namespace BilibiliLive.Constant
 		public const string GetLivehimeVersion = "https://api.live.bilibili.com/xlive/app-blink/v1/liveVersionInfo/getHomePageLiveVersion";//获取直播姬版本信息
 		public const string SendGift = "https://api.live.bilibili.com/xlive/revenue/v1/gift/sendGold";//发送礼物
 		public const string SendDanmaku = "https://api.live.bilibili.com/msg/send";//发送弹幕消息
+
+		public const string EHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/E";//直播心跳E回复
+		public const string XHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/X";//直播心跳X回复
 		#endregion
 
 		#region 用户API

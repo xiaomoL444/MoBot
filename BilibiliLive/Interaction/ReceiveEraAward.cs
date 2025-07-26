@@ -1,6 +1,8 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Models;
 using Microsoft.Extensions.Logging;
+using MoBot.Handle.Extensions;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +13,7 @@ namespace BilibiliLive.Interaction
 {
 	public partial class UserInteraction
 	{
-		public static async Task ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName, int duration = 60)
+		public static async Task<(int code, string msg)> ReceiveAward(UserCredential userCredential, string taskID, string activityID, string activityName, string taskName, string rewaredName)
 		{
 			Dictionary<string, string> body = new() {
 				{ "task_id", taskID },
@@ -28,8 +30,12 @@ namespace BilibiliLive.Interaction
 			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
 			request.Content = new FormUrlEncodedContent(body);
 
-			var result = Tool.HttpClient.SendAsync(request);
-			_logger.LogInformation("用户{user}领取的任务id：{taskid}活动id：{activityid}活动名称：{activityname}任务名称：{taskname}奖励名称：{awardname}", userCredential.DedeUserID, taskID, activityID, activityName, taskName, rewaredName);
+			var response = await Tool.HttpClient.SendAsync(request);
+			var result = await response.Content.ReadAsStringAsync();
+			var json = JObject.Parse(result);
+			_logger.LogInformation("用户{user}领取的任务id：{taskid}的回复{@response}", userCredential.DedeUserID, taskID, json);
+
+			return new(((int)json["code"]), ((string?)json["message"]));
 		}
 	}
 }
