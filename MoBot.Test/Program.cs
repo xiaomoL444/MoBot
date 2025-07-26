@@ -1,7 +1,4 @@
 ﻿using BilibiliLive.Handle;
-using BilibiliLive.Models;
-using DailyChat;
-using DailyTask;
 using Destructurama;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,20 +6,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
-using MoBot.Core.Models;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
 using MoBot.Infra.Quartz.JobListener;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Quartz;
 using Quartz.Impl.Matchers;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
-using System.Collections.Specialized;
-using System.Web;
 
 string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} : {Message:lj}{NewLine}{Exception}";
 

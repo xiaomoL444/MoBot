@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
-using MoBot.Core.Models;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
@@ -16,8 +15,6 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
-using System.Runtime;
-using System.Text.Json;
 
 
 string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {CallerFilePath} {CallerMemberName} {CallerLineNumber} : {Message:lj}{NewLine}{Exception}";
