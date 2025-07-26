@@ -151,7 +151,7 @@ onMounted(() => {
         .then(async response => {
             if (response == undefined) { return; }
             // bg.value = response.data.background;
-            bg.value = require('../assets/GiftLiveStatus/background.jpg');
+            bg.value = require('../assets/MultiInfoView/background.jpg');
 
             console.log(response.data);
             datas.value = response.data.data;
@@ -163,7 +163,7 @@ onMounted(() => {
 });
 
 function showDefaultmsg() {
-    bg.value = require('../assets/GiftLiveStatus/background.jpg');
+    bg.value = require('../assets/MultiInfoView/background.jpg');
     datas.value = [{}, {}];
 }
 

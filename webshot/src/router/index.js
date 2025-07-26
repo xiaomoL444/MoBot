@@ -24,9 +24,9 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/TaskStatus.vue')
   },
   {
-    path: '/GiftLiveStatus',
-    name: 'GiftLiveStatus',
-    component: () => import('../views/GiftLiveStatus.vue')
+    path: '/MultiInfoView',
+    name: 'MultiInfoView',
+    component: () => import('../views/MultiInfoView.vue')
   }
 ]
 
