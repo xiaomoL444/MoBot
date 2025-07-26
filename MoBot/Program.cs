@@ -11,6 +11,9 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
+using MoBot.Infra.Quartz.JobListener;
+using Quartz;
+using Quartz.Impl.Matchers;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Runtime;
@@ -38,6 +41,7 @@ try
 		{
 			//添加必要的插件
 			services.AddScoped<IDataStorage, JsonDataStorage>();
+			services.AddJobListener();//使用计时器的Log输出
 
 			//Bot客户端
 			services.AddScoped<IMoBotClient, MoBotClient>();
@@ -54,34 +58,21 @@ try
 
 			services.AddScoped<IMessageHandle<Group>, DailyTask.DailyTaskHandle>();//每日定时任务（古文和夸夸）
 
+			services.AddQuartz();
+			services.AddQuartzHostedService(option => { option.WaitForJobsToComplete = true; });
+
 			server.Add(services); // 拷贝或保存原 services
 		})
 		.Build();
 
-	//创建文件夹
-	List<string> directoryList = Enum.GetValues(typeof(DirectoryType)).Cast<DirectoryType>().ToList().Select(q => q.ToString().ToLower()).ToList();
-	foreach (var directory in directoryList)
-	{
-		if (!Directory.Exists(directory))
-		{
-			Log.Warning("{d}不存在，创建中", directory);
-			Directory.CreateDirectory("./" + directory);
-		}
-		foreach (var serive in services)
-		{
-			var path = $"./{directory}/{(serive.ImplementationType.Assembly.GetName().Name ?? "Unknown")}/";
-			if (!Directory.Exists(path))
-			{
-				Log.Warning("{p}不存在，创建中", path);
-				Directory.CreateDirectory(path);
-			}
-		}
-	}
-
+	await (await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler()).Start();
+	_ = Task.Run(async () => { await Task.Delay(2 * 1000); 
+		await ShowAllJobsAsync(await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler()); });
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
 	BilibiliLive.Tool.GlobalLogger.LoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
 	BilibiliLive.Tool.GlobalDataStorage.DataStorage = host.Services.GetRequiredService<IDataStorage>();
+
 	MoBotClient.Initial();
 
 	while (true) ;
@@ -89,4 +80,37 @@ try
 catch (Exception ex)
 {
 	Log.Error(ex, ex.ToString());
+}
+
+async Task ShowAllJobsAsync(IScheduler scheduler)
+{
+	// 1. 获取所有 Job 分组
+	var jobGroups = await scheduler.GetJobGroupNames();
+
+	foreach (var group in jobGroups)
+	{
+		// 2. 获取该分组下的所有 JobKey
+		var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(group));
+
+		foreach (var jobKey in jobKeys)
+		{
+			// 3. 获取 Job 的详细信息
+			var jobDetail = await scheduler.GetJobDetail(jobKey);
+
+			// 4. 获取该 Job 对应的 Trigger（可能有多个）
+			var triggers = await scheduler.GetTriggersOfJob(jobKey);
+
+			foreach (var trigger in triggers)
+			{
+				var triggerState = await scheduler.GetTriggerState(trigger.Key);
+
+				// 打印信息
+				Log.Logger.Information("Job: {JobKey} | Trigger: {TriggerKey} | State: {State} | NextFireTime: {NextFireTimeUtc}",
+					jobKey,
+					trigger.Key,
+					triggerState,
+					trigger.GetNextFireTimeUtc()?.ToLocalTime() ?? DateTime.MinValue);
+			}
+		}
+	}
 }
