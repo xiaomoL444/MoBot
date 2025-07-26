@@ -588,6 +588,7 @@ namespace BilibiliLive.Handle
 				session.Stop();
 				_viewsSessions.Remove(session);
 				msgChain.Text($"关闭[{session.UserName}]看[{session.TargetUserName}]直播间").Text("\n");
+				msgChain.Text(string.Join("\n", session.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}"))).Text("\n");
 			}
 
 			_logger.LogInformation("关闭玩法中");
