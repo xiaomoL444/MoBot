@@ -16,6 +16,8 @@ using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Quartz;
+using Quartz.Impl.Matchers;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Collections.Specialized;
@@ -54,6 +56,9 @@ try
 			services.AddScoped<IMessageHandle<Group>, EraHandle>();
 			//server.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();
 			//server.AddScoped<IMessageHandle<Group>, DailyTaskHandle>();
+
+			services.AddQuartz();
+			services.AddQuartzHostedService(option => { option.WaitForJobsToComplete = true; });
 
 			server.Add(services); // 拷贝或保存原 services
 
