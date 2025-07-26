@@ -138,7 +138,7 @@ namespace BilibiliLive.Handle
 		public string TargetUserName { get; } = string.Empty;
 		public List<(int code, string msg)> HeartResult = new();//心跳结果
 
-		private bool isView = false;//是否正在观看直播，是开启和关停观看直播的关键
+		public bool IsView { get; private set; } = false;//是否正在观看直播，是开启和关停观看直播的关键
 		public ViewStreamSession(UserCredential userCredential, string userName, string targetUserName, long targetRoomID)
 		{
 			UserCredential = userCredential;
@@ -149,7 +149,7 @@ namespace BilibiliLive.Handle
 
 		public void Start()
 		{
-			isView = true;
+			IsView = true;
 			//生成新的看播的Task
 			_ = Task.Run(async () =>
 			{
@@ -166,7 +166,7 @@ namespace BilibiliLive.Handle
 					var ts = Eresult.ts;
 					var secret_key = Eresult.secret_key;
 					int index = 0;
-					while (isView)
+					while (IsView)
 					{
 						index++;
 						_logger.LogDebug("[{user}]:[{targetRoomID}]看播等待{interval}s中", UserCredential.DedeUserID, TargetRoomID, timeInterval);
@@ -182,7 +182,7 @@ namespace BilibiliLive.Handle
 				catch (Exception ex)
 				{
 					AddResult(ref HeartResult, -1, $"[{DateTimeOffset.Now.ToUnixTimeSeconds()}]遇到错误，请前往控制台查看");
-					isView = false;
+					IsView = false;
 					_logger.LogError(ex, "[{user}]:[{targetRoomID}]看播出现错误", UserCredential.DedeUserID, TargetRoomID);
 				}
 			});
@@ -190,7 +190,7 @@ namespace BilibiliLive.Handle
 		public void Stop()
 		{
 			_logger.LogInformation("[{user}]关闭观看直播间[{targetRoomID}]", UserCredential.DedeUserID, TargetRoomID);
-			isView = false;
+			IsView = false;
 		}
 
 		void AddResult(ref List<(int code, string msg)> result, int code, string msg)
@@ -519,10 +519,26 @@ namespace BilibiliLive.Handle
 			msgChain.Text("看播：");
 			foreach (var user in accountConfig.Users)
 			{
+
 				var userInfo = await UserInteraction.GetUserInfo(user.UserCredential);
 				foreach (var targetUid in user.ViewLiveUsers)
 				{
 					var targetUserInfo = await UserInteraction.GetUserInfo(accountConfig.Users.FirstOrDefault(q => q.Uid == targetUid).UserCredential);
+
+					var targetSession = _viewsSessions.FirstOrDefault(q => q.UserCredential.DedeUserID == user.Uid && q.TargetRoomID == targetUserInfo.Data.LiveRoom.RoomId);
+					if (targetSession is not null)
+					{
+						if (targetSession.IsView)
+						{
+							_logger.LogInformation("user[{user}]:room[{room}]正在观看，跳过", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
+							continue;
+						}
+						else
+						{
+							_logger.LogWarning("user[{user}]:room[{room}]已关闭，重新启动", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
+							_viewsSessions.Remove(targetSession);
+						}
+					}
 					_logger.LogDebug("添加[{uid}]的看[{targetRoomID}]直播间", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
 					var session = new ViewStreamSession(user.UserCredential, userInfo.Data.Name, targetUserInfo.Data.Name, targetUserInfo.Data.LiveRoom.RoomId);
 					session.Start();
@@ -567,9 +583,10 @@ namespace BilibiliLive.Handle
 			}
 
 			_logger.LogInformation("关闭看播");
-			foreach (var session in _viewsSessions)
+			foreach (var session in _viewsSessions.ToList())
 			{
 				session.Stop();
+				_viewsSessions.Remove(session);
 				msgChain.Text($"关闭[{session.UserName}]看[{session.TargetUserName}]直播间").Text("\n");
 			}
 
@@ -639,7 +656,7 @@ namespace BilibiliLive.Handle
 				msgChain.Text("\n");
 			}
 			msgChain.Text($"玩法：{(_isGameStart ? "Alive >w<" : "已关闭")}").Text("\n");
-			msgChain.Text($"看播：\n{string.Join("\n", _viewsSessions.Select(s => $"♪[{s.UserName}]观看[{s.TargetUserName}]的直播间：\n  ♫  {string.Join("  ♫  ", s.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}"))}"))}");
+			msgChain.Text($"看播：\n{string.Join("\n", _viewsSessions.Select(s => $"♪[{s.UserName}]观看[{s.TargetUserName}]的直播间：{(s.IsView ? "存活" : "已关闭")}\n  ♫  {string.Join("  ♫  ", s.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}"))}"))}");
 
 			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
 			return;

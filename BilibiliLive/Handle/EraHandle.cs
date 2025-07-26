@@ -354,62 +354,70 @@ namespace BilibiliLive.Handle
 
 					_ = Task.Run(async () =>
 					{
-						//锁定任务
-						string taskID = awardType switch
+						try
 						{
-							EraAwardType.Live => eraConfig.LiveTaskIDs[0],
-							EraAwardType.View => eraConfig.ViewTaskIDs[0],
-							_ => "",
-						};
-						if (string.IsNullOrEmpty(taskID))
-						{
-							_logger.LogError("获取的taskID为空！");
-							resultDic.TryAdd(user.Uid, "失败\n获取的taskID为空！");
-							return;
-						}
-						var taskInfo = (await UserInteraction.GetTaskInfo(user.UserCredential, new() { taskID })).Data.List[0];
-
-
-						TaskInfoRsp.TaskInfoData.TaskElement.CheckPointElement targetCheckPoint = null;
-						foreach (var checkPoint in taskInfo.AccumulativeCheckPoints)
-						{
-							if (checkPoint.Status == TaskInfoRsp.TaskInfoData.TaskCompleteStatus.已完成但未领取)
+							//锁定任务
+							string taskID = awardType switch
 							{
-								_logger.LogDebug("匹配到{@msg}", checkPoint);
-								targetCheckPoint = checkPoint;
-								break;
+								EraAwardType.Live => eraConfig.LiveTaskIDs[5],
+								EraAwardType.View => eraConfig.ViewTaskIDs[0],
+								_ => "",
+							};
+							if (string.IsNullOrEmpty(taskID))
+							{
+								_logger.LogError("获取的taskID为空！");
+								resultDic.TryAdd(user.Uid, "失败\n获取的taskID为空！");
+								return;
 							}
-						}
+							var taskInfo = (await UserInteraction.GetTaskInfo(user.UserCredential, new() { taskID })).Data.List[0];
 
-						if (targetCheckPoint == null)
-						{
-							//没有未领取的任务或者是没有完成任务
-							_logger.LogInformation("user[{user}]没有未领取的任务或者是没有完成任务", user.Uid);
-							return;
-						}
 
-						List<(int code, string msg)> resultList = new();
-						for (int i = 0; i < 50; i++)
-						{
-							_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
-							var result = await UserInteraction.ReceiveAward(user.UserCredential, targetCheckPoint.Sid, eraConfig.ActivityID, eraConfig.TaskTitle, taskInfo.TaskName, targetCheckPoint.AwardName);
-							resultList.Add(result);
-							if (result.code == 0 || result.code == 75255)
+							TaskInfoRsp.TaskInfoData.TaskElement.CheckPointElement targetCheckPoint = null;
+							foreach (var checkPoint in taskInfo.AccumulativeCheckPoints)
 							{
-								_logger.LogDebug("退出领取，已领取或库存使用完");
-								break;
+								if (checkPoint.Status == TaskInfoRsp.TaskInfoData.TaskCompleteStatus.已完成但未领取)
+								{
+									_logger.LogDebug("匹配到{@msg}", checkPoint);
+									targetCheckPoint = checkPoint;
+									break;
+								}
 							}
 
-							await Task.Delay(awardType switch
+							if (targetCheckPoint == null)
 							{
-								EraAwardType.Live => Random.Shared.Next(250, 750),
-								EraAwardType.View => Random.Shared.Next(200, 500),
-							});
-						}
+								//没有未领取的任务或者是没有完成任务
+								_logger.LogInformation("user[{user}]没有未领取的任务或者是没有完成任务", user.Uid);
+								return;
+							}
 
-						var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"));
-						resultDic.TryAdd(user.Uid, msg);
-						_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, msg);
+							List<(int code, string msg)> resultList = new();
+							for (int i = 0; i < 50; i++)
+							{
+								_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
+								var result = await UserInteraction.ReceiveAward(user.UserCredential, targetCheckPoint.Sid, eraConfig.ActivityID, eraConfig.TaskTitle, taskInfo.TaskName, targetCheckPoint.AwardName);
+								resultList.Add(result);
+								if (result.code == 0 || result.code == 75255)
+								{
+									_logger.LogDebug("退出领取，已领取或库存使用完");
+									break;
+								}
+
+								await Task.Delay(awardType switch
+								{
+									EraAwardType.Live => Random.Shared.Next(250, 750),
+									EraAwardType.View => Random.Shared.Next(200, 500),
+								});
+							}
+
+							var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"));
+							resultDic.TryAdd(user.Uid, msg);
+							_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, msg);
+						}
+						catch (Exception ex)
+						{
+							_logger.LogError(ex, "{user}抢{type}出现错误", user.Uid, awardType.ToString());
+							Interlocked.Decrement(ref userNum);
+						}
 					});
 				}
 
