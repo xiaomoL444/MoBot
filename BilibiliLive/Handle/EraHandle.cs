@@ -409,7 +409,7 @@ namespace BilibiliLive.Handle
 								});
 							}
 
-							var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"));
+							var msg = string.Join("\n", resultList.GroupBy(q => q).Select(s => $"{(s.Key.msg == "0" ? "领取成功" : s.Key.msg)}x{s.Count()}"));
 							resultDic.TryAdd(user.Uid, msg);
 							_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, msg);
 						}
