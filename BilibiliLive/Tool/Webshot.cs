@@ -82,8 +82,8 @@ namespace BilibiliLive.Tool
 				await page.GoToAsync(url);
 				await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
 				{
-					Width = 2560,
-					Height = 1440
+					Width = 1920,
+					Height = 1080
 				});
 				_logger.LogDebug("正在截图网页：{url}", url);
 				await page.WaitForFunctionAsync(waitForFunc);
