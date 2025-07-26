@@ -1,6 +1,6 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
-using BilibiliLive.Models;
+using BilibiliLive.Models.config;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
@@ -15,7 +15,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static BilibiliLive.Models.AccountConfig;
+using static BilibiliLive.Models.config.AccountConfig;
 using HttpClient = BilibiliLive.Tool.HttpClient;
 
 namespace BilibiliLive.Handle

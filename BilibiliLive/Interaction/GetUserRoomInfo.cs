@@ -1,5 +1,5 @@
 ﻿using BilibiliLive.Constant;
-using BilibiliLive.Models;
+using BilibiliLive.Models.Live;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 namespace BilibiliLive.Interaction

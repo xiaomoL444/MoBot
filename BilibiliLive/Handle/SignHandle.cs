@@ -1,5 +1,6 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Models;
+using BilibiliLive.Models.config;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Event.Message;

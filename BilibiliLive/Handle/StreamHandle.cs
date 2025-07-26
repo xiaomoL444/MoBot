@@ -1,6 +1,7 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
+using BilibiliLive.Models.config;
 using BilibiliLive.Models.Live;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ using System.Linq.Expressions;
 using System.Net.Http.Json;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Principal;
-using static BilibiliLive.Models.AccountConfig;
+using static BilibiliLive.Models.config.AccountConfig;
 using HttpClient = BilibiliLive.Tool.HttpClient;
 
 namespace BilibiliLive.Handle

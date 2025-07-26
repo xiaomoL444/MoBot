@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BilibiliLive.Models
+namespace BilibiliLive.Models.config
 {
 	public class AccountConfig
 	{
