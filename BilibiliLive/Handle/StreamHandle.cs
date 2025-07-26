@@ -681,12 +681,12 @@ namespace BilibiliLive.Handle
 					{
 						var danmuku = _danmukus[Random.Shared.Next(0, _danmukus.Count)];
 						_logger.LogDebug("{senduser}给{room}发送弹幕{@danmuku}", user.Uid, room, danmuku);
-						await Task.Delay(Random.Shared.Next(1500, 2000));
+						await Task.Delay(Random.Shared.Next(2000, 2500));
 						var match = await UserInteraction.SendDanmuka(userCredential, room.ToString(), danmuku.danmukuType, danmuku.msg);
 						match.Switch(
 							None =>
 						{
-							danmukuResult.Add(new(0, "点赞成功"));
+							danmukuResult.Add(new(0, "发送弹幕成功"));
 						}, Error =>
 						{
 							danmukuResult.Add(new(Error.Value.code, Error.Value.msg));
@@ -719,7 +719,7 @@ namespace BilibiliLive.Handle
 							result = (Error.Value.code, Error.Value.msg);
 						});
 
-					//点赞结束，汇总
+					//牛蛙结束，汇总
 					msg += @$" ♪ [{targetUserInfo.Data.Name}]直播间
     ♫  {result.msg}
 ";
