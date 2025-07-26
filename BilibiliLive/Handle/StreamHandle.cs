@@ -181,6 +181,8 @@ namespace BilibiliLive.Handle
 				}
 				catch (Exception ex)
 				{
+					AddResult(ref HeartResult, -1, $"[{DateTimeOffset.Now.ToUnixTimeSeconds()}]遇到错误，请前往控制台查看");
+					isView = false;
 					_logger.LogError(ex, "[{user}]:[{targetRoomID}]看播出现错误", UserCredential.DedeUserID, TargetRoomID);
 				}
 			});
@@ -562,6 +564,13 @@ namespace BilibiliLive.Handle
 					msgChain.Text(errorMsg.Value);
 				});
 				msgChain.Text("\n");
+			}
+
+			_logger.LogInformation("关闭看播");
+			foreach (var session in _viewsSessions)
+			{
+				session.Stop();
+				msgChain.Text($"关闭[{session.UserName}]看[{session.TargetUserName}]直播间").Text("\n");
 			}
 
 			_logger.LogInformation("关闭玩法中");

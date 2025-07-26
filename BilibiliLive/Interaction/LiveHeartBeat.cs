@@ -44,7 +44,7 @@ namespace BilibiliLive.Interaction
 			var Eresult = await Eresponse.Content.ReadAsStringAsync();
 			_logger.LogDebug("直播进入房间回复{@res}", Eresult.TryPraseToJson());
 			var Ejson = JObject.Parse(Eresult);
-			return new(((int)Ejson["code"]), ((string?)Ejson["message"]), (long)Ejson["data"]["timestamp"], (int)Ejson["data"]["heartbeat_interval"], (string?)Ejson["data"]["secret_key"]);
+			return new((int)Ejson["code"], ((string?)Ejson["message"]), Ejson["data"]?["timestamp"]?.Value<long>() ?? DateTimeOffset.Now.ToUnixTimeMilliseconds(), Ejson["data"]?["heartbeat_interval"]?.Value<int>() ?? 60, Ejson["data"]?["secret_key"]?.Value<string>() ?? "");
 		}
 
 		public static async Task<(int code, string msg, long ts, int timeInterval, string secret_key)> LiveXHeratBeat(UserCredential userCredential, int livePart, int areaV2, int index, long room, long ets, string benchmark, int timeInterval)
@@ -77,7 +77,7 @@ namespace BilibiliLive.Interaction
 			_logger.LogDebug("直播心跳回复{@res}", Xresult.TryPraseToJson());
 
 			var Xjson = JObject.Parse(Xresult);
-			return new((int)Xjson["code"], ((string?)Xjson["message"]), (long)Xjson["data"]["timestamp"], (int)Xjson["data"]["heartbeat_interval"], (string?)Xjson["data"]["secret_key"]);
+			return new((int)Xjson["code"], ((string?)Xjson["message"]), Xjson["data"]?["timestamp"]?.Value<long>() ?? DateTimeOffset.Now.ToUnixTimeMilliseconds(), Xjson["data"]?["heartbeat_interval"]?.Value<int>() ?? 60, Xjson["data"]?["secret_key"]?.Value<string>() ?? "");
 		}
 
 		private static async Task<string> GenerateS(int livePart, int areaV2, int index, long room, long ets, string benchmark, int timeInterval, long ts)
