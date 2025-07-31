@@ -7,8 +7,12 @@ if "%num%"=="1" goto Mobot_Test
 
 :Mobot_Test
 docker save -o docker/mobot_test.rar mobot_test:latest
+goto Next
 
 :Mobot
 docker save -o docker/mobot.rar mobot:latest
+goto Next
 
+:Next
 pause
+exit

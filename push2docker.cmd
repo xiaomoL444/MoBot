@@ -24,7 +24,7 @@ if "%num%"=="" goto Mobot
 if "%num%"=="1" goto Mobot_Test
 
 :Mobot_Test
-docker build --platform linux/arm64 -t mobot_test .
+docker build -f Dockerfile.dev --platform linux/arm64 -t mobot_test .
 pause
 exit
 
