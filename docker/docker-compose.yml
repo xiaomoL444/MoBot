@@ -1,0 +1,72 @@
+services:
+  mobot:
+    image: mobot:latest
+    container_name: mobot
+    volumes:
+      - /mnt/mmc0-4/MoBot/logs:/app/logs
+      - /mnt/mmc0-4/MoBot/videos:/app/videos
+      - /mnt/mmc0-4/MoBot/config:/app/config
+      - /mnt/mmc0-4/MoBot/data:/app/data
+      - /mnt/mmc0-4/MoBot/cache:/app/cache
+    ports:
+      - 5416:5417
+    extra_hosts:
+      - "webshot.local:192.168.100.1"
+      - "biliveheartkeep.local:192.168.100.1"
+      - "chrome.local:192.168.100.1"
+    command:
+      - bash
+      - -c
+      - dotnet MoBot.dll & socat TCP-LISTEN:5417,fork TCP:127.0.0.1:5416
+  mobot_test:
+    image: mobot:test
+    container_name: mobot_test
+    profiles:
+      - test
+    volumes:
+      - /mnt/mmc0-4/MoBot_Test/logs:/app/logs
+      - /mnt/mmc0-4/MoBot_Test/videos:/app/videos
+      - /mnt/mmc0-4/MoBot_Test/config:/app/config
+      - /mnt/mmc0-4/MoBot_Test/data:/app/data
+      - /mnt/mmc0-4/MoBot_Test/cache:/app/cache
+    entrypoint:
+      - dotnet
+      - MoBot_Test.dll
+  webshot:
+    image: webshot:latest
+    container_name: webshot
+    ports:
+      - 8080:8081
+    extra_hosts:
+      - "mobot.local:192.168.100.1"
+    command:
+      - bash
+      - -c 
+      - nginx -g daemon off & socat TCP-LISTEN:8081,fork TCP:127.0.0.1:8080
+  bilibiliheartkeep:
+    image: bilivekeepheart:latest
+    ports:
+      - 3788:3788
+  chrome:
+    image: chrome:latest
+    container_name: chrome
+    ports:
+      - 9222:9223
+    command: 
+      - bash
+      - -c 
+      - /start.sh & socat TCP-LISTEN:9223,fork TCP:127.0.0.1:9222
+  mihoyobbs:
+    image: womsxd/mihoyo-bbs
+    container_name: mihoyobbs
+    restart: always
+    environment:
+      - CRON_SIGNIN=30 9 * * *
+      - MULTI=TRUE
+    volumes:
+      - /mnt/mmc0-4/MihoyoBBSTools/config:/var/app/config
+      - /mnt/mmc0-4/MihoyoBBSTools/push.py:/var/app/push.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"

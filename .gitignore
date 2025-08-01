@@ -38,5 +38,6 @@ bld/
 .vs/
 
 publish/
-docker/
+docker/*.rar
+docker/*.tar
 videos/

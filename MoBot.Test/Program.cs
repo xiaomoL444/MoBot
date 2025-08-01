@@ -15,6 +15,7 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
+using System.Net;
 
 string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} : {Message:lj}{NewLine}{Exception}";
 

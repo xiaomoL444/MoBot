@@ -147,7 +147,7 @@ onMounted(() => {
     var id = route.query.id;
     console.log(id);
     if (id == undefined) { showDefaultmsg(); return; }
-    axios.get('http://localhost:5416?id=' + id)
+    axios.get('http://mobot.lan:5416?id=' + id)
         .then(async response => {
             if (response == undefined) { return; }
             // bg.value = response.data.background;

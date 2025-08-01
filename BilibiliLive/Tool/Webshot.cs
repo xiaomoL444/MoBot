@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +23,7 @@ namespace BilibiliLive.Tool
 		private static IBrowser _browser = null;
 		public static string GetIPAddress()
 		{
-			return "http://localhost:8080";
+			return "http://webshot.lan:8080";
 		}
 
 		static Webshot()
@@ -32,31 +34,21 @@ namespace BilibiliLive.Tool
 		static void StartNewChrome()
 		{
 			_logger.LogDebug("创建Chorme实例");
-			var chromePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ChromePathWindow : ChromePathLinux;
-			if (!File.Exists(chromePath))
+			string address = string.Empty;
+			try
 			{
-				_logger.LogError("不存在Chrome地址！");
-				throw new("不存在Chrome地址！");
+				address = Dns.GetHostEntry("chrome.lan").AddressList[0].ToString()+":9222";
 			}
-			//首次调用实例化浏览器
-			_browser = Puppeteer.LaunchAsync(new LaunchOptions
+			catch (Exception ex)
 			{
-				ExecutablePath = chromePath,
-				Headless = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? false : true,
-				Args = [ "--no-sandbox",
-	"--disable-gpu",
-	"--disable-dev-shm-usage",
-	"--disable-software-rasterizer",
-	"--disable-extensions",
-	"--disable-background-networking",
-	"--disable-sync",
-	"--disable-default-apps",
-	"--mute-audio",
-	"--disable-setuid-sandbox",
-	"--disable-features=TranslateUI",
-	"--no-xshm",
-	"--disable-dbus"],
-				DumpIO = true// 打开调试输出
+				_logger.LogError(ex, "获取Chrome address错误");
+				return;
+			}
+			_logger.LogDebug("尝试连接{address}", address);
+			//首次调用实例化浏览器
+			_browser = Puppeteer.ConnectAsync(new ConnectOptions
+			{
+				BrowserURL = address,
 			}).Result;
 		}
 
