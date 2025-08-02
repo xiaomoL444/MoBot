@@ -37,7 +37,7 @@ namespace BilibiliLive.Tool
 			string address = string.Empty;
 			try
 			{
-				address = Dns.GetHostEntry("chrome.lan").AddressList[0].ToString()+":9222";
+				address = $"http://{Dns.GetHostEntry("chrome.lan").AddressList[0].ToString()}:9222";
 			}
 			catch (Exception ex)
 			{
@@ -63,7 +63,7 @@ namespace BilibiliLive.Tool
 		/// <returns>图片base64</returns>
 		public static async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
 		{
-			if (_browser.Process.HasExited)
+			if (!_browser.IsConnected)
 			{
 				_logger.LogWarning("Chrome被意外关闭，重新启动");
 				StartNewChrome();
@@ -86,8 +86,9 @@ namespace BilibiliLive.Tool
 				_logger.LogDebug("截图完成");
 				return base64;
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
+				_logger.LogError(ex, "截图失败");
 				return string.Empty;//其实可以返回一张空图片地址
 			}
 

@@ -6,9 +6,6 @@ RUN apt-get update && apt-get install -y ffmpeg tzdata && rm -rf /var/lib/apt/li
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
-RUN apt update && apt install -y socat && \
-    rm -rf /var/lib/apt/lists/*
-
 #设置chrome
 #RUN apt-get update && apt-get install -y curl && \
 #    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \

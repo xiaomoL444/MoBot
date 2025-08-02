@@ -1,8 +1,7 @@
 # 选择 nginx 官方镜像作为基础镜像
 FROM nginx:alpine
 
-RUN apt update && apt install -y socat && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk update && apk add socat
 
 # 删除默认的 nginx 网站文件
 RUN rm -rf /usr/share/nginx/html/*

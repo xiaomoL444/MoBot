@@ -9,18 +9,19 @@ services:
       - /mnt/mmc0-4/MoBot/data:/app/data
       - /mnt/mmc0-4/MoBot/cache:/app/cache
     ports:
-      - 5416:5417
+      - 5416:5416
     extra_hosts:
-      - "webshot.local:192.168.100.1"
-      - "biliveheartkeep.local:192.168.100.1"
-      - "chrome.local:192.168.100.1"
+      - "bilivekeepheart.lan:192.168.100.1"
+      - "chrome.lan:192.168.100.1"
     command:
       - bash
       - -c
-      - dotnet MoBot.dll & socat TCP-LISTEN:5417,fork TCP:127.0.0.1:5416
+      - dotnet MoBot.dll
   mobot_test:
     image: mobot:test
     container_name: mobot_test
+    stdin_open: true     # 等价于 docker run -i
+    tty: true 
     profiles:
       - test
     volumes:
@@ -31,20 +32,19 @@ services:
       - /mnt/mmc0-4/MoBot_Test/cache:/app/cache
     entrypoint:
       - dotnet
-      - MoBot_Test.dll
+      - MoBot.Test.dll
   webshot:
     image: webshot:latest
     container_name: webshot
     ports:
       - 8080:8081
-    extra_hosts:
-      - "mobot.local:192.168.100.1"
     command:
-      - bash
+      - sh
       - -c 
-      - nginx -g daemon off & socat TCP-LISTEN:8081,fork TCP:127.0.0.1:8080
-  bilibiliheartkeep:
+      - nginx -g 'daemon off;' & socat TCP-LISTEN:8081,fork TCP:127.0.0.1:8080
+  bilivekeepheart:
     image: bilivekeepheart:latest
+    container_name: bilivekeepheart
     ports:
       - 3788:3788
   chrome:
@@ -52,6 +52,10 @@ services:
     container_name: chrome
     ports:
       - 9222:9223
+      - 6081:6081
+    extra_hosts:
+      - "mobot.lan:192.168.100.1"
+      - "webshot.lan:192.168.100.1"
     command: 
       - bash
       - -c 

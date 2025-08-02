@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -23,7 +24,8 @@ namespace BilibiliLive.Tool
 		private static ConcurrentDictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
 		private static object _lock = new();
 
-		private const string _ipAddress = "http://localhost:5416";
+		private const int port = 5416;
+		private static string _ipAddress { get { return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"http://+:{port}/" : $"http://*:{port}/"; } }
 
 		public static void Start()
 		{
@@ -31,10 +33,19 @@ namespace BilibiliLive.Tool
 			// 创建一个 HttpListener 实例
 			HttpListener listener = new HttpListener();
 			// 指定监听的 URL，通常是 "http://localhost:端口号/"
-			listener.Prefixes.Add($"{_ipAddress}/");
+			listener.Prefixes.Add(_ipAddress);
 			// 启动监听器
-			listener.Start();
-			_logger.LogInformation($"服务器正在监听 {_ipAddress}/");
+			try
+			{
+				listener.Start();
+
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "开启失败");
+				throw;
+			}
+			_logger.LogInformation($"服务器正在监听 {_ipAddress}");
 
 			_ = Task.Run(() =>
 			{
@@ -92,7 +103,7 @@ namespace BilibiliLive.Tool
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer).TryPraseToJson(): contentType);
+				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer).TryPraseToJson() : contentType);
 			}
 			catch (Exception ex)
 			{
@@ -128,7 +139,7 @@ namespace BilibiliLive.Tool
 
 		public static string GetIPAddress()
 		{
-			return _ipAddress;
+			return $"http://mobot.lan:{port}";
 		}
 
 		private static string GetContentType(HttpServerContentType contentType)

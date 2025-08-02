@@ -297,8 +297,16 @@ namespace BilibiliLive.Handle
 					//准备绘画
 					_ = Task.Run(async () =>
 					{
-						string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
-						await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Image("base64://" + base64).Build());
+						try
+						{
+							string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
+							await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Image("base64://" + base64).Build());
+						}
+						catch (Exception ex)
+						{
+							_logger.LogError(ex,"截图失败");
+						}
+						
 					});
 				}
 
