@@ -7,22 +7,6 @@ Public变量小写开头，后面大写
 私有变量下划线小写
 局部变量小写后大写
 
-# Docker 编译
-
-VERSION=$(git rev-parse --short HEAD)
-
-dotnet publish -c Release -r linux-arm64 --self-contained false -o publish
-
-docker build --platform linux/arm64 -t mobot .
-
-docker run -d --name mobot -v /mnt/mmc0-4/MoBot/Chrome:/app/Chrome -v /mnt/mmc0-4/MoBot/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot/config:/app/config -v /mnt/mmc0-4/MoBot/data:/app/data -v /mnt/mmc0-4/MoBot/cache:/app/cache --network host mobot
-
-docker run --name mobot_test -v /mnt/mmc0-4/MoBot/Chrome:/app/Chrome -v /mnt/mmc0-4/MoBot/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot/config:/app/config -v /mnt/mmc0-4/MoBot/data:/app/data -v /mnt/mmc0-4/MoBot/cache:/app/cache --network host mobot_test
-
-docker run -d --name mobot -v C:/Code/MoBot/docker/logs:/app/logs -v C:/Code/MoBot/docker/videos:/app/videos -v C:/Code/MoBot/docker/configs:/app/configs -v C:/Code/MoBot/docker/data:/app/data mobot
-
-docker run -d --network host --name webshot webshot
-
 # 模版
 
 DI注入可以获取如下接口：
@@ -62,29 +46,3 @@ DailyChatSettingWinForm 不太会起名字，这个是用来修改DailyChat的�
 DailyPoems 每日古诗，因为有很好的朋友建议说做一个每日夸夸功能，但是我没找到夸夸的api，也觉得自己可能写不好，思来想去换成定时发送古诗好了
 
 # UNKNOW
-
-docker run --privileged -v /dev:/dev -v /mnt/mmc0-4/MoBot\_test/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot\_test/configs:/app/configs -it mobot\_test
-
-docker run  -v C:/Code/MoBot/docker/logs:/app/logs -v C:/Code/MoBot/docker/data:/app/data -v C:/Code/MoBot/docker/videos:/app/videos -v C:/Code/MoBot/docker/configs:/app/configs mobot -it mobot
-
-docker run -d --name mobot\_test --privileged -v /mnt/mmc0-4/MoBot\_test/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot\_test/configs:/app/configs mobot\_test
-
-docker run -v /mnt/mmc0-4/MoBot\_test/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot\_test/configs:/app/configs -it mobot\_test
-
-docker run -d --name mobot -v /mnt/mmc0-4/MoBot/logs:/app/logs -v /mnt/mmc0-4/MoBot/videos:/app/videos -v /mnt/mmc0-4/MoBot/configs:/app/configs -v /mnt/mmc0-4/MoBot/data:/app/data mobot
-
-h264\_v4l2m2m
-mpegts
-ffmpeg -re -i testvideo.mp4 -c:v libx264 -b:v 2000k -f mpegts udp://192.168.5.11:1111
-ffmpeg -re -i testvideo.mp4 -c:v h264\_v4l2m2m -b:v 8000k -f mpegts udp://192.168.5.11:1111
-
-ffmpeg -re -i testvideo.mp4 -c:v h264\_v4l2m2m -b:v 2000k -c:a aac -b:a 128k -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=live\_609872107\_38653366\&key=7aa98cc05cbfe4e878e3dbb821cfd13d\&schedule=rtmp\&pflag=1"
-
-
-
-ffmpeg -re  -i testvideo.mp4 -c:v h264\_v4l2m2m -preset ultrafast -crf 51 -b:v 200k -c:a aac -b:a 128k -pix\_fmt yuv420p -bufsize 6000k -an -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=live\_609872107\_38653366\&key=7aa98cc05cbfe4e878e3dbb821cfd13d\&schedule=rtmp\&pflag=1"
-
-ffmpeg -fflags +genpts -err\_detect ignore\_err -i udp://127.0.0.1:12345 -c copy -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=live\_609872107\_38653366\&key=7aa98cc05cbfe4e878e3dbb821cfd13d\&schedule=rtmp\&pflag=1"
-
-ffmpeg -re -stream\_loop -1 -fflags +genpts -i "C:\\Code\\YT-dlp download video\\reencoded\\017 . video\_16\_fixed.mp4" -f mpegts -c copy -mpegts\_flags +initial\_discontinuity -muxpreload 0 -muxdelay 0  udp://127.0.0.1:12345
-
