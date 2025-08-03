@@ -9,7 +9,7 @@ namespace MoBot.Core.Interfaces
 {
 	public interface IMoBotClient
 	{
-		public void Initial();
+		public Task Initial();
 		public Task RouteAsync(EventPacketBase eventPacket);
 	}
 }

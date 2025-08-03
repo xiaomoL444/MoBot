@@ -43,7 +43,7 @@ namespace BilibiliLive.Tool
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "开启失败");
-				throw;
+				return;
 			}
 			_logger.LogInformation($"服务器正在监听 {_ipAddress}");
 

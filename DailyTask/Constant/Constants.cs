@@ -10,5 +10,8 @@ namespace DailyTask.Constant
 	{
 		public const long OPGroupID = 1079464803;
 		public const long OPAdmin = 2580139692;
+
+		public const string JobGroup = "DailyTask";
+		public const string TriggerGroup = "DailyTask";
 	}
 }

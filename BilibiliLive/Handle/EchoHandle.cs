@@ -1,16 +1,21 @@
-﻿
-using MoBot.Core.Interfaces;
-using MoBot.Core.Models.Net;
+﻿using MoBot.Core.Models.Net;
 using Newtonsoft.Json.Linq;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Event;
 using MoBot.Handle.Message;
+using MoBot.Core.Interfaces.MessageHandle;
 
 namespace BilibiliLive.Handle
 {
 	public class EchoHandle : IMessageHandle<Group>
 	{
+		public IRootModel RootModel => new BilibiliRootModel();
+
+		public string Name => "Ciallo~";
+
+		public string Description => "输入「复活吧我的爱人」触发";
+
 		public Task Initial()
 		{
 			return Task.CompletedTask;

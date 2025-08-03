@@ -17,6 +17,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HttpClient = DailyTask.Tool.HttpClient;
 using Quartz.Impl.Matchers;
+using MoBot.Core.Interfaces.MessageHandle;
 
 namespace DailyTask
 {
@@ -27,8 +28,11 @@ namespace DailyTask
 		private ISchedulerFactory _schedulerFactory;
 		private IScheduler scheduler;
 
-		private const string DefaultTriggerGrpup = "DailyTaskHandle";
-		private const string DefaultJobGrpup = "DailyTaskHandle";
+		public IRootModel RootModel => new DailyTaskRootModel();
+
+		public string Name => "刷新每日任务时间";
+
+		public string Description => "/重载时间";
 
 		public DailyTaskHandle(
 			ILogger<DailyTaskHandle> logger,
@@ -52,44 +56,12 @@ namespace DailyTask
 		public async Task HandleAsync(Group group)
 		{
 			var config = _dataStorage.Load<Config>("config");
-			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron);//DailyPoems
-			await RescheduleOrCreateJob(scheduler, "DailyPraiseJob", DefaultJobGrpup, "DailyPraiseTrigger", DefaultTriggerGrpup, config.DailyPraiseCron);//每日夸夸
+			await RescheduleOrCreateJob(scheduler, "DailyPoems", Constants.JobGroup, "DailyPoemsTrigger", Constants.TriggerGroup, config.DailyPoemsCron);//DailyPoems
+			await RescheduleOrCreateJob(scheduler, "DailyPraise", Constants.JobGroup, "DailyPraiseTrigger", Constants.TriggerGroup, config.DailyPraiseCron);//每日夸夸
 
 			await MessageSender.SendGroupMsg(Constants.OPGroupID, MessageChainBuilder.Create().Text(@$"重载成功
 每日诗文时间：{CronExpressionDescriptor.ExpressionDescriptor.GetDescription(config.DailyPoemsCron, new CronExpressionDescriptor.Options { Locale = "zh-CN", Use24HourTimeFormat = true })}
 每日夸夸时间：{CronExpressionDescriptor.ExpressionDescriptor.GetDescription(config.DailyPraiseCron, new CronExpressionDescriptor.Options { Locale = "zh-CN", Use24HourTimeFormat = true })}").Build());
-
-			return;
-		}
-
-		public async Task Initial()
-		{
-			var config = _dataStorage.Load<Config>("config");
-			if (!CronExpression.IsValidExpression(config.DailyPoemsCron))
-			{
-				_logger.LogError("Cron表达式非法");
-				return;
-			}
-			//添加定时调度器
-			scheduler = await _schedulerFactory.GetScheduler();
-			scheduler.ListenerManager.AddJobListener(new JobFinishedListener(_logger), GroupMatcher<JobKey>.GroupContains(DefaultJobGrpup));
-
-			var DailyPoemsJob = JobBuilder.Create<FetchPoems>()
-				.SetJobData(new JobDataMap() {
-					new KeyValuePair<string, object>("DataStorage", _dataStorage) ,
-					new KeyValuePair<string, object>("Logger",_logger)
-				})
-				.Build();
-			await RescheduleOrCreateJob(scheduler, "DailyPoemsJob", DefaultJobGrpup, "DailyPoemsTrigger", DefaultTriggerGrpup, config.DailyPoemsCron, DailyPoemsJob);//创建DailyPoems的定时任务
-
-			var DailyPraise = JobBuilder.Create<DailyPraise>()
-				.SetJobData(new JobDataMap() {
-					new KeyValuePair<string, object>("DataStorage", _dataStorage) ,
-					new KeyValuePair<string, object>("Logger",_logger)
-				})
-				.Build();
-			await RescheduleOrCreateJob(scheduler, "DailyPraiseJob", DefaultJobGrpup, "DailyPraiseTrigger", DefaultTriggerGrpup, config.DailyPraiseCron, DailyPraise);//创建每日夸夸的定时任务
-
 
 			return;
 		}

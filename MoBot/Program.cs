@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
@@ -45,14 +46,29 @@ try
 			services.AddScoped<IBotSocketClient, WebSocketClient>();
 
 			//加载插件
-			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.EchoHandle>();//复活吧我的爱人
-			services.AddScoped<IMessageHandle<Group>, StreamHandle>();//直播
-			services.AddScoped<IMessageHandle<Group>, SignHandle>();//登录B站
-			services.AddScoped<IMessageHandle<Group>, AccountListHandle>();//登录B站
-			services.AddScoped<IMessageHandle<Group>, EraHandle>();//激励计划
 
+			//B站
+			services.AddScoped<IInitializer, BilibiliLive.Handle.InitialHandle>();//B站初始化
+
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.EchoHandle>();//复活吧我的爱人
+
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.SignHandle>();//B站登录
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.ListHandle>();//B站列出登录了的用户
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.DeleteUserHandle>();//B站删除用户
+
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.StartLiveHandle>();//B站开始直播
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.StopLiveHandle>();//B站关闭直播
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.ViewLiveStateHandle>();//B站查看直播状态
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.FinishGiftTaskHandle>();//B站完成投喂任务
+
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.QueryTasksHandle>();//B站查询激励计划任务
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.ReceiveDailyEraAwardHandle>();//B站领取每日任务
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.RefreshEraDataHandle>();//B站在版更时刷新任务
+
+			//关键词回复
 			services.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
 
+			//每日定时任务
 			services.AddScoped<IMessageHandle<Group>, DailyTask.DailyTaskHandle>();//每日定时任务（古文和夸夸）
 
 			services.AddQuartz();
@@ -63,12 +79,13 @@ try
 		.Build();
 
 	await (await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler()).Start();
-	_ = Task.Run(async () => { await Task.Delay(2 * 1000); 
-		await ShowAllJobsAsync(await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler()); });
+	_ = Task.Run(async () =>
+	{
+		await Task.Delay(2 * 1000);
+		await ShowAllJobsAsync(await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler());
+	});
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
-	BilibiliLive.Tool.GlobalLogger.LoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-	BilibiliLive.Tool.GlobalDataStorage.DataStorage = host.Services.GetRequiredService<IDataStorage>();
 
 	MoBotClient.Initial();
 

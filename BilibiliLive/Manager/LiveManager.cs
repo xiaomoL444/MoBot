@@ -1,14 +1,15 @@
 ﻿using BilibiliLive.Constant;
+using BilibiliLive.Handle;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Models.config;
 using BilibiliLive.Models.Live;
+using BilibiliLive.Session;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
-using MoBot.Core.Models.Event.Message;
+using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Message;
-using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -17,225 +18,44 @@ using OneOf.Types;
 using OpenBLive.Client;
 using OpenBLive.Client.Data;
 using OpenBLive.Runtime;
-using OpenBLive.Runtime.Data;
 using OpenBLive.Runtime.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq.Expressions;
-using System.Net.Http.Json;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Principal;
-using static BilibiliLive.Models.config.AccountConfig;
-using HttpClient = BilibiliLive.Tool.HttpClient;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace BilibiliLive.Handle
+namespace BilibiliLive.Manager
 {
 	/// <summary>
-	/// 直播会话
+	/// 管理直播回话的类
 	/// </summary>
-	sealed class LiveStreamSession
+	public static class LiveManager
 	{
-		private readonly ILogger<LiveStreamSession> _logger;
 
-		public UserCredential UserCredential { get; } = new();//这位B站用户的个人信息
-		public string Platform { get; } = string.Empty;
-		public bool IsLive = false;//是否还在直播
-		public Action FailCallback = () => { };//异常退出时触发错误回调（通常是关闭直播链接）
-		public (string code, string msg) ExitState = new();
+		private static readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(LiveManager));
+		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
 
-		private Process _process = new();//直播的ffmpeg程序
+		private static Process? _childProcess;//子推流程序1
 
-		private string _rtmp = string.Empty;//直播的远程推流连接
-		public LiveStreamSession(UserCredential userCredential, string platform, string rtmp, ILogger<LiveStreamSession> logger)
-		{
-			_logger = logger;
-			Platform = platform;
-			UserCredential = userCredential;
-			_rtmp = rtmp;
-			Start();
-		}
-		void Start()
-		{
-			IsLive = true;
-			//主ffmpeg程序
-			var args = $"-loglevel warning -fflags +genpts -err_detect ignore_err -ignore_unknown -flags low_delay -i udp://239.0.0.1:11111 -c copy -f flv \"{_rtmp}\"";
-			_logger.LogDebug("{uid}直播会话程序参数{args}", UserCredential.DedeUserID, args);
-			_process = new Process
-			{
-				StartInfo = new ProcessStartInfo()
-				{
-					FileName = "ffmpeg",
-					Arguments = args,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-					RedirectStandardInput = true,
-					UseShellExecute = false,
-					CreateNoWindow = true,
-				},
-				EnableRaisingEvents = true
-			};
-			_process.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[{uid}直播会话] {info}", UserCredential.DedeUserID, e.Data); };
-			_process.ErrorDataReceived += (s, e) => { if (string.IsNullOrEmpty(e.Data)) return; _logger.LogDebug("[{uid}直播会话] {info}", UserCredential.DedeUserID, e.Data); };
-			_process.Exited += (s, e) =>
-			{
-				IsLive = false;
-				ExitState = new($"{_process.ExitCode}", $"退出码：{_process.ExitCode}");
-				if (_process.ExitCode == 0)
-				{
-					_logger.LogInformation("[{uid}]直播会话手动退出", UserCredential.DedeUserID);
-					return;
-				}
-				_logger.LogError("[{uid}]直播会话异常退出，CODE:{exit_code}", UserCredential.DedeUserID, _process.ExitCode);
-				FailCallback();
+		private static (string version, string build) _livehimeVersion = new("7.19.0.9432", "9432");
+		private static List<string> _streamVideoPaths = new();
+		private static bool _isGameStart = false;//B站的开发平台的玩法，我用来检测弹幕了（）
+		private static List<LiveStreamSession> _sessions = new();
 
-				//await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("主程序退出出现了一些异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
-			};
-			_process.Start();
-			_process.BeginOutputReadLine();
-			_process.BeginErrorReadLine();
-		}
-
-		/// <summary>
-		/// 关闭程序
-		/// </summary>
-		/// <returns>返回是否关闭成功</returns>
-		public async Task<bool> StopAsync()
-		{
-			IsLive = false;
-			if (_process is not { HasExited: true })
-			{
-				_process!.StandardInput.WriteLine("q");
-				_process.StandardInput.Flush();
-
-				using var cts = new CancellationTokenSource(5000);
-				try
-				{
-					await _process.WaitForExitAsync(cts.Token);
-					_logger.LogInformation("{uid}的直播会话已关闭", UserCredential.DedeUserID);
-					return true;
-				}
-				catch (OperationCanceledException)
-				{
-					_logger.LogWarning("{uid}的直播会话未退出，超时", UserCredential.DedeUserID);
-					return false;
-				}
-			}
-			_logger.LogWarning("该直播会话不存在亦或是已退出，无法重新退出");
-			return true;
-		}
-	}
-
-	/// <summary>
-	/// 看播会话（）
-	/// </summary>
-	sealed class ViewStreamSession
-	{
-		private ILogger _logger = GlobalLogger.CreateLogger(typeof(ViewStreamSession));
-		public UserCredential UserCredential { get; } = new();//自己的用户信息
-		public string UserName { get; } = string.Empty;
-		public long TargetRoomID { get; } = 0;//目标观看的房间
-		public string TargetUserName { get; } = string.Empty;
-		public List<(int code, string msg)> HeartResult = new();//心跳结果
-
-		public bool IsView { get; private set; } = false;//是否正在观看直播，是开启和关停观看直播的关键
-		public ViewStreamSession(UserCredential userCredential, string userName, string targetUserName, long targetRoomID)
-		{
-			UserCredential = userCredential;
-			TargetRoomID = targetRoomID;
-			UserName = userName;
-			TargetUserName = targetUserName;
-		}
-
-		public void Start()
-		{
-			IsView = true;
-			//生成新的看播的Task
-			_ = Task.Run(async () =>
-			{
-				try
-				{
-					_logger.LogInformation("[{user}]观看直播间[{targetRoomID}]，EHeartBeat", UserCredential.DedeUserID, TargetRoomID);
-
-					//发送E消息
-					var Eresult = await UserInteraction.LiveEHeartBeat(UserCredential, 3, 321, TargetRoomID);
-
-					AddResult(ref HeartResult, Eresult.code, Eresult.msg);
-					var timeInterval = Eresult.timeInterval;
-					//var timeInterval = 1;
-					var ts = Eresult.ts;
-					var secret_key = Eresult.secret_key;
-					int index = 0;
-					while (IsView)
-					{
-						index++;
-						_logger.LogDebug("[{user}]:[{targetRoomID}]看播等待{interval}s中", UserCredential.DedeUserID, TargetRoomID, timeInterval);
-						await Task.Delay(timeInterval * 1000);
-						var Xresult = await UserInteraction.LiveXHeratBeat(UserCredential, 3, 321, index, TargetRoomID, ts, secret_key, timeInterval);
-
-						AddResult(ref HeartResult, Xresult.code, Xresult.msg);
-						timeInterval = Xresult.timeInterval;
-						ts = Xresult.ts;
-						secret_key = Xresult.secret_key;
-					}
-				}
-				catch (Exception ex)
-				{
-					AddResult(ref HeartResult, -1, $"[{DateTimeOffset.Now.ToUnixTimeSeconds()}]遇到错误，请前往控制台查看");
-					IsView = false;
-					_logger.LogError(ex, "[{user}]:[{targetRoomID}]看播出现错误", UserCredential.DedeUserID, TargetRoomID);
-				}
-			});
-		}
-		public void Stop()
-		{
-			_logger.LogInformation("[{user}]关闭观看直播间[{targetRoomID}]", UserCredential.DedeUserID, TargetRoomID);
-			IsView = false;
-		}
-
-		void AddResult(ref List<(int code, string msg)> result, int code, string msg)
-		{
-			if (code != 0)
-			{
-				result.Add(new(code, msg));
-			}
-			else
-			{
-				result.Add(new(0, "心跳成功"));
-			}
-		}
-
-	}
-	/// <summary>
-	/// 控制串流的小家伙
-	/// </summary>
-	public class StreamHandle : IMessageHandle<Group>
-	{
-		private readonly long _opGroupID = Constant.Constants.OPGroupID;
-		private readonly long _opAdmin = Constant.Constants.OPAdmin;
-
-		private readonly ILogger<StreamHandle> _logger;
-		private readonly IDataStorage _dataStorage;
-		private readonly ILoggerFactory _loggerFactory;
-
-		private Process? _childProcess;//子推流程序1
-
-		private (string version, string build) _livehimeVersion = new("7.19.0.9432", "9432");
-		private List<string> _streamVideoPaths = new();
-		private bool _isGameStart = false;//B站的开发平台的玩法，我用来检测弹幕了（）
-		private List<LiveStreamSession> _sessions = new();
-
-		private List<ViewStreamSession> _viewsSessions = new();//看播会话
+		private static List<ViewStreamSession> _viewsSessions = new();//看播会话
 #if DEBUG
-		private bool isDebug = true; //主程序的推流-f flv 要记得改 和 mpegts
+		private static bool isDebug = true; //主程序的推流-f flv 要记得改 和 mpegts
 #endif
 #if !DEBUG
-		private bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
+		private static bool isDebug = false; //主程序的推流-f flv 要记得改 和 mpegts
 #endif
 
-		private string streamOpenTime = "";//开启直播的时间，用来记录Data
+		private static string streamOpenTime = "";//开启直播的时间，用来记录Data
 
-		private List<(LiveDanmukuType danmukuType, string msg)> _danmukus = [
+		private static readonly List<(LiveDanmukuType danmukuType, string msg)> _danmukus = [
 			new(LiveDanmukuType.Text, "UpUp我喜欢你"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_比心]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_遨游]"),
@@ -244,63 +64,16 @@ namespace BilibiliLive.Handle
 			new(LiveDanmukuType.Emotion,"upower_[崩坏：星穹铁道_心]")
 		];
 
-		private bool isViewLive = false;//是否在看直播
+		private static bool isViewLive = false;//是否在看直播
 
-		public StreamHandle(
-			ILogger<StreamHandle> logger,
-			IDataStorage dataStorage,
-			ILoggerFactory loggerFactory
-			)
-		{
-			_logger = logger;
-			_dataStorage = dataStorage;
-			_loggerFactory = loggerFactory;
-		}
+		//开放平台参数
+		static IBApiClient bApiClient = new BApiClient();
+		static WebSocketBLiveClient m_WebSocketBLiveClient;
+		static InteractivePlayHeartBeat m_PlayHeartBeat;
+		static string appId = "";
+		static string gameId = "";
 
-		public async Task Initial()
-		{
-			//探测GenerateS服务是否开启
-			try
-			{
-				var result = await HttpClient.SendAsync(new(HttpMethod.Get, Constants.LiveHeartGenerateSUrl));
-
-				_logger.LogInformation("探测到GenerateS服务");
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError("直播GenerateS服务可能未开启，请注意开启");
-			}
-
-			return;
-		}
-		public Task<bool> CanHandleAsync(Group message)
-		{
-			if (message.IsGroupID(_opGroupID) && message.IsUserID(_opAdmin) && (message.IsMsg("/开始推流") || message.IsMsg("/关闭推流") || message.IsMsg("/推流状态") || message.IsMsg("/投喂任务"))) return Task.FromResult(true);
-
-			return Task.FromResult(false);
-		}
-
-		public Task HandleAsync(Group message)
-		{
-			var commonds = message.SplitMsg();
-			switch (commonds[0])
-			{
-				case "/开始推流":
-					StartStream(message);
-					break;
-				case "/关闭推流":
-					StopStream(message);
-					break;
-				case "/推流状态":
-					ViewStreamState(message);
-					break;
-				case "/投喂任务":
-					FinishGiftTask(message);
-					break;
-			}
-			return Task.CompletedTask;
-		}
-		async void StartStream(Group group)
+		public static async Task StartLive(Action<List<MessageSegment>> sendMessage)
 		{
 
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
@@ -310,7 +83,7 @@ namespace BilibiliLive.Handle
 			if (!Directory.Exists(streamConfig.StreamVideoDirectory))
 			{
 				_logger.LogError("视频目录->{path}不存在，请检查配置文件", streamConfig.StreamVideoDirectory);
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("视频目录不存在...߹ - ߹，勾修金sama请检查一下吧").Build());
+				sendMessage(MessageChainBuilder.Create().Text("视频目录不存在...߹ - ߹，勾修金sama请检查一下吧").Build());
 				return;
 			}
 
@@ -321,7 +94,7 @@ namespace BilibiliLive.Handle
 			if (_streamVideoPaths.Count <= 0)
 			{
 				_logger.LogError("视频目录->{path}下不存在视频源", streamConfig.StreamVideoDirectory);
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("不存在视频源...߹ - ߹，勾修金sama请检查一下吧").Build());
+				sendMessage(MessageChainBuilder.Create().Text("不存在视频源...߹ - ߹，勾修金sama请检查一下吧").Build());
 				return;
 			}
 
@@ -331,12 +104,12 @@ namespace BilibiliLive.Handle
 			//获取直播姬版本
 			try
 			{
-				var versionData = JObject.Parse(await (await HttpClient.SendAsync(new(HttpMethod.Get, $"{Constants.GetLivehimeVersion}?system_version=2"))).Content.ReadAsStringAsync());
+				var versionData = JObject.Parse(await (await Tool.HttpClient.SendAsync(new(HttpMethod.Get, $"{Constants.GetLivehimeVersion}?system_version=2"))).Content.ReadAsStringAsync());
 				_livehimeVersion = new(((string?)versionData["data"]["curr_version"]), ((string?)versionData["data"]["build"]));
 			}
 			catch (Exception ex)
 			{
-				await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("请求版本失败，可能是没有网络连接(｡•́︿•̀｡) ").Build());
+				sendMessage(MessageChainBuilder.Create().Text("请求版本失败，可能是没有网络连接(｡•́︿•̀｡) ").Build());
 				return;
 			}
 
@@ -371,7 +144,7 @@ namespace BilibiliLive.Handle
 					_logger.LogInformation("[{user}]不在直播，创建直播会话中", userInfo.Data.Name);
 				}
 				//开启直播
-				var result = await StartLive(userCredential, streamConfig.AreaV2, streamConfig.Platform);
+				var result = await CreateLiveSession(userCredential, streamConfig.AreaV2, streamConfig.Platform);
 				result.Switch(session =>
 				{
 					_logger.LogInformation("开播成功");
@@ -460,7 +233,7 @@ namespace BilibiliLive.Handle
 								_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
 								_logger.LogWarning("子ffmpeg异常退出");
 
-								await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序退出出现了异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
+								sendMessage(MessageChainBuilder.Create().Text("子程序退出出现了异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 								isStream = false;
 								videoCts.Cancel();
 							};
@@ -488,14 +261,14 @@ namespace BilibiliLive.Handle
 							catch (OperationCanceledException)
 							{
 								_logger.LogWarning("直播子程序超时未退出");
-								await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序异常超时退出...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
+								sendMessage(MessageChainBuilder.Create().Text("子程序异常超时退出...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 								break;
 							}
 						}
 						catch (Exception ex)
 						{
 							_logger.LogError(ex, "子程序出现错误");
-							await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("子程序出现了错误...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
+							sendMessage(MessageChainBuilder.Create().Text("子程序出现了错误...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
 							break;
 						}
 					}
@@ -510,7 +283,7 @@ namespace BilibiliLive.Handle
 			}
 			else
 			{
-				var startLiveEventResult = await StartLiveEvent();
+				var startLiveEventResult = await StartOpenLive();
 				startLiveEventResult.Switch(none => { _isGameStart = true; msgChain.Text("已开启"); }, error => { msgChain.Text("开启失败！"); });
 			}
 			msgChain.Text("\n");
@@ -547,9 +320,9 @@ namespace BilibiliLive.Handle
 				}
 			}
 
-			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
+			sendMessage(msgChain.Build());
 		}
-		async void StopStream(Group group)
+		public static async Task StopLive(Action<List<MessageSegment>> sendMessage)
 		{
 			var msgChain = MessageChainBuilder.Create().Text("直播关闭中，关闭状态\n");
 
@@ -569,16 +342,16 @@ namespace BilibiliLive.Handle
 					continue;
 				}
 
-				var stopliveResult = await StopLive(session.UserCredential);
+				var stopliveResult = await CloseLiveRoom(session.UserCredential);
 				stopliveResult.Switch(
 					successMsg =>
-				{
-					msgChain.Text($"关闭成功{(string.IsNullOrEmpty(successMsg.Value) ? "" : $"({successMsg.Value})")}");
-					_sessions.Remove(session);
-				}, errorMsg =>
-				{
-					msgChain.Text(errorMsg.Value);
-				});
+					{
+						msgChain.Text($"关闭成功{(string.IsNullOrEmpty(successMsg.Value) ? "" : $"({successMsg.Value})")}");
+						_sessions.Remove(session);
+					}, errorMsg =>
+					{
+						msgChain.Text(errorMsg.Value);
+					});
 				msgChain.Text("\n");
 			}
 
@@ -596,7 +369,7 @@ namespace BilibiliLive.Handle
 			msgChain.Text("开发平台玩法：");
 			if (_isGameStart)
 			{
-				var stopGameResult = await StopLiveEvent();
+				var stopGameResult = await StopOpenLive();
 				_logger.LogInformation("Result:{result}", stopGameResult);
 				msgChain.Text((stopGameResult ? "关闭成功" : "关闭失败"));
 
@@ -637,15 +410,15 @@ namespace BilibiliLive.Handle
 				}
 			}
 
-			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
+			sendMessage(msgChain.Build());
 			_ = Task.Run(async () =>
 			{
 				await Task.Delay(Random.Shared.Next(500, 1500));
-				await MessageSender.SendGroupMsg(group.GroupId, gameResultMsgChain.Build());
+				sendMessage(gameResultMsgChain.Build());
 			});
 		}
 
-		async void ViewStreamState(Group group)
+		public static async Task ViewLiveState(Action<List<MessageSegment>> sendMessage)
 		{
 			var msgChain = MessageChainBuilder.Create();
 			msgChain.Text($"串流程序状态：{((_childProcess == null || _childProcess.HasExited) ? "已退出或不存在（请及时关闭推流）" : "Alive! >w<")}\n");
@@ -659,13 +432,13 @@ namespace BilibiliLive.Handle
 			msgChain.Text($"玩法：{(_isGameStart ? "Alive >w<" : "已关闭")}").Text("\n");
 			msgChain.Text($"看播：\n{string.Join("\n", _viewsSessions.Select(s => $"♪[{s.UserName}]观看[{s.TargetUserName}]的直播间：{(s.IsView ? "存活" : "已关闭")}\n  ♫  {string.Join("  ♫  ", s.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}"))}"))}");
 
-			await MessageSender.SendGroupMsg(group.GroupId, msgChain.Build());
+			sendMessage(msgChain.Build());
 			return;
 		}
 
-		async void FinishGiftTask(Group group)
+		public static async Task FinishGiftTask(Action<List<MessageSegment>> sendMessage)
 		{
-			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
+			sendMessage(MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
 
 			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			List<object> datas = new();
@@ -771,7 +544,7 @@ namespace BilibiliLive.Handle
 
 			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
-			await MessageSender.SendGroupMsg(group.GroupId, MessageChainBuilder.Create().Image("base64://" + base64).Build());
+			sendMessage(MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}
 
 		/// <summary>
@@ -780,7 +553,7 @@ namespace BilibiliLive.Handle
 		/// <param name="videoPath">视频路径</param>
 		/// <returns></returns>
 		/// <exception cref="Exception"></exception>
-		TimeSpan GetVideoDuration(string videoPath)
+		static TimeSpan GetVideoDuration(string videoPath)
 		{
 			var process = new Process
 			{
@@ -813,7 +586,7 @@ namespace BilibiliLive.Handle
 		/// <paramref name="platform"/>直播平台
 		/// </summary>
 		/// <returns>直播会话，或者一个错误信息返回</returns>
-		async Task<OneOf<LiveStreamSession, Error<string>>> StartLive(UserCredential userCredential, int areaV2, string platform)
+		static async Task<OneOf<LiveStreamSession, Error<string>>> CreateLiveSession(UserCredential userCredential, int areaV2, string platform)
 		{
 			try
 			{
@@ -846,7 +619,7 @@ namespace BilibiliLive.Handle
 				var app_sec = "af125a0d5279fd576c1b4418a3e8276d";
 				param = UserInteraction.AppSign(param, app_key, app_sec);
 				startliveRequest.Content = new FormUrlEncodedContent(param);
-				var startliveResponse = await HttpClient.SendAsync(startliveRequest);
+				var startliveResponse = await Tool.HttpClient.SendAsync(startliveRequest);
 				var startliveResponseString = await startliveResponse.Content.ReadAsStringAsync();
 				_logger.LogDebug("开启{uid}直播间的回复{@response}", userCredential.DedeUserID, startliveResponseString);
 
@@ -870,7 +643,7 @@ namespace BilibiliLive.Handle
 
 				//下方开启会话直播
 				var rtmp = startliveData?.Data.Rtmp.Addr + JsonConvert.DeserializeObject<string>($"\"{startliveData?.Data.Rtmp.Code}\"");
-				LiveStreamSession liveStreamSession = new(userCredential, platform, rtmp, _loggerFactory.CreateLogger<LiveStreamSession>());
+				LiveStreamSession liveStreamSession = new(userCredential, platform, rtmp);
 
 				return liveStreamSession;
 			}
@@ -882,10 +655,10 @@ namespace BilibiliLive.Handle
 		}
 
 		/// <summary>
-		/// 关闭直播间
+		/// 关闭远程直播间
 		/// </summary>
 		/// <returns></returns>
-		async Task<OneOf<Success<string>, Error<string>>> StopLive(UserCredential userCredential)
+		static async Task<OneOf<Success<string>, Error<string>>> CloseLiveRoom(UserCredential userCredential)
 		{
 
 			try
@@ -902,7 +675,7 @@ namespace BilibiliLive.Handle
 
 				var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={roomID}&csrf={userCredential.Bili_Jct}&platform={session.Platform}");
 				httpRequestMessage.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata};bili_jct={userCredential.Bili_Jct}");
-				var response = await HttpClient.SendAsync(httpRequestMessage);
+				var response = await Tool.HttpClient.SendAsync(httpRequestMessage);
 
 				var stopliveResponseString = await response.Content.ReadAsStringAsync();
 				_logger.LogDebug("关闭{user}直播间的回复{@response}", userCredential.DedeUserID, stopliveResponseString);
@@ -923,16 +696,11 @@ namespace BilibiliLive.Handle
 		}
 
 
-		IBApiClient bApiClient = new BApiClient();
-		WebSocketBLiveClient m_WebSocketBLiveClient;
-		InteractivePlayHeartBeat m_PlayHeartBeat;
-		string appId = "";
-		string gameId = "";
 		/// <summary>
 		/// 开启监控直播间事件
 		/// </summary>
 		/// <returns></returns>
-		async Task<OneOf<None, Error<string>>> StartLiveEvent()
+		static async Task<OneOf<None, Error<string>>> StartOpenLive()
 		{
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 			string AccessKeyId = streamConfig.LiveOpenPlatForm.AccessKeyId;
@@ -969,7 +737,7 @@ namespace BilibiliLive.Handle
 				if (startInfo?.Code != 0)
 				{
 					_logger.LogError("B站直播开放平台的开始信息有误{startinfo}", startInfo?.Message);
-					await StopLiveEvent();
+					await StopOpenLive();
 					return new Error<string>("开放平台信息有误");
 				}
 
@@ -1006,14 +774,14 @@ namespace BilibiliLive.Handle
 					m_WebSocketBLiveClient.OnEnter += (enter) => { WriteLog($"[{enter.uname}]进入房间"); };//观众进入房间事件
 					m_WebSocketBLiveClient.OnLiveStart += (liveStart) => { WriteLog($"直播间[{liveStart.room_id}]开始直播，分区ID：【{liveStart.area_id}】,标题为【{liveStart.title}】"); };//直播间开始直播事件
 					m_WebSocketBLiveClient.OnLiveEnd += (liveEnd) => { WriteLog($"直播间[{liveEnd.room_id}]直播结束，分区ID：【{liveEnd.area_id}】,标题为【{liveEnd.title}】"); };//直播间停止直播事件
-																																								//m_WebSocketBLiveClient.Connect();//正常连接
-					m_WebSocketBLiveClient.Connect();
+
+					m_WebSocketBLiveClient.Connect(new TimeSpan(0, 30, 0));
 					return new None();
 				}
 				else
 				{
 					_logger.LogError("开启玩法错误: {@info}", startInfo);
-					await StopLiveEvent();
+					await StopOpenLive();
 					return new Error<string>("开启玩法错误");
 				}
 			}
@@ -1025,10 +793,10 @@ namespace BilibiliLive.Handle
 		}
 
 		/// <summary>
-		/// 关闭监控直播间事件
+		/// 关闭开放平台监控直播间事件
 		/// </summary>
 		/// <returns></returns>
-		async Task<bool> StopLiveEvent()
+		static async Task<bool> StopOpenLive()
 		{
 			try
 			{

@@ -27,10 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Asserts\fonts\Goth.ttf">
+    <None Update="Asserts\BilibiliLive\fonts\Goth.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Asserts\fonts\Kawayi.ttf">
+    <None Update="Asserts\BilibiliLive\fonts\Kawayi.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Third\OpenBLive.dll">
@@ -51,8 +51,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Asserts\fonts\" />
-    <Folder Include="Asserts\images\" />
+    <Folder Include="Asserts\BilibiliLive\fonts\" />
+    <Folder Include="Asserts\BilibiliLive\images\" />
+    <Folder Include="Asserts\BilibiliLive\icon\" />
   </ItemGroup>
 
 </Project>

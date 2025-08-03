@@ -26,7 +26,7 @@ namespace MoBot.Handle
 			_logger = logger;
 		}
 
-		public void Initial()
+		public async Task Initial()
 		{
 			var client = _provider.GetService<IBotSocketClient>();
 			client.Initial();
@@ -41,7 +41,7 @@ namespace MoBot.Handle
 				try
 				{
 					_logger.LogInformation("{name}初始化中...", initializer.RootModel.Name);
-					initializer.Initialize();
+					await initializer.Initialize();
 				}
 				catch (Exception ex)
 				{

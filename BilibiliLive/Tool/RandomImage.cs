@@ -11,7 +11,7 @@ namespace BilibiliLive.Tool
 	{
 		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
 		private static string backgroundDirectory = "background";
-		private static string defaultBackground = "./Asserts/images/MyLover.png";
+		private static string defaultBackground = "./Asserts/BilibiliLive/images/MyLover.png";
 		public static string GetBase64()
 		{
 			return Convert.ToBase64String(GetBytes());

@@ -71,7 +71,7 @@ namespace BilibiliLive.Interaction
 			{
 				return new None();
 			}
-			return new Error<(int code, string msg)>(new((int)json["code"], (string)json["msg"]));
+			return new Error<(int code, string msg)>(new((int)json["code"], (string)json["message"]));
 		}
 	}
 }

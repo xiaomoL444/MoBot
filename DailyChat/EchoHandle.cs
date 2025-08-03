@@ -2,6 +2,7 @@
 using DailyChat.Models;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Action;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
@@ -24,6 +25,12 @@ namespace DailyChat
 	{
 		private readonly ILogger<EchoHandle> _logger;
 		private readonly IDataStorage _dataStorage;
+
+		public IRootModel RootModel =>new DailyChatRootModel();
+
+		public string Name => "关键词回复功能";
+
+		public string Description => "/抱抱、/贴贴、/晚安";
 
 		public EchoHandle(
 			ILogger<EchoHandle> logger,
