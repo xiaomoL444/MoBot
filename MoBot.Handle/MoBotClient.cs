@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Net;
@@ -31,39 +32,22 @@ namespace MoBot.Handle
 			client.Initial();
 
 			//模块的初始化
-			var imTypes = AppDomain.CurrentDomain
-			.GetAssemblies()
-			.SelectMany(x => x.GetTypes())
-			.Where(t => !t.IsAbstract && !t.IsInterface)
-			.SelectMany(t => t.GetInterfaces()
-				.Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageHandle<>))
-				.Select(i => new { Implementation = t, Interface = i }))
-			.Distinct();
+			var initializationTarget = _provider.GetServices<IInitializer>();
 
-			var types = imTypes
-			.GroupBy(x => x.Interface.GenericTypeArguments[0]) // 按 T 分组
-			.Select(g => g.First().Interface)                  // 只取每种 T 的一个 IM<T>
-			.ToList();
-
-			foreach (var type in types)
+			foreach (var initializer in initializationTarget)
 			{
-				var services = _provider.GetServices(type);
-				if (services is null)
-					continue;
 
-				// 调用 Init()
-				var initMethod = type.GetMethod("Initial");
-				foreach (var service in services)
+				//调用 Init()
+				try
 				{
-					try
-					{
-						initMethod?.Invoke(service, null);
-					}
-					catch (Exception ex)
-					{
-						_logger.LogError(ex, "初始化失败{name}", type.Name);
-					}
+					_logger.LogInformation("{name}初始化中...", initializer.RootModel.Name);
+					initializer.Initialize();
 				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "{name}初始化失败", initializer.RootModel.Name);
+				}
+
 			}
 		}
 
