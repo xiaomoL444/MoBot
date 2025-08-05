@@ -15,7 +15,7 @@ namespace BilibiliLive.Session
 	/// </summary>
 	sealed class LiveStreamSession
 	{
-		private readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(LiveStreamSession));
+		private readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(LiveStreamSession));
 
 		public UserCredential UserCredential { get; } = new();//这位B站用户的个人信息
 		public string Platform { get; } = string.Empty;

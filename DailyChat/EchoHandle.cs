@@ -26,11 +26,13 @@ namespace DailyChat
 		private readonly ILogger<EchoHandle> _logger;
 		private readonly IDataStorage _dataStorage;
 
-		public IRootModel RootModel =>new DailyChatRootModel();
+		public IRootModel RootModel => new DailyChatRootModel();
 
-		public string Name => "关键词回复功能";
+		public string Name => "/抱抱、/贴贴、/晚安";
 
-		public string Description => "/抱抱、/贴贴、/晚安";
+		public string Description => "关键词回复功能";
+
+		public string Icon => "./Asserts/DailyChat/icon/UI_NPCTopIcon_EditTeam.png";
 
 		public EchoHandle(
 			ILogger<EchoHandle> logger,
@@ -66,8 +68,15 @@ namespace DailyChat
 			try
 			{
 #if !DEBUG
-				var QQData = ((JObject)(await MessageSender.GetLoginInfo()).Data).ToObject<GetLoginInfo>();
-				selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}]";
+				try
+				{
+					var QQData = ((JObject)(await MessageSender.GetLoginInfo()).Data).ToObject<GetLoginInfo>();
+					selfIDMessage = $"[CQ:at,qq={QQData.UserId},name={QQData.Nickname}]";
+				}
+				catch (Exception)
+				{
+					_logger.LogError("无法获取个人信息");
+				}
 #else
 				selfIDMessage = $"[CQ:at,qq=3485806003,name=黑塔]";
 #endif

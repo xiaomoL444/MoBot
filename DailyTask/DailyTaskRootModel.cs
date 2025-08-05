@@ -13,6 +13,6 @@ namespace DailyTask
 
 		public string Description =>"目前只实现了每日夸夸和每日古文";
 
-		public string Icon => "./Asserts/DailyTask/icon/icon.png";
+		public string Icon => "./Asserts/DailyTask/icon/rootModelIcon.png";
 	}
 }

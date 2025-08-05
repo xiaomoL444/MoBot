@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
+    <ProjectReference Include="..\MoBot.Infra\MoBot.Infra.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
   </ItemGroup>
 
@@ -27,19 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Asserts\BilibiliLive\fonts\Goth.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Asserts\BilibiliLive\fonts\Kawayi.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Third\OpenBLive.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Third\System.Reactive.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Third\Websocket.Client.dll">
+    <None Update="Third\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -53,7 +42,6 @@
   <ItemGroup>
     <Folder Include="Asserts\BilibiliLive\fonts\" />
     <Folder Include="Asserts\BilibiliLive\images\" />
-    <Folder Include="Asserts\BilibiliLive\icon\" />
   </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@
 using BilibiliLive.Handle;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
-using BilibiliLive.Models.config;
+using BilibiliLive.Models.Config;
 using BilibiliLive.Models.Live;
 using BilibiliLive.Session;
 using BilibiliLive.Tool;
@@ -11,6 +11,9 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Message;
+using MoBot.Infra.PuppeteerSharp.Interface;
+using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PuppeteerSharp.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OneOf;
@@ -35,8 +38,10 @@ namespace BilibiliLive.Manager
 	public static class LiveManager
 	{
 
-		private static readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(LiveManager));
-		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
+		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(LiveManager));
+		private static readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
+		private static readonly IWebshot _webshot = GlobalSetting.Webshot;
+		private static readonly IWebshotRequestStore _webshotRequestStore = GlobalSetting.WebshotRequestStore;
 
 		private static Process? _childProcess;//子推流程序1
 
@@ -536,13 +541,13 @@ namespace BilibiliLive.Manager
 #endif
 			//截图界面
 			string uuid = Guid.NewGuid().ToString();
-			HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
+			_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
 			{
 				data = datas,
 				background = ""
 			}));
 
-			var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
+			var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
 			sendMessage(MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}

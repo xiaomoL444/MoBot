@@ -1,37 +1,37 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
-using Newtonsoft.Json.Linq;
+using MoBot.Infra.PuppeteerSharp.Interface;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BilibiliLive.Tool
+namespace MoBot.Infra.PuppeteerSharp.Webshot
 {
-	public static class Webshot
+	public class Webshot : IWebshot
 	{
-		private static IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
-		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(Webshot));
+		private readonly IDataStorage _dataStorage;
+		private readonly ILogger _logger;
+		private IBrowser _browser = null;
 
-		private const string ChromePathWindow = "C:\\Code\\Chrome\\chrome.exe";//window的Chrome地址
-		private const string ChromePathLinux = "./Chrome/chrome";//linux的Chrome地址
-
-		private static IBrowser _browser = null;
-		public static string GetIPAddress()
+		public Webshot(
+			IDataStorage dataStorage,
+			ILogger<Webshot> logger)
 		{
-			return "http://webshot.lan:8080";
-		}
+			_dataStorage = dataStorage;
+			_logger = logger;
 
-		static Webshot()
-		{
 			StartNewChrome();
 		}
 
-		static void StartNewChrome()
+		public string GetIPAddress()
+		{
+			return "http://webshot.lan:8080";
+		}
+		void StartNewChrome()
 		{
 			_logger.LogDebug("创建Chorme实例");
 			string address = string.Empty;
@@ -45,13 +45,22 @@ namespace BilibiliLive.Tool
 				return;
 			}
 			_logger.LogDebug("尝试连接{address}", address);
-			//首次调用实例化浏览器
-			_browser = Puppeteer.ConnectAsync(new ConnectOptions
+			try
 			{
-				BrowserURL = address,
-			}).Result;
-		}
+				//首次调用实例化浏览器
+				_browser = Puppeteer.ConnectAsync(new ConnectOptions
+				{
+					BrowserURL = address,
+				}).Result;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "连接失败");
+				return;
+			}
+			_logger.LogInformation("连接成功");
 
+		}
 		/// <summary>
 		/// 网页截图
 		/// </summary>
@@ -61,7 +70,7 @@ namespace BilibiliLive.Tool
 		/// <param name="waitForFunc">等待指令</param>
 		/// <param name="cookieParam">cookie(我自己一般用不到（）)</param>
 		/// <returns>图片base64</returns>
-		public static async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
+		public async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
 		{
 			if (!_browser.IsConnected)
 			{

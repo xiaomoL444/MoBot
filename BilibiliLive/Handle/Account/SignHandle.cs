@@ -17,9 +17,11 @@ namespace BilibiliLive.Handle.Account
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "登录账户";
+		public string Name => "/登录";
 
-		public string Description => "/登录";
+		public string Description => "登录账户";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/bilibiliTelevision.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

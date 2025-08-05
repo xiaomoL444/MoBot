@@ -30,9 +30,11 @@ namespace DailyTask
 
 		public IRootModel RootModel => new DailyTaskRootModel();
 
-		public string Name => "刷新每日任务时间";
+		public string Name => "/重载时间";
 
-		public string Description => "/重载时间";
+		public string Description => "刷新每日任务时间";
+
+		public string Icon => "./Asserts/DailyTask/icon/refreshTimeIcon.png";
 
 		public DailyTaskHandle(
 			ILogger<DailyTaskHandle> logger,
@@ -46,7 +48,7 @@ namespace DailyTask
 		}
 		public Task<bool> CanHandleAsync(Group group)
 		{
-			if (group.IsGroupID(Constant.Constants.OPGroupID) && group.IsMsg("/重载时间"))
+			if (group.IsGroupID(Constant.Constants.OPGroupID) && group.IsUserID(Constant.Constants.OPAdmin) && group.IsMsg("/重载时间"))
 			{
 				return Task.FromResult(true);
 			}

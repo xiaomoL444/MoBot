@@ -21,6 +21,11 @@ namespace MoBot.Core.Interfaces.MessageHandle
 		string Description { get; }
 
 		/// <summary>
+		/// 图标
+		/// </summary>
+		string Icon { get; }
+
+		/// <summary>
 		/// 判断是否执行这个模块
 		/// </summary>
 		/// <param name="message"></param>

@@ -17,13 +17,15 @@ namespace BilibiliLive.Handle.Account
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "删除用户";
+		public string Name => "/删除用户 <用户序号>";
 
-		public string Description => "/删除用户 <用户序号>";
+		public string Description => "删除用户";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/bilibiliTelevision.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/登录"))
+			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/删除用户"))
 				return Task.FromResult(true);
 			return Task.FromResult(false);
 		}

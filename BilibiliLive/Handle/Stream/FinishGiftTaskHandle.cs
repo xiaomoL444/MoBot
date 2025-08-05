@@ -17,9 +17,11 @@ namespace BilibiliLive.Handle.Stream
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "完成投喂任务";
+		public string Name => "/投喂任务";
 
-		public string Description => "/投喂任务";
+		public string Description => "完成投喂任务";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

@@ -7,6 +7,6 @@ namespace BilibiliLive.Interaction
 {
 	public partial class UserInteraction
 	{
-		private static readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(UserInteraction));
+		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(UserInteraction));
 	}
 }

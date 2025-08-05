@@ -1,12 +1,15 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
-using BilibiliLive.Models.config;
+using BilibiliLive.Models.Config;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Message;
+using MoBot.Infra.PuppeteerSharp.Interface;
+using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PuppeteerSharp.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Quartz;
@@ -23,8 +26,10 @@ namespace BilibiliLive.Manager
 	public static class EraManager
 	{
 
-		private static readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(EraManager));
-		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
+		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(EraManager));
+		private static readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
+		private static IWebshot _webshot = GlobalSetting.Webshot;
+		private static IWebshotRequestStore _webshotRequestStore = GlobalSetting.WebshotRequestStore;
 
 		/// <summary>
 		/// 刷新活动信息
@@ -195,21 +200,21 @@ namespace BilibiliLive.Manager
 				string dataUuid = Guid.NewGuid().ToString();
 				string backgroundUuid = Guid.NewGuid().ToString();
 				string faceUuid = Guid.NewGuid().ToString();
-				HttpServer.SetNewContent(dataUuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
+				_webshotRequestStore.SetNewContent(dataUuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
 				{
 					text = text,
 					face = userInfo.Data.Face,
-					background = $"{HttpServer.GetIPAddress()}?id={backgroundUuid}"
+					background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}"
 				}));
 				//HttpServer.SetNewContent(faceUuid, HttpServerContentType.ImagePng, await icon.Content.ReadAsByteArrayAsync());
-				HttpServer.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, RandomImage.GetBytes());
+				_webshotRequestStore.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, RandomImage.GetBytes());
 
 				//准备绘画
 				_ = Task.Run(async () =>
 				{
 					try
 					{
-						string base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
+						string base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/TaskStatus?id={dataUuid}");
 						sendMessage(MessageChainBuilder.Create().Image("base64://" + base64).Build());
 					}
 					catch (Exception ex)
@@ -366,8 +371,8 @@ namespace BilibiliLive.Manager
 						}
 						var uuid = Guid.NewGuid().ToString();
 						var json = new { background = "", data = msg };
-						HttpServer.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(json));
-						var base64 = await Webshot.ScreenShot($"{Webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
+						_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(json));
+						var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
 						await MessageSender.SendGroupMsg(groupID, MessageChainBuilder.Create().Image($"base64://{base64}").Build());
 					}

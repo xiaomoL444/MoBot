@@ -1,7 +1,7 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
 using BilibiliLive.Models;
-using BilibiliLive.Models.config;
+using BilibiliLive.Models.Config;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
@@ -24,8 +24,8 @@ namespace BilibiliLive.Manager
 {
 	public static class AccountManager
 	{
-		private static readonly ILogger _logger = GlobalLogger.CreateLogger(typeof(EraManager));
-		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
+		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(EraManager));
+		private static readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
 
 		public static async Task Sign(Action<List<MessageSegment>> sendMessage)
 		{

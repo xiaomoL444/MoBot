@@ -17,13 +17,15 @@ namespace BilibiliLive.Handle.Account
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "列出登录了的账户";
+		public string Name => "/账号列表";
 
-		public string Description => "/账号列表";
+		public string Description => "列出登录了的账户";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/UI_Icon_Paimon.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/登录"))
+			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/账号列表"))
 				return Task.FromResult(true);
 			return Task.FromResult(false);
 		}

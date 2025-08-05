@@ -17,9 +17,11 @@ namespace BilibiliLive.Handle.Era
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "查询任务";
+		public string Name => "/查询任务";
 
-		public string Description => "/查询任务";
+		public string Description => "查询任务";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

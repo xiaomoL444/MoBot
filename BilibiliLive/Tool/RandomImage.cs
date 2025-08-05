@@ -9,7 +9,7 @@ namespace BilibiliLive.Tool
 {
 	public static class RandomImage
 	{
-		private static readonly IDataStorage _dataStorage = GlobalDataStorage.DataStorage;
+		private static readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
 		private static string backgroundDirectory = "background";
 		private static string defaultBackground = "./Asserts/BilibiliLive/images/MyLover.png";
 		public static string GetBase64()

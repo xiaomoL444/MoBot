@@ -1,8 +1,7 @@
-﻿using BilibiliLive.Models;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MoBot.Handle.Extensions;
-using Newtonsoft.Json.Linq;
-using PuppeteerSharp;
+using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PuppeteerSharp.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,24 +11,28 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using WebSocketSharp.Server;
 
-namespace BilibiliLive.Tool
+namespace MoBot.Infra.PuppeteerSharp.WebshotRequestStore
 {
-	/// <summary>
-	/// 专门用来和Webshot交互的伺服器（）
-	/// </summary>
-	public static class HttpServer
+	internal class WebshotRequestStore : IWebshotRequestStore
 	{
-		private static ILogger _logger = GlobalLogger.CreateLogger(typeof(HttpServer));
-		private static ConcurrentDictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
-		private static object _lock = new();
+		private readonly ILogger _logger;
+		private ConcurrentDictionary<string, (HttpServerContentType contentType, object content)> _contents = new();
+		private object _lock = new();
 
 		private const int port = 5416;
-		private static string _ipAddress { get { return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"http://+:{port}/" : $"http://*:{port}/"; } }
+		private string _ipAddress { get { return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"http://+:{port}/" : $"http://*:{port}/"; } }
 
-		public static void Start()
+		public WebshotRequestStore(ILogger<WebshotRequestStore> logger)
 		{
+			_logger = logger;
+			Start();
+		}
 
+		public void Start()
+		{
+			_logger.LogInformation("创建伺服器实例中");
 			// 创建一个 HttpListener 实例
 			HttpListener listener = new HttpListener();
 			// 指定监听的 URL，通常是 "http://localhost:端口号/"
@@ -81,7 +84,7 @@ namespace BilibiliLive.Tool
 				}
 			});
 		}
-		static void Response(HttpListenerResponse response, HttpStatusCode httpStatus, HttpServerContentType contentType, object message)
+		void Response(HttpListenerResponse response, HttpStatusCode httpStatus, HttpServerContentType contentType, object message)
 		{
 			// 设置响应头和状态
 			response.ContentType = GetContentType(contentType);
@@ -111,7 +114,7 @@ namespace BilibiliLive.Tool
 			}
 
 		}
-		public static void SetNewContent(string uuid, HttpServerContentType contentType, object content)
+		public void SetNewContent(string uuid, HttpServerContentType contentType, object content)
 		{
 			(HttpServerContentType contentType, object content) value;
 			if (_contents.ContainsKey(uuid))
@@ -137,12 +140,12 @@ namespace BilibiliLive.Tool
 
 		}
 
-		public static string GetIPAddress()
+		public string GetIPAddress()
 		{
 			return $"http://mobot.lan:{port}";
 		}
 
-		private static string GetContentType(HttpServerContentType contentType)
+		private string GetContentType(HttpServerContentType contentType)
 		{
 			return contentType switch
 			{

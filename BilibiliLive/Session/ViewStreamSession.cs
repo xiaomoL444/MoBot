@@ -17,7 +17,7 @@ namespace BilibiliLive.Session
 	/// </summary>
 	sealed class ViewStreamSession
 	{
-		private ILogger _logger = GlobalLogger.CreateLogger(typeof(ViewStreamSession));
+		private ILogger _logger = GlobalSetting.CreateLogger(typeof(ViewStreamSession));
 		public UserCredential UserCredential { get; } = new();//自己的用户信息
 		public string UserName { get; } = string.Empty;
 		public long TargetRoomID { get; } = 0;//目标观看的房间

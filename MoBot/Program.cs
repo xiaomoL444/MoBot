@@ -11,6 +11,8 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Handle;
 using MoBot.Handle.DataStorage;
 using MoBot.Handle.Net;
+using MoBot.Infra.PuppeteerSharp.Webshot;
+using MoBot.Infra.PuppeteerSharp.WebshotRequestStore;
 using MoBot.Infra.Quartz.JobListener;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -41,6 +43,9 @@ try
 			services.AddScoped<IDataStorage, JsonDataStorage>();
 			services.AddJobListener();//使用计时器的Log输出
 
+			services.AddWebshot();//添加截图程序
+			services.AddWebshotRequestStore();//添加截图程序索要数据的伺服器
+
 			//Bot客户端
 			services.AddScoped<IMoBotClient, MoBotClient>();
 			services.AddScoped<IBotSocketClient, WebSocketClient>();
@@ -69,7 +74,12 @@ try
 			services.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
 
 			//每日定时任务
+			services.AddScoped<IInitializer, DailyTask.InitialHandle>();//每日定时任务初始化
 			services.AddScoped<IMessageHandle<Group>, DailyTask.DailyTaskHandle>();//每日定时任务（古文和夸夸）
+
+			//帮助列表
+			services.AddScoped<IMessageHandle<Group>, ModelManager.Handle.GetHelpHandle>();//每日定时任务（古文和夸夸）
+
 
 			services.AddQuartz();
 			services.AddQuartzHostedService(option => { option.WaitForJobsToComplete = true; });
@@ -79,15 +89,12 @@ try
 		.Build();
 
 	await (await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler()).Start();
-	_ = Task.Run(async () =>
-	{
-		await Task.Delay(2 * 1000);
-		await ShowAllJobsAsync(await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler());
-	});
 
 	var MoBotClient = host.Services.GetRequiredService<IMoBotClient>();
 
-	MoBotClient.Initial();
+	await MoBotClient.Initial();
+
+	await ShowAllJobsAsync(await host.Services.GetRequiredService<ISchedulerFactory>().GetScheduler());
 
 	while (true) ;
 }

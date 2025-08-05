@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BilibiliLive.Models
+namespace MoBot.Infra.PuppeteerSharp.Models
 {
 	public enum HttpServerContentType
 	{

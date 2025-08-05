@@ -24,6 +24,7 @@
     <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
     <ProjectReference Include="..\MoBot.Infra\MoBot.Infra.csproj" />
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
+    <ProjectReference Include="..\ModelManager\ModelManager.csproj" />
   </ItemGroup>
 
   <ItemGroup>

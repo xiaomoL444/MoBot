@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
+using MoBot.Infra.PuppeteerSharp.Interface;
+using MoBot.Infra.PuppeteerSharp.Interfaces;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -28,11 +30,15 @@ namespace BilibiliLive.Handle
 			ILoggerFactory loggerFactory,
 			IDataStorage dataStorage,
 			ISchedulerFactory schedulerFactory,
-			IJobListener jobListener)
+			IJobListener jobListener,
+			IWebshot webshot,
+			IWebshotRequestStore webshotRequestStore)
 		{
 			_logger = logger;
-			GlobalLogger.LoggerFactory = loggerFactory;
-			GlobalDataStorage.DataStorage = dataStorage;
+			GlobalSetting.LoggerFactory = loggerFactory;
+			GlobalSetting.DataStorage = dataStorage;
+			GlobalSetting.Webshot = webshot;
+			GlobalSetting.WebshotRequestStore = webshotRequestStore;
 			_schedulerFactory = schedulerFactory;
 			_jobListener = jobListener;
 		}
@@ -49,9 +55,6 @@ namespace BilibiliLive.Handle
 			{
 				_logger.LogError("直播GenerateS服务可能未开启，请注意开启");
 			}
-
-			//开启http伺服器给webshot传数据
-			HttpServer.Start();
 
 			var scheduler = await _schedulerFactory.GetScheduler();
 			//注册领取事件

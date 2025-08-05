@@ -18,4 +18,10 @@
     <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Asserts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

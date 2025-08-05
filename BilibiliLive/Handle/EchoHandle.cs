@@ -12,9 +12,11 @@ namespace BilibiliLive.Handle
 	{
 		public IRootModel RootModel => new BilibiliRootModel();
 
-		public string Name => "Ciallo~";
+		public string Name => "复活吧我的爱人";
 
-		public string Description => "输入「复活吧我的爱人」触发";
+		public string Description => "Ciallo~";
+
+		public string Icon => "./Asserts/BilibiliLive/icon/ciallo.jpg";
 
 		public Task Initial()
 		{
