@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MoBot.Core\MoBot.Core.csproj" />
+    <ProjectReference Include="..\MoBot.Handle\MoBot.Handle.csproj" />
+    <ProjectReference Include="..\MoBot.Infra\MoBot.Infra.csproj" />
+    <ProjectReference Include="..\MoBot.Shared\MoBot.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Asserts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -133,8 +133,8 @@ onMounted(() => {
 });
 
 function showDefaultmsg() {
-  img_list.value.bg = require("../assets/TaskStatus/background.png");
-  img_list.value.face = require("../assets/TaskStatus/icon.png");
+  img_list.value.bg = require("../assets/image/TaskStatus/background.png");
+  img_list.value.face = require("../assets/image/TaskStatus/icon.png");
   task_info.value = '读取中';
 }
 

@@ -27,6 +27,11 @@ const routes = [
     path: '/MultiInfoView',
     name: 'MultiInfoView',
     component: () => import('../views/MultiInfoView.vue')
+  },
+  {
+    path: '/HelpList',
+    name: 'HelpList',
+    component: () => import('../views/HelpListView.vue')
   }
 ]
 

@@ -5,5 +5,5 @@
     /* 半透明白色背景 */
     backdrop-filter: blur(10px);
     /* 高斯模糊 */
-    border-radius: 35px;
+    border-radius: 4vw;
 }
