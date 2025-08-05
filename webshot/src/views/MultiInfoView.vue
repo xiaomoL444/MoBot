@@ -150,8 +150,8 @@ onMounted(() => {
     axios.get('http://mobot.lan:5416?id=' + id)
         .then(async response => {
             if (response == undefined) { return; }
-            bg.value = response.data.background;
-            // bg.value = require('../assets/image/MultiInfoView/background.jpg');
+            // bg.value = response.data.background;
+            bg.value = require('../assets/image/MultiInfoView/background.jpg');
 
             console.log(response.data);
             datas.value = response.data.data;
