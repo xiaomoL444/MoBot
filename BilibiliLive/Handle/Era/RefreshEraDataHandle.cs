@@ -24,7 +24,7 @@ namespace BilibiliLive.Handle.Era
 
 		public string Description => "更新激励计划";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
+		public string Icon => "./Assets/BilibiliLive/icon/live.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

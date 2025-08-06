@@ -21,7 +21,7 @@ namespace BilibiliLive.Handle.Stream
 
 		public string Description => "查看推流状态";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
+		public string Icon => "./Assets/BilibiliLive/icon/live.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

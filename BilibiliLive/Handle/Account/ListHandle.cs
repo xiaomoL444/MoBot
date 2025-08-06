@@ -21,7 +21,7 @@ namespace BilibiliLive.Handle.Account
 
 		public string Description => "列出登录了的账户";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/UI_Icon_Paimon.png";
+		public string Icon => "./Assets/BilibiliLive/icon/UI_Icon_Paimon.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

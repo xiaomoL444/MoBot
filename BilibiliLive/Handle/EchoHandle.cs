@@ -16,7 +16,7 @@ namespace BilibiliLive.Handle
 
 		public string Description => "Ciallo~";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/ciallo.jpg";
+		public string Icon => "./Assets/BilibiliLive/icon/ciallo.jpg";
 
 		public Task Initial()
 		{

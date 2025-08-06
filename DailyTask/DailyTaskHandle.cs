@@ -34,7 +34,7 @@ namespace DailyTask
 
 		public string Description => "刷新每日任务时间";
 
-		public string Icon => "./Asserts/DailyTask/icon/refreshTimeIcon.png";
+		public string Icon => "./Assets/DailyTask/icon/refreshTimeIcon.png";
 
 		public DailyTaskHandle(
 			ILogger<DailyTaskHandle> logger,

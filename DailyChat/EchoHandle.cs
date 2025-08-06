@@ -32,7 +32,7 @@ namespace DailyChat
 
 		public string Description => "关键词回复功能";
 
-		public string Icon => "./Asserts/DailyChat/icon/UI_NPCTopIcon_EditTeam.png";
+		public string Icon => "./Assets/DailyChat/icon/UI_NPCTopIcon_EditTeam.png";
 
 		public EchoHandle(
 			ILogger<EchoHandle> logger,

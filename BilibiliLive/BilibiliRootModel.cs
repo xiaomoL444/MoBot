@@ -13,6 +13,6 @@ namespace BilibiliLive
 
 		public string Description => "B站直播功能";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/rootModelIcon.png";
+		public string Icon => "./Assets/BilibiliLive/icon/rootModelIcon.png";
 	}
 }

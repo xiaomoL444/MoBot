@@ -13,6 +13,6 @@ namespace DailyChat
 
 		public string Description => "这是一个关键词回复功能";
 
-		public string Icon => "./Asserts/DailyChat/icon/UI_TempEmoticon.png";
+		public string Icon => "./Assets/DailyChat/icon/UI_TempEmoticon.png";
 	}
 }

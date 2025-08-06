@@ -34,14 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Asserts\**">
+    <None Update="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Asserts\BilibiliLive\fonts\" />
-    <Folder Include="Asserts\BilibiliLive\images\" />
   </ItemGroup>
 
 </Project>

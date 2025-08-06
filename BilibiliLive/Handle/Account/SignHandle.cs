@@ -21,7 +21,7 @@ namespace BilibiliLive.Handle.Account
 
 		public string Description => "登录账户";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/bilibiliTelevision.png";
+		public string Icon => "./Assets/BilibiliLive/icon/bilibiliTelevision.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{

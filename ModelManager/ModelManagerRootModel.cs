@@ -13,6 +13,6 @@ namespace ModelManager
 
 		public string Description => "模块管理";
 
-		public string Icon => "./Asserts/ModelManager/icon/rootModelIcon.png";
+		public string Icon => "./Assets/ModelManager/icon/rootModelIcon.png";
 	}
 }

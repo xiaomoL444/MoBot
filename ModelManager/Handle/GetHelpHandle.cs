@@ -30,7 +30,7 @@ namespace ModelManager.Handle
 
 		public string Description => "获取帮助";
 
-		public string Icon => "./Asserts/ModelManager/icon/UI_QuestMain_Finish.png";
+		public string Icon => "./Assets/ModelManager/icon/UI_QuestMain_Finish.png";
 
 		private readonly IServiceProvider _services;
 		private readonly ILogger<GetHelpHandle> _logger;
