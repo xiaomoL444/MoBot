@@ -10,12 +10,14 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using MoBot.Infra.PuppeteerSharp.Interface;
 using MoBot.Infra.PuppeteerSharp.Interfaces;
 using MoBot.Infra.PuppeteerSharp.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OneOf;
 using OneOf.Types;
 using QRCoder;
@@ -23,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -36,7 +40,7 @@ namespace BilibiliLive.Manager
 		private static IWebshot _webshot = GlobalSetting.Webshot;
 		private static IWebshotRequestStore _webshotRequestStore = GlobalSetting.WebshotRequestStore;
 
-		public static async Task Sign(Action<List<MessageSegment>> sendMessage)
+		public static async Task Sign(Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage)
 		{
 			//获得QRcode 的url并转化为图像
 			var QRcodeGen = await Tool.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, Constants.BilibiliWebSignQRcodeGenerataApi));
@@ -53,25 +57,30 @@ namespace BilibiliLive.Manager
 				string qrCodeAsAsciiArt = qrCodeAscii.GetGraphic(1);
 				_logger.LogInformation($"\n{qrCodeAsAsciiArt}");
 
-				sendMessage(MessageChainBuilder.Create().Text("勾修金sama~，请登录~(＾ω＾)").Image($"base64://{qrCodeImageAsBase64}").Build());
-
+				var msgRsp = await sendMessage(MessageChainBuilder.Create().Text("勾修金sama~，请登录~(＾ω＾)").Image($"base64://{qrCodeImageAsBase64}").Build());
+				_ = Task.Run(async () =>
+				{
+					//倒计时90秒后撤回图片
+					await Task.Delay(90 * 1000);
+					await MessageSender.DeleteMsg(JObject.Parse(msgRsp.RawMessage)["data"]["message_id"].Value<string>());
+				});
 				//启动线程，等待连接成功
 				await Task.Run(() => { WaitForScan(sendMessage, QRcodeGenResult.Data.QrcodeKey); });
 			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "获取QRcode链接失败");
-				sendMessage(MessageChainBuilder.Create().Text("获取二维码失败了哦(｡•́︿•̀｡)").Build());
+				await sendMessage(MessageChainBuilder.Create().Text("获取二维码失败了哦(｡•́︿•̀｡)").Build());
 				throw;
 			}
 		}
-		static async void WaitForScan(Action<List<MessageSegment>> sendMessage, string qrcode_key)
+		static async void WaitForScan(Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage, string qrcode_key)
 		{
 			try
 			{
 				bool isPolling = true;
 				int pollingCount = 0;
-				int pollingMaxCount = 150;
+				int pollingMaxCount = 90;
 				while (isPolling)
 				{
 					if (pollingCount >= pollingMaxCount)
@@ -152,11 +161,9 @@ namespace BilibiliLive.Manager
 		{
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 
-			//var msgChain = MessageChainBuilder.Create().Text("末酱为勾修金sama找到了的用户\n");
 			Dictionary<string, UserInfoRsp> userInfoCache = (await Task.WhenAll(accountConfig.Users.Select(async q => new { uid = q.Uid, userinfo = await UserInteraction.GetUserInfo(q.UserCredential) }))).ToDictionary(x => x.uid, x => x.userinfo);
 
-			//string insertImgInfo(string uid, string info) => $"<img src='data:image/png;base64,{Convert.ToBase64String(Tool.HttpClient.SendAsync(new(HttpMethod.Get, userInfoCache[uid].Data.Face)).Result.Content.ReadAsByteArrayAsync().Result)}' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
-			string insertImgInfo(string uid, string info) => $"<img src='{userInfoCache[uid].Data.Face}' @load='OnImageLoad' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
+			string insertImgInfo(string uid, string info) => $"<img src='{userInfoCache[uid].Data.Face}' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
 
 			AccountList accountList = new() { ImageCount = accountConfig.Users.Count + 1 };
 			foreach (var user in accountConfig.Users)
@@ -170,14 +177,10 @@ namespace BilibiliLive.Manager
 					{
 						Name = userInfo.Data.Name,
 						Icon = userInfo.Data.Face,
-						Info = $@"{(roomInfo.Data is { RoomStatus: 0 } ? "未开通直播间" : "已开通直播间")}
-{string.Join("\n", user.LiveDatas.Select(livedata => $@"{livedata.LiveArea}:
-  ♪ 看播：
-{string.Join("\n", livedata.ViewLiveUsers.Select(viewUser => insertImgInfo(viewUser, userInfoCache[viewUser].Data.Name)))}
-  ♪ 发送弹幕：
-{string.Join("\n", livedata.SendUserDanmuku.Select(danmukuUser => insertImgInfo(danmukuUser.Key, userInfoCache[danmukuUser.Key].Data.Name + $" x{danmukuUser.Value}")))}
-  ♪ 投喂礼物：
-{string.Join("\n", livedata.GiftUsers.Select(giftUser => insertImgInfo(giftUser.Key, userInfoCache[giftUser.Key].Data.Name + $" x{giftUser.Value}")))}"))}"
+						Info = $@"<div>{(roomInfo.Data is { RoomStatus: 0 } ? "未开通直播间" : "已开通直播间")}</div>{string.Join("", user.LiveDatas.Select(livedata => $@"<div>{livedata.LiveArea}:</div><div style='display:flex;gap:3vw;'><div style='flex:0 1 auto;'>  ♪ 看播：
+{string.Join("\n", livedata.ViewLiveUsers.Select(viewUser => insertImgInfo(viewUser, userInfoCache[viewUser].Data.Name)))}</div><div style='flex:0 1 auto;'>  ♪ 发送弹幕：
+{string.Join("\n", livedata.SendUserDanmuku.Select(danmukuUser => insertImgInfo(danmukuUser.Key, userInfoCache[danmukuUser.Key].Data.Name + $" x{danmukuUser.Value}")))}</div><div style='flex:0 1 auto;'>  ♪ 投喂礼物：
+{string.Join("\n", livedata.GiftUsers.Select(giftUser => insertImgInfo(giftUser.Key, userInfoCache[giftUser.Key].Data.Name + $" x{giftUser.Value}")))}</div></div>"))}"
 					});
 				}
 				catch (Exception ex)
@@ -187,31 +190,65 @@ namespace BilibiliLive.Manager
 				}
 			}
 
-			//截图
-			string uuid = Guid.NewGuid().ToString();
-			_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(accountList));
+			//计算md5值，对比是否有缓存
+			var input = JsonConvert.SerializeObject(accountList);
+			string md5_result = string.Empty;
+			using (var md5 = MD5.Create())
+			{
+				byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+				byte[] hashBytes = md5.ComputeHash(inputBytes);
 
-			var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/AccountList?id={uuid}", screenshotOptions: new() { FullPage = true });
+				// 把字节数组转换成十六进制字符串
+				StringBuilder sb = new StringBuilder();
+				foreach (var b in hashBytes)
+					sb.Append(b.ToString("x2"));  // 小写16进制
+
+				md5_result = sb.ToString();
+			}
+			_logger.LogDebug("List:{@input},md5:{md5}", input, md5_result);
+#if DEBUG
+			bool debug = true;
+#else
+			bool debug = false;
+#endif
+			var base64 = string.Empty;
+			var path = $"{_dataStorage.GetDirectory(MoBot.Core.Models.DirectoryType.Cache)}/{md5_result}.png";
+			if (!File.Exists(path) || debug)
+			{
+				_logger.LogDebug("不存在图片，创建图片");
+				//截图
+				string uuid = Guid.NewGuid().ToString();
+				_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(accountList));
+
+				base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/AccountList?id={uuid}", screenshotOptions: new() { FullPage = true });
+				byte[] imageBytes = Convert.FromBase64String(base64);
+				File.WriteAllBytes(path, imageBytes);
+			}
+			else
+			{
+				_logger.LogDebug("{path}存在，直接发送图片", path);
+				base64 = Convert.ToBase64String(File.ReadAllBytes(path));
+			}
+
 			return new Success<string>(base64);
 		}
 
-		public static async Task DeleteUser(Action<List<MessageSegment>> sendMessage, List<string> args)
+		/// <summary>
+		/// 删除用户
+		/// </summary>
+		/// <param name="uid">需要删除的uid</param>
+		/// <returns></returns>
+		public static async Task<OneOf<Success<string>, Error<string>>> DeleteUser(string uid)
 		{
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
-			try
-			{
-				int index = int.Parse(args[0]);
-				accountConfig.Users.RemoveAt(index);
-				sendMessage(MessageChainBuilder.Create().Text($"成功帮勾修金sama移除第[{index}]个用户(骄傲)").Build());
-				_dataStorage.Save(Constants.AccountFile, accountConfig);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "删除用户失败");
-				sendMessage(MessageChainBuilder.Create().Text($"移除用户失败惹(｡•́︿•̀｡) ").Build());
-			}
 
-
+			bool isDone = accountConfig.Users.Remove(accountConfig.Users.First(q => q.Uid == uid));
+			if (!isDone)
+			{
+				return new Error<string>("删除失败惹(｡•́︿•̀｡) ，请重新确认一下参数啦");
+			}
+			_dataStorage.Save(Constants.AccountFile, accountConfig);
+			return new Success<string>($"成功帮勾修金sama移除用户[{uid}](骄傲)");
 		}
 	}
 }
