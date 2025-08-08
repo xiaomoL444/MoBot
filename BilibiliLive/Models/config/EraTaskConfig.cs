@@ -7,18 +7,23 @@ using System.Threading.Tasks;
 
 namespace BilibiliLive.Models.Config
 {
-	internal class EraTaskConfig
+	public class EraTaskConfig
 	{
-		[JsonProperty("task_title")]
-		public string TaskTitle { get; set; } = string.Empty;//任务标题“如原神5.8激励计划”
+		[JsonProperty("era_task_datas")]
+		public List<EraTaskData> EraTaskDatas { get; set; } = new();
+		public class EraTaskData
+		{
+			[JsonProperty("game_name")]
+			public string GameName { get; set; } = string.Empty;//Era的名字，比如genshin和starrail
 
-		[JsonProperty("live_task_ids")]
-		public List<string> LiveTaskIDs { get; set; } = new();//所有直播任务的id
+			[JsonProperty("task_title")]
+			public string TaskTitle { get; set; } = string.Empty;//任务标题“如原神5.8激励计划”
 
-		[JsonProperty("view_task_ids")]
-		public List<string> ViewTaskIDs { get; set; } = new();//所有看播任务的id
+			[JsonProperty("task_ids")]
+			public Dictionary<string, List<string>> TaskIDs { get; set; } = new();//所有任务名与ids（如每日奖励(dailyAwared:1,2,3,4)）
 
-		[JsonProperty("activity_id")]
-		public string ActivityID { get; set; } = string.Empty;//活动id
+			[JsonProperty("activity_id")]
+			public string ActivityID { get; set; } = string.Empty;//活动id
+		}
 	}
 }

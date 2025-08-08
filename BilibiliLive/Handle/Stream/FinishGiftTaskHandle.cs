@@ -1,10 +1,12 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Manager;
+using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
+using OneOf.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +23,15 @@ namespace BilibiliLive.Handle.Stream
 
 		public string Description => "完成投喂任务";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
+		public string Icon => "./Assets/BilibiliLive/icon/live.png";
+
+		private readonly ILogger<FinishGiftTaskHandle> _logger;
+
+		public FinishGiftTaskHandle(
+			ILogger<FinishGiftTaskHandle> logger)
+		{
+			_logger = logger;
+		}
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
@@ -32,8 +42,28 @@ namespace BilibiliLive.Handle.Stream
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
-			await LiveManager.FinishGiftTask(sendMessage);
+			CancellationTokenSource cancellationTokenSource = new();
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await Task.Delay(1000, cancellationTokenSource.Token);
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
+				}
+				catch (OperationCanceledException ex)
+				{
+					_logger.LogDebug("等待任务取消");
+				}
+			});
+			var result = await LiveManager.FinishGiftTask();
+			result.Switch(success =>
+			{
+				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("投喂礼物结果").Image($"base64://{success.Value}").Build());
+			}, error =>
+			{
+				cancellationTokenSource.Cancel();
+				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
+			});
 		}
 	}
 }

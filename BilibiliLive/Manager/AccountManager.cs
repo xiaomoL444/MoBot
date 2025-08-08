@@ -1,7 +1,9 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Interaction;
+using BilibiliLive.Manager.Era;
 using BilibiliLive.Models;
 using BilibiliLive.Models.Config;
+using BilibiliLive.Models.Webshot;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
@@ -10,7 +12,12 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
+using MoBot.Infra.PuppeteerSharp.Interface;
+using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PuppeteerSharp.Models;
 using Newtonsoft.Json;
+using OneOf;
+using OneOf.Types;
 using QRCoder;
 using System;
 using System.Collections.Generic;
@@ -24,8 +31,10 @@ namespace BilibiliLive.Manager
 {
 	public static class AccountManager
 	{
-		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(EraManager));
+		private static readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(AccountManager));
 		private static readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
+		private static IWebshot _webshot = GlobalSetting.Webshot;
+		private static IWebshotRequestStore _webshotRequestStore = GlobalSetting.WebshotRequestStore;
 
 		public static async Task Sign(Action<List<MessageSegment>> sendMessage)
 		{
@@ -139,32 +148,51 @@ namespace BilibiliLive.Manager
 			};
 		}
 
-		public static async Task ShowUserList(Action<List<MessageSegment>> sendMessage)
+		public static async Task<OneOf<Success<string>, Error<string>>> ShowUserList()
 		{
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 
-			var msgChain = MessageChainBuilder.Create().Text("末酱为勾修金sama找到了的用户\n");
-			for (int i = 0; i < accountConfig.Users.Count; i++)
-			{
-				var user = accountConfig.Users[i];
-				var userCredential = user.UserCredential;
-				var userInfo = await UserInteraction.GetUserInfo(userCredential);
+			//var msgChain = MessageChainBuilder.Create().Text("末酱为勾修金sama找到了的用户\n");
+			Dictionary<string, UserInfoRsp> userInfoCache = (await Task.WhenAll(accountConfig.Users.Select(async q => new { uid = q.Uid, userinfo = await UserInteraction.GetUserInfo(q.UserCredential) }))).ToDictionary(x => x.uid, x => x.userinfo);
 
+			//string insertImgInfo(string uid, string info) => $"<img src='data:image/png;base64,{Convert.ToBase64String(Tool.HttpClient.SendAsync(new(HttpMethod.Get, userInfoCache[uid].Data.Face)).Result.Content.ReadAsByteArrayAsync().Result)}' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
+			string insertImgInfo(string uid, string info) => $"<img src='{userInfoCache[uid].Data.Face}' @load='OnImageLoad' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
+
+			AccountList accountList = new() { ImageCount = accountConfig.Users.Count + 1 };
+			foreach (var user in accountConfig.Users)
+			{
+				var userCredential = user.UserCredential;
+				var userInfo = userInfoCache[user.Uid];
+				var roomInfo = await UserInteraction.GetUserRoomInfo(user.Uid);
 				try
 				{
-					msgChain.Text($"[{i}][{userInfo.Data.Name}]:{(userInfo.Data is not { LiveRoom.RoomStatus: 0 } ? "未开通直播间" : "已开通直播间")}").Text("\n");
-					msgChain.Text("是否开启直播：" + (user.IsStartLive ? "是" : "否")).Text("\n");
-					msgChain.Text("送给用户礼物：" + string.Join(",", user.GiftUsers)).Text("\n");
-					msgChain.Text("观看用户直播：" + string.Join(",", user.ViewLiveUsers)).Text("\n");
-					msgChain.Text("发送用户弹幕：" + string.Join(",", user.SendUserDanmuku)).Text("\n");
+					accountList.AccountInfos.Add(new()
+					{
+						Name = userInfo.Data.Name,
+						Icon = userInfo.Data.Face,
+						Info = $@"{(roomInfo.Data is { RoomStatus: 0 } ? "未开通直播间" : "已开通直播间")}
+{string.Join("\n", user.LiveDatas.Select(livedata => $@"{livedata.LiveArea}:
+  ♪ 看播：
+{string.Join("\n", livedata.ViewLiveUsers.Select(viewUser => insertImgInfo(viewUser, userInfoCache[viewUser].Data.Name)))}
+  ♪ 发送弹幕：
+{string.Join("\n", livedata.SendUserDanmuku.Select(danmukuUser => insertImgInfo(danmukuUser.Key, userInfoCache[danmukuUser.Key].Data.Name + $" x{danmukuUser.Value}")))}
+  ♪ 投喂礼物：
+{string.Join("\n", livedata.GiftUsers.Select(giftUser => insertImgInfo(giftUser.Key, userInfoCache[giftUser.Key].Data.Name + $" x{giftUser.Value}")))}"))}"
+					});
 				}
 				catch (Exception ex)
 				{
-					msgChain.Text("获取失败");
+					accountList.AccountInfos.Add(new() { Name = user.Uid, Icon = MoBot.Infra.PuppeteerSharp.Constant.Constants.WhiteTransParentBase64, Info = "获取失败" });
+					accountList.ImageCount--;
 				}
-
 			}
-			sendMessage(msgChain.Build());
+
+			//截图
+			string uuid = Guid.NewGuid().ToString();
+			_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(accountList));
+
+			var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/AccountList?id={uuid}", screenshotOptions: new() { FullPage = true });
+			return new Success<string>(base64);
 		}
 
 		public static async Task DeleteUser(Action<List<MessageSegment>> sendMessage, List<string> args)

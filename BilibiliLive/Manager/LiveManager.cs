@@ -4,11 +4,13 @@ using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Models.Config;
 using BilibiliLive.Models.Live;
+using BilibiliLive.Models.Webshot;
 using BilibiliLive.Session;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
+using MoBot.Core.Models;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Message;
 using MoBot.Infra.PuppeteerSharp.Interface;
@@ -27,6 +29,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,12 +47,12 @@ namespace BilibiliLive.Manager
 		private static readonly IWebshot _webshot = GlobalSetting.Webshot;
 		private static readonly IWebshotRequestStore _webshotRequestStore = GlobalSetting.WebshotRequestStore;
 
-		private static Process? _childProcess;//子推流程序1
+		public static bool IsLive { get => _sessions.Count != 0; }//若存在会话则是在开播，不管会话是否异常退出
 
 		private static (string version, string build) _livehimeVersion = new("7.19.0.9432", "9432");
-		private static List<string> _streamVideoPaths = new();
 		private static bool _isGameStart = false;//B站的开发平台的玩法，我用来检测弹幕了（）
-		private static List<LiveStreamSession> _sessions = new();
+		private static SourceStreamSession _sourceStreamSession = new();//源推流会话
+		private static List<LiveStreamSession> _sessions = new();//直播会话
 
 		private static List<ViewStreamSession> _viewsSessions = new();//看播会话
 #if DEBUG
@@ -62,6 +66,11 @@ namespace BilibiliLive.Manager
 
 		private static readonly List<(LiveDanmukuType danmukuType, string msg)> _danmukus = [
 			new(LiveDanmukuType.Text, "UpUp我喜欢你"),
+			new(LiveDanmukuType.Text, "(●• ̀ω•́ )✧"),
+			new(LiveDanmukuType.Text, "ヾ(✿ﾟ▽ﾟ)ノ"),
+			new(LiveDanmukuType.Text, "ε(*･ω･)_/ﾟ:･☆"),
+			new(LiveDanmukuType.Text, "ο(=·ω＜=)☆kira"),
+			new(LiveDanmukuType.Text, "₍˄·͈༝·͈˄*₎◞ ̑̑"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_比心]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_遨游]"),
 			new(LiveDanmukuType.Emotion,"upower_[崩坏3·光辉矢愿_回眸]"),
@@ -78,33 +87,44 @@ namespace BilibiliLive.Manager
 		static string appId = "";
 		static string gameId = "";
 
-		public static async Task StartLive(Action<List<MessageSegment>> sendMessage)
+		/// <summary>
+		/// 开启直播
+		/// <paramref name="uidList"/>需要开播的用户id列表
+		/// <paramref name="liveArea"/>直播分区，通常为genshin与starrail
+		/// </summary>
+		/// <returns>返回图查的base64</returns>
+		public static async Task<OneOf<Success<string>, Error<string>>> StartLive(List<string> uidList, string liveArea)
 		{
 
 			var accountConfig = _dataStorage.Load<AccountConfig>("account");
 			var streamConfig = _dataStorage.Load<StreamConfig>("stream");
 
-			//校验参数
-			if (!Directory.Exists(streamConfig.StreamVideoDirectory))
+			if (uidList.Count <= 0)
 			{
-				_logger.LogError("视频目录->{path}不存在，请检查配置文件", streamConfig.StreamVideoDirectory);
-				sendMessage(MessageChainBuilder.Create().Text("视频目录不存在...߹ - ߹，勾修金sama请检查一下吧").Build());
-				return;
-			}
-
-			//读取视频文件
-			_streamVideoPaths = Directory.GetFiles(streamConfig.StreamVideoDirectory).Where(q => q.EndsWith(".mp4")).OrderBy(q => Path.GetFileName(q)).ToList();
-			_logger.LogDebug("找到的所有视频文件{paths}", _streamVideoPaths);
-
-			if (_streamVideoPaths.Count <= 0)
-			{
-				_logger.LogError("视频目录->{path}下不存在视频源", streamConfig.StreamVideoDirectory);
-				sendMessage(MessageChainBuilder.Create().Text("不存在视频源...߹ - ߹，勾修金sama请检查一下吧").Build());
-				return;
+				_logger.LogWarning("提供的uid数量为零！");
+				return new Error<string>("提供的uid数量为零！");
 			}
 
 			//开启直播
-			var msgChain = MessageChainBuilder.Create().Text("直播开启中(＾ω＾)，直播状态\n");
+
+			MultiInfoView multiInfoView = new MultiInfoView();
+			var backgroundPath = RandomImage.GetImagePath();
+			var backgroundUuid = Guid.NewGuid().ToString();
+			_webshotRequestStore.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(backgroundPath));
+			multiInfoView.Background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}";
+
+
+			var sourceStreamInitializeResult = await _sourceStreamSession.Initialize();
+
+			if (sourceStreamInitializeResult.IsT0)
+			{
+				//若成功
+			}
+			else
+			{
+				//若失败
+				return new Error<string>(sourceStreamInitializeResult.AsT1.Value);
+			}
 
 			//获取直播姬版本
 			try
@@ -114,18 +134,36 @@ namespace BilibiliLive.Manager
 			}
 			catch (Exception ex)
 			{
-				sendMessage(MessageChainBuilder.Create().Text("请求版本失败，可能是没有网络连接(｡•́︿•̀｡) ").Build());
-				return;
+				//若失败
+				_logger.LogError(ex, "获取直播姬版本失败");
+				return new Error<string>("请求版本失败，可能是没有网络连接(｡•́︿•̀｡) ");
 			}
 
 			//开启直播
-			foreach (var account in accountConfig.Users)
+			foreach (var account_uid in uidList)
 			{
-				if (!account.IsStartLive)
+				//校验用户是否存在
+				if (!accountConfig.Users.Any(q => q.Uid == account_uid))
 				{
-					_logger.LogInformation("{uid}未开启直播选项", account.Uid);
+					_logger.LogDebug("{uid}用户不存在", account_uid);
+					var uuid = Guid.NewGuid().ToString();
+					_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Assets/BilibiliLive/icon/transparent.png"));
+					multiInfoView.Data.Add(new() { Info = "不存在用户!", Name = account_uid, Face = $"{_webshotRequestStore.GetIPAddress()}?id={uuid}" });
 					continue;
 				}
+
+				//校验用户是否有开播分区的数据
+				var account = accountConfig.Users.FirstOrDefault(q => q.Uid == account_uid)!;
+				if (!account.LiveDatas.Any(q => q.LiveArea == liveArea))
+				{
+					_logger.LogDebug("{uid}没有该分区的开播数据", account.Uid, liveArea);
+					var uuid = Guid.NewGuid().ToString();
+					_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.ImagePng, File.ReadAllBytes("./Assets/BilibiliLive/icon/transparent.png"));
+					multiInfoView.Data.Add(new() { Info = "没有该分区的开播数据!", Name = account.Uid, Face = $"{_webshotRequestStore.GetIPAddress()}?id={uuid}" });
+					continue;
+				}
+
+				//查找用户是否已在直播中
 				var userCredential = account.UserCredential;
 				var userInfo = await UserInteraction.GetUserInfo(userCredential);
 				var session = _sessions.FirstOrDefault(q => q.UserCredential.DedeUserID == userCredential.DedeUserID);
@@ -134,7 +172,8 @@ namespace BilibiliLive.Manager
 					if (session.IsLive)
 					{
 						_logger.LogInformation("[{user}]已经在直播中，跳过重复开播", userInfo.Data.Name);
-						msgChain.Text($"[{userInfo.Data.Name}]：已在直播中\n");
+						multiInfoView.Data.Add(new() { Info = "已经在直播中，跳过重复开播", Name = userInfo.Data.Name, Face = userInfo.Data.Face });
+						//msgChain.Text($"[{userInfo.Data.Name}]：已在直播中\n");
 						continue;
 					}
 					else
@@ -148,202 +187,121 @@ namespace BilibiliLive.Manager
 				{
 					_logger.LogInformation("[{user}]不在直播，创建直播会话中", userInfo.Data.Name);
 				}
-				//开启直播
-				var result = await CreateLiveSession(userCredential, streamConfig.AreaV2, streamConfig.Platform);
+
+				//开启直播会话
+				var result = await CreateLiveSession(userCredential, streamConfig.LiveAreas.FirstOrDefault(q => q.AreaName == liveArea)!.Area, liveArea);
 				result.Switch(session =>
 				{
 					_logger.LogInformation("开播成功");
 					_sessions.Add(session);
-					msgChain.Text($"[{userInfo.Data.Name}]:开播成功\n");
-					return;
+					multiInfoView.Data.Add(new() { Info = "开播成功!\n", Name = userInfo.Data.Name, Face = userInfo.Data.Face });
 				}, errorMsg =>
 				{
 					_logger.LogError("开播失败");
-					msgChain.Text($"[{userInfo.Data.Name}]:{errorMsg.Value}\n");
-					return;
+					multiInfoView.Data.Add(new() { Info = $"开播失败\n{errorMsg.Value}\n", Name = userInfo.Data.Name, Face = userInfo.Data.Face });
 				});
 			}
 
 			//开启子ffmpeg程序
-			if (_childProcess == null || _childProcess.HasExited)
-			{
-				//若程序不存在或者已经退出（？错误退出）
-				_ = Task.Run(async () =>
-				{
-					int num = streamConfig.Index;
-					bool isStream = true;
-					while (isStream)
-					{
-						try
-						{
-							CancellationTokenSource videoCts = new CancellationTokenSource();//要是中途出错了直接打断这个等待的Task并退出循环
-
-							//设置播放的次序
-							if (num >= _streamVideoPaths.Count) num = 0;
-							_logger.LogInformation("播放第{i}个视频，路径为：{path}", num, _streamVideoPaths[num]);
-
-							var streamConfig = _dataStorage.Load<StreamConfig>("stream");
-							streamConfig.Index = num;
-							_dataStorage.Save("stream", streamConfig);
-
-							//设置视频时长
-							TimeSpan duration;
-							try
-							{
-								duration = GetVideoDuration(_streamVideoPaths[num]);
-							}
-							catch (Exception ex)
-							{
-								_logger.LogWarning(ex, "视频读取失败,{path}", _streamVideoPaths[num]);
-								num++;
-								continue;
-							}
-							var child_args = $"-re -loglevel warning -fflags +genpts+igndts+discardcorrupt -i \"{_streamVideoPaths[num]}\" -t {duration.TotalSeconds}  -c copy -mpegts_flags +initial_discontinuity -muxpreload 0 -muxdelay 0  -f mpegts udp://239.0.0.1:11111";
-							_logger.LogDebug("ffmpeg子程序参数{args}", child_args);
-							_childProcess = new Process
-							{
-
-								StartInfo = new ProcessStartInfo()
-								{
-									FileName = "ffmpeg",
-									Arguments = child_args,
-									RedirectStandardOutput = true,
-									RedirectStandardError = true,
-									RedirectStandardInput = true,
-									UseShellExecute = false,
-									CreateNoWindow = true,
-								},
-								EnableRaisingEvents = true
-							};
-							_childProcess.OutputDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
-							_childProcess.ErrorDataReceived += (s, e) => { if (!string.IsNullOrEmpty(e.Data)) _logger.LogDebug("[ffmpeg_child] {info}", e.Data); };
-
-							_childProcess.Exited += async (s, e) =>
-							{
-								//0即是正常退出（播放完或者是输入q，这里只有播放完，让他强制退出就使用-1）
-								if (_childProcess.ExitCode == 0)
-								{
-									num++;
-									videoCts.Cancel();
-									return;
-								}
-								//windows是-1，linux是137
-								if (_childProcess.ExitCode == -1 || _childProcess.ExitCode == 137)
-								{
-									_logger.LogInformation("子ffmpeg强制退出，结束直播");
-									isStream = false;
-									videoCts.Cancel();
-									return;
-								}
-								_logger.LogWarning("子程序错误码{exit_code}", _childProcess.ExitCode);
-								_logger.LogWarning("子ffmpeg异常退出");
-
-								sendMessage(MessageChainBuilder.Create().Text("子程序退出出现了异常...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
-								isStream = false;
-								videoCts.Cancel();
-							};
-							_childProcess.Start();
-							_childProcess.BeginOutputReadLine();
-							_childProcess.BeginErrorReadLine();
-
-							//等待视频的时长
-							try
-							{
-								await Task.Delay((int)duration.TotalMilliseconds, videoCts.Token);
-							}
-							catch (Exception)
-							{
-								_logger.LogDebug("子程序经过{time}秒退出", duration.TotalSeconds);
-							}
-
-							using var closeCts = new CancellationTokenSource(10000);
-							try
-							{
-								await _childProcess.WaitForExitAsync(closeCts.Token);
-								_logger.LogInformation("直播子程序已关闭");
-								continue;
-							}
-							catch (OperationCanceledException)
-							{
-								_logger.LogWarning("直播子程序超时未退出");
-								sendMessage(MessageChainBuilder.Create().Text("子程序异常超时退出...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
-								break;
-							}
-						}
-						catch (Exception ex)
-						{
-							_logger.LogError(ex, "子程序出现错误");
-							sendMessage(MessageChainBuilder.Create().Text("子程序出现了错误...(˃ ⌑ ˂ഃ )，下次末酱会处理好的").Build());
-							break;
-						}
-					}
-				});
-			}
+			var sourceStreamResult = await _sourceStreamSession.Open();
+			multiInfoView.ExtraInfos.Add(sourceStreamResult);
 
 			//开启开发平台玩法：
-			msgChain.Text("开发平台玩法：");
+			string openLiveMsg = "开发平台玩法：";
 			if (_isGameStart)
 			{
-				msgChain.Text("已开启，无需重复开启");
+				openLiveMsg += "已开启，无需重复开启";
 			}
 			else
 			{
 				var startLiveEventResult = await StartOpenLive();
-				startLiveEventResult.Switch(none => { _isGameStart = true; msgChain.Text("已开启"); }, error => { msgChain.Text("开启失败！"); });
+				startLiveEventResult.Switch(none => { _isGameStart = true; openLiveMsg += "已开启"; }, error => { openLiveMsg += "开启失败！"; });
 			}
-			msgChain.Text("\n");
+			multiInfoView.ExtraInfos.Add(openLiveMsg);
 
 			//开启看播
-			msgChain.Text("看播：");
-			foreach (var user in accountConfig.Users)
+			//msgChain.Text("看播：");
+			foreach (var uid in uidList)
 			{
-
+				string viewLiveMsg = string.Empty;
+				var user = accountConfig.Users.FirstOrDefault(q => q.Uid == uid)!;
 				var userInfo = await UserInteraction.GetUserInfo(user.UserCredential);
-				foreach (var targetUid in user.ViewLiveUsers)
+				foreach (var viewUid in user.LiveDatas.FirstOrDefault(q => q.LiveArea == liveArea)!.ViewLiveUsers)
 				{
-					var targetUserInfo = await UserInteraction.GetUserInfo(accountConfig.Users.FirstOrDefault(q => q.Uid == targetUid).UserCredential);
-
-					var targetSession = _viewsSessions.FirstOrDefault(q => q.UserCredential.DedeUserID == user.Uid && q.TargetRoomID == targetUserInfo.Data.LiveRoom.RoomId);
-					if (targetSession is not null)
+					//判断用来看播的用户是否存在
+					if (!accountConfig.Users.Any(q => q.Uid == viewUid))
 					{
-						if (targetSession.IsView)
+						_logger.LogWarning("看播用户{uid}不存在！", viewUid);
+						viewLiveMsg += $"看播用户{viewUid}不存在！";
+						continue;
+					}
+
+					var viewUser = accountConfig.Users.FirstOrDefault(q => q.Uid == viewUid)!;
+					var viewUserInfo = await UserInteraction.GetUserInfo(viewUser.UserCredential);
+					//是否已经看播中
+					var viewSession = _viewsSessions.FirstOrDefault(q => q.UserCredential.DedeUserID == viewUser.Uid && q.TargetRoomID == userInfo.Data.LiveRoom.RoomId);
+					if (viewSession is not null)
+					{
+						if (viewSession.IsView)
 						{
-							_logger.LogInformation("user[{user}]:room[{room}]正在观看，跳过", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
+							_logger.LogInformation("user[{user}]:room[{room}]正在被观看，跳过", user.Uid, userInfo.Data.LiveRoom.RoomId);
 							continue;
 						}
 						else
 						{
-							_logger.LogWarning("user[{user}]:room[{room}]已关闭，重新启动", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
-							_viewsSessions.Remove(targetSession);
+							_logger.LogWarning("user[{user}]:room[{room}]已关闭，重新启动", user.Uid, userInfo.Data.LiveRoom.RoomId);
+							_viewsSessions.Remove(viewSession);
 						}
 					}
-					_logger.LogDebug("添加[{uid}]的看[{targetRoomID}]直播间", user.Uid, targetUserInfo.Data.LiveRoom.RoomId);
-					var session = new ViewStreamSession(user.UserCredential, userInfo.Data.Name, targetUserInfo.Data.Name, targetUserInfo.Data.LiveRoom.RoomId);
+					var liveAreaData = streamConfig.LiveAreas.FirstOrDefault(q => q.AreaName == liveArea);
+					//判断Stream里是否有这个参数
+					if (liveAreaData == null)
+					{
+						_logger.LogWarning("StreamConfig中没有这个直播游戏分区{part}", liveArea);
+						multiInfoView.Data.Add(new() { Info = $"StreamConfig中没有这个直播游戏分区{liveArea}\n", Name = userInfo.Data.Name, Face = userInfo.Data.Face });
+						continue;
+					}
+					_logger.LogDebug("添加[{uid}]的看[{targetRoomID}]直播间，大分区{part}，小分区{area}", viewUid, userInfo.Data.LiveRoom.RoomId, liveAreaData.LivePart, liveAreaData.Area);
+					//新增看播会话
+					var session = new ViewStreamSession(viewUser.UserCredential, viewUserInfo.Data.Name, userInfo.Data.Name, userInfo.Data.LiveRoom.RoomId, liveAreaData.LivePart, liveAreaData.Area);
 					session.Start();
 					_viewsSessions.Add(session);
-					msgChain.Text($"[{userInfo.Data.Name}]观看[{targetUserInfo.Data.Name}]的直播间").Text("\n");
+					viewLiveMsg += $"<img src='data:image/png;base64,{Convert.ToBase64String((await Tool.HttpClient.SendAsync(new(HttpMethod.Get, viewUserInfo.Data.Face))).Content.ReadAsByteArrayAsync().Result)}' style='padding-left:2vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>[{viewUserInfo.Data.Name}]正在观看直播间</span>\n";
 				}
+				multiInfoView.Data.FirstOrDefault(q => q.Name == userInfo.Data.Name)!.Info += viewLiveMsg;
 			}
 
-			sendMessage(msgChain.Build());
-		}
-		public static async Task StopLive(Action<List<MessageSegment>> sendMessage)
-		{
-			var msgChain = MessageChainBuilder.Create().Text("直播关闭中，关闭状态\n");
+			var multiInfoUuid = Guid.NewGuid().ToString();
+			_webshotRequestStore.SetNewContent(multiInfoUuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(multiInfoView));
 
+			var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/MultiInfoView?id={multiInfoUuid}");
+
+			return new Success<string>(base64);
+
+			//sendMessage(msgChain.Build());
+		}
+
+		/// <summary>
+		/// 关闭直播，返回关闭信息（text）
+		/// </summary>
+		/// <param name="sendMessage"></param>
+		/// <returns></returns>
+		public static async Task<string> StopLive()
+		{
 			_logger.LogInformation("关闭直播间");
 
-			var _sessions_copy = _sessions.ToList();
-			foreach (var session in _sessions_copy)
+			var msg = "直播关闭中，关闭状态\n";
+
+			foreach (var session in _sessions.ToList())
 			{
 				_logger.LogInformation("关闭{user}的直播中", session.UserCredential.DedeUserID);
 				var userInfo = await UserInteraction.GetUserInfo(session.UserCredential);
-				msgChain.Text($"[{userInfo.Data.Name}]:");
+				msg += $"[{userInfo.Data.Name}]:";
 
 				bool isSessionStop = await session.StopAsync();
 				if (!isSessionStop)
 				{
-					msgChain.Text("串流程序关闭失败！\n");
+					msg += "串流程序关闭失败！\n";
 					continue;
 				}
 
@@ -351,13 +309,13 @@ namespace BilibiliLive.Manager
 				stopliveResult.Switch(
 					successMsg =>
 					{
-						msgChain.Text($"关闭成功{(string.IsNullOrEmpty(successMsg.Value) ? "" : $"({successMsg.Value})")}");
+						msg += $"关闭成功{(string.IsNullOrEmpty(successMsg.Value) ? "" : $"({successMsg.Value})")}";
 						_sessions.Remove(session);
 					}, errorMsg =>
 					{
-						msgChain.Text(errorMsg.Value);
+						msg += errorMsg.Value;
 					});
-				msgChain.Text("\n");
+				msg += "\n";
 			}
 
 			_logger.LogInformation("关闭看播");
@@ -365,18 +323,18 @@ namespace BilibiliLive.Manager
 			{
 				session.Stop();
 				_viewsSessions.Remove(session);
-				msgChain.Text($"关闭[{session.UserName}]看[{session.TargetUserName}]直播间").Text("\n");
-				msgChain.Text(string.Join("\n", session.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}"))).Text("\n");
+				msg += $"关闭[{session.UserName}]看[{session.TargetUserName}]直播间\n";
+				msg += string.Join("\n", session.HeartResult.GroupBy(g => g).Select(r => $"{r.Key.msg}x{r.Count()}")) + "\n";
 			}
 
 			_logger.LogInformation("关闭玩法中");
 			var gameResultMsgChain = MessageChainBuilder.Create();
-			msgChain.Text("开发平台玩法：");
+			msg += "开发平台玩法：";
 			if (_isGameStart)
 			{
 				var stopGameResult = await StopOpenLive();
 				_logger.LogInformation("Result:{result}", stopGameResult);
-				msgChain.Text((stopGameResult ? "关闭成功" : "关闭失败"));
+				msg += (stopGameResult ? "关闭成功" : "关闭失败");
 
 				if (!_isGameStart)
 				{
@@ -393,40 +351,25 @@ namespace BilibiliLive.Manager
 			}
 			else
 			{
-				msgChain.Text("关闭状态，未开启");
+				msg += "关闭状态，未开启";
 			}
-			msgChain.Text("\n");
+			msg += "\n";
 
-			if (_childProcess is { HasExited: false })
-			{
+			await _sourceStreamSession.Close();
 
-				using var cts = new CancellationTokenSource(5000);
-				_childProcess!.Kill();
-				try
-				{
-					await _childProcess.WaitForExitAsync(cts.Token);
-					msgChain.Text("串流程序关闭成功");
-					_logger.LogInformation("串流程序关闭成功");
-				}
-				catch (OperationCanceledException)
-				{
-					_logger.LogWarning("串流程序关闭失败");
-					msgChain.Text("串流程序关闭失败！");
-				}
-			}
+			return msg;
 
-			sendMessage(msgChain.Build());
-			_ = Task.Run(async () =>
-			{
-				await Task.Delay(Random.Shared.Next(500, 1500));
-				sendMessage(gameResultMsgChain.Build());
-			});
+			//_ = Task.Run(async () =>
+			//{
+			//	await Task.Delay(Random.Shared.Next(500, 1500));
+			//	sendMessage(gameResultMsgChain.Build());
+			//});
 		}
 
 		public static async Task ViewLiveState(Action<List<MessageSegment>> sendMessage)
 		{
 			var msgChain = MessageChainBuilder.Create();
-			msgChain.Text($"串流程序状态：{((_childProcess == null || _childProcess.HasExited) ? "已退出或不存在（请及时关闭推流）" : "Alive! >w<")}\n");
+			msgChain.Text($"串流程序状态：{(_sourceStreamSession.IsStream ? "已退出或不存在（请及时关闭推流）" : "Alive! >w<")}\n");
 			foreach (var session in _sessions)
 			{
 				var userInfo = await UserInteraction.GetUserInfo(session.UserCredential);
@@ -441,157 +384,178 @@ namespace BilibiliLive.Manager
 			return;
 		}
 
-		public static async Task FinishGiftTask(Action<List<MessageSegment>> sendMessage)
+		public static async Task<OneOf<Success<string>, Error<string>>> FinishGiftTask()
 		{
-			sendMessage(MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
-
-			var account = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
-			List<object> datas = new();
+			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			MultiInfoView multiInfoView = new();
 #if DEBUG
-			datas = new() {
-				new{
-					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
-					name = "Name",
-					info =  "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  点赞成功x3\r\n ♫  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ♫  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功"
-				},
-				new{
-					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
-					name = "Name",
-					info =  "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  投喂牛蛙成功"
-				},
-				new{
-					face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg",
-					name = "Name",
-					info =  "发送弹幕：\r\n发送牛蛙：\r\n ♪ [戀祈]直播间\r\n ♫  投喂牛蛙成功\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功"
-				}
+			multiInfoView = new()
+			{
+				Background = "",
+				ExtraInfos = ["测试"],
+				Data = [
+					new()
+				{
+					Name = "测试",
+					Info = "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  点赞成功x3\r\n ♫  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ♫  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功",
+					Face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg" },
+					new()
+				{
+					Name = "测试",
+					Info = "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  点赞成功x3\r\n ♫  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ♫  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功",
+					Face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg" },
+					new()
+				{
+					Name = "测试",
+					Info = "发送弹幕：\r\n ♪ [戀祈]直播间\r\n ♫  点赞成功x3\r\n ♫  您发送弹幕的频率过快x3\r\n ? [心爱子]直播间\r\n ♫  点赞成功x4\r\n ?  您发送弹幕的频率过快x2\r\n发送牛蛙：\r\n ♪ [心爱子]直播间\r\n ♫  投喂牛蛙成功",
+					Face = "http://i1.hdslb.com/bfs/face/b94d505e6be9b2504f6fa23c0030751b23f54e5f.jpg" }
+					]
+
 			};
 #else
-			//发送礼物
-			foreach (var user in account.Users)
+			if (_sessions.Count <= 0)
 			{
-
-				var userCredential = user.UserCredential;
+				_logger.LogWarning("没有正在开播的会话");
+				return new Error<string>("没有开播的会话哦");
+			}
+			//发送礼物（查找开播中的用户和分区）
+			foreach (var session in _sessions)
+			{
+				//查找用户合法性
+				var user = accountConfig.Users.FirstOrDefault(q => q.Uid == session.UserCredential.DedeUserID);//正在直播的用户
+				if (user == null)
+				{
+					_logger.LogWarning("查找用户失败！{uid}", session.UserCredential.DedeUserID);
+					continue;
+				}
+				var userCredential = session.UserCredential;
 				var userInfo = await UserInteraction.GetUserInfo(userCredential);
+				var liveAreaData = user.LiveDatas.FirstOrDefault(q => q.LiveArea == session.LiveArea);
+				if (liveAreaData == null)
+				{
+					_logger.LogWarning("{uid}不存在直播分区数据！", session.UserCredential.DedeUserID);
+					continue;
+				}
+
+				//判断会话是否存活
+				if (!session.IsLive)
+				{
+					_logger.LogWarning("会话关闭，无法投喂");
+					multiInfoView.Data.Add(new() { Name = userInfo.Data.Name, Face = userInfo.Data.Face, Info = "会话已关闭，无法投喂" });
+					continue;
+				}
+
+				var room = userInfo.Data.LiveRoom.RoomId;
 
 				string msg = string.Empty;
 				//发送弹幕
-				if (user.SendUserDanmuku.Count != 0)
+				if (liveAreaData.SendUserDanmuku.Count != 0)
 					msg += "发送弹幕：\n";
-				foreach (var uid in user.SendUserDanmuku)
+				foreach (var sendConfig in liveAreaData.SendUserDanmuku)
 				{
-					var danmukuUserInfo = await UserInteraction.GetUserInfo(account.Users.FirstOrDefault(q => q.Uid == uid).UserCredential);
-					var room = danmukuUserInfo.Data.LiveRoom.RoomId;
+					var danmukuUser = accountConfig.Users.FirstOrDefault(q => q.Uid == sendConfig.Key);
+					if (danmukuUser == null)
+					{
+						_logger.LogWarning("找不到用户{uid}", sendConfig.Key);
+						msg += $"用户不存在{sendConfig}\n";
+						continue;
+					}
+					var danmukuUserInfo = await UserInteraction.GetUserInfo(danmukuUser.UserCredential);
+
 					List<(int code, string msg)> danmukuResult = new();
 					//发送六次弹幕
-					for (int time = 0; time < 6; time++)
+					for (int time = 0; time < sendConfig.Value; time++)
 					{
-						var danmuku = _danmukus[Random.Shared.Next(0, _danmukus.Count)];
-						_logger.LogDebug("{senduser}给{room}发送弹幕{@danmuku}", user.Uid, room, danmuku);
-						await Task.Delay(Random.Shared.Next(4*1000, 7*1000));
-						var match = await UserInteraction.SendDanmuka(userCredential, room.ToString(), danmuku.danmukuType, danmuku.msg);
-						match.Switch(
-							None =>
+						var danmukuList = danmukuUser.Uid == "609872107" ? _danmukus : _danmukus.Where(q => q.danmukuType == LiveDanmukuType.Text).ToList();
+						var danmuku = danmukuList[Random.Shared.Next(0, danmukuList.Count)];
+						_logger.LogDebug("{senduser}给{room}发送弹幕{@danmuku}", danmukuUserInfo.Data.Name, room, danmuku);
+						await Task.Delay(Random.Shared.Next(4 * 1000, 7 * 1000));
+						try
 						{
-							danmukuResult.Add(new(0, "发送弹幕成功"));
-						}, Error =>
+							var match = await UserInteraction.SendDanmuka(danmukuUser.UserCredential, room.ToString(), danmuku.danmukuType, danmuku.msg);
+							match.Switch(
+								None =>
+								{
+									danmukuResult.Add(new(0, "弹幕发送成功~"));
+								}, Error =>
+								{
+									danmukuResult.Add(new(Error.Value.code, Error.Value.msg));
+								});
+						}
+						catch (Exception ex)
 						{
-							danmukuResult.Add(new(Error.Value.code, Error.Value.msg));
-						});
+							_logger.LogError(ex, "发送弹幕请求失败");
+							danmukuResult.Add(new(-1, "发送弹幕请求失败"));
+
+						}
+
 					}
-					//点赞结束，汇总
-					msg += @$" ♪ [{danmukuUserInfo.Data.Name}]直播间
-    ♫  {string.Join("\n ♬  ", danmukuResult.GroupBy(q => q).Select(s => $"{s.Key.msg}x{s.Count()}"))}
-";
+
+					var iconBase64 = Convert.ToBase64String(await (await Tool.HttpClient.SendAsync(new(HttpMethod.Get, danmukuUserInfo.Data.Face))).Content.ReadAsByteArrayAsync());
+					msg += string.Join("\n", danmukuResult.GroupBy(q => q).Select(s => $"<img src='data:image/png;base64,{iconBase64}' style='padding-left:2vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>[{danmukuUserInfo.Data.Name}]：{s.Key.msg} x {s.Count()}</span>")) + "\n";
 				}
 
 				//发送牛蛙
-				if (user.GiftUsers.Count != 0)
+				if (liveAreaData.GiftUsers.Count != 0)
 					msg += "发送牛蛙：\n";
-				foreach (var uid in user.GiftUsers)
+				foreach (var sendConfig in liveAreaData.GiftUsers)
 				{
-					var targetUserInfo = await UserInteraction.GetUserInfo(account.Users.FirstOrDefault(q => q.Uid == uid).UserCredential);
-					var room = targetUserInfo.Data.LiveRoom.RoomId;
-					(int code, string msg) result = new();
-
-					await Task.Delay(Random.Shared.Next(500, 1000))
-						;
-					var match = await UserInteraction.SendLiveGift(userCredential, uid, room.ToString(), "31039");
-					match.Switch(
-						None =>
+					var giftUser = accountConfig.Users.FirstOrDefault(q => q.Uid == sendConfig.Key);
+					if (giftUser == null)
+					{
+						_logger.LogWarning("找不到用户{uid}", sendConfig.Key);
+						msg += $"用户不存在{sendConfig}\n";
+						continue;
+					}
+					var giftUserInfo = await UserInteraction.GetUserInfo(giftUser.UserCredential);
+					List<(int code, string msg)> result = new();
+					for (int time = 0; time < sendConfig.Value; time++)
+					{
+						await Task.Delay(Random.Shared.Next(500, 1000));
+						try
 						{
-							result = (0, "投喂牛蛙成功");
-						}, Error =>
+							var match = await UserInteraction.SendLiveGift(giftUser.UserCredential, user.Uid, room.ToString(), "31039");
+							match.Switch(
+								None =>
+								{
+									result.Add(new(0, "投喂牛蛙成功"));
+								}, Error =>
+								{
+									result.Add(new(Error.Value.code, Error.Value.msg));
+								});
+						}
+						catch (Exception ex)
 						{
-							result = (Error.Value.code, Error.Value.msg);
-						});
+							_logger.LogError(ex, "投喂礼物请求失败");
+							result.Add(new(-1, "投喂礼物请求失败"));
+						}
 
+					}
 					//牛蛙结束，汇总
-					msg += @$" ♪ [{targetUserInfo.Data.Name}]直播间
-    ♫  {result.msg}
-";
+					var iconBase64 = Convert.ToBase64String(await (await Tool.HttpClient.SendAsync(new(HttpMethod.Get, giftUserInfo.Data.Face))).Content.ReadAsByteArrayAsync());
+					msg += string.Join("\n", result.GroupBy(q => q).Select(s => $"<img src='data:image/png;base64,{iconBase64}' style='padding-left:2vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>[{giftUserInfo.Data.Name}]：{s.Key.msg} x {s.Count()}</span>")) + "\n";
 				}
 
-				datas.Add(new
-				{
-					face = userInfo.Data.Face,
-					name = userInfo.Data.Name,
-					info = msg
-				});
+				multiInfoView.Data.Add(new() { Name = userInfo.Data.Name, Face = userInfo.Data.Face, Info = msg });
 			}
 #endif
 			//截图界面
 			string uuid = Guid.NewGuid().ToString();
-			_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(new
-			{
-				data = datas,
-				background = ""
-			}));
+			_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(multiInfoView));
 
 			var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/MultiInfoView?id={uuid}");
 
-			sendMessage(MessageChainBuilder.Create().Image("base64://" + base64).Build());
-		}
-
-		/// <summary>
-		/// 获得视频长度
-		/// </summary>
-		/// <param name="videoPath">视频路径</param>
-		/// <returns></returns>
-		/// <exception cref="Exception"></exception>
-		static TimeSpan GetVideoDuration(string videoPath)
-		{
-			var process = new Process
-			{
-				StartInfo = new ProcessStartInfo
-				{
-					FileName = "ffprobe",
-					Arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"",
-					RedirectStandardOutput = true,
-					UseShellExecute = false,
-					CreateNoWindow = true
-				}
-			};
-
-			process.Start();
-			string output = process.StandardOutput.ReadToEnd();
-			process.WaitForExit();
-
-			if (double.TryParse(output, NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds))
-			{
-				return TimeSpan.FromSeconds(seconds);
-			}
-
-			throw new Exception($"无法解析 ffprobe 输出: {output}");
+			return new Success<string>(base64);
+			//sendMessage(MessageChainBuilder.Create().Image("base64://" + base64).Build());
 		}
 
 		/// <summary>
 		/// 开启直播间
 		/// <paramref name="userCredential"/>用户凭证（登录信息）
 		/// <paramref name="areaV2"/>直播分区
-		/// <paramref name="platform"/>直播平台
 		/// </summary>
 		/// <returns>直播会话，或者一个错误信息返回</returns>
-		static async Task<OneOf<LiveStreamSession, Error<string>>> CreateLiveSession(UserCredential userCredential, int areaV2, string platform)
+		static async Task<OneOf<LiveStreamSession, Error<string>>> CreateLiveSession(UserCredential userCredential, int areaV2, string liveArea)
 		{
 			try
 			{
@@ -613,7 +577,7 @@ namespace BilibiliLive.Manager
 				Dictionary<string, string> param = new() {
 						{ "room_id", $"{roomID}" },
 						{ "area_v2", $"{areaV2}" },
-						{ "platform", $"{platform}" },
+						{ "platform", "pc_link" },
 						{ "csrf", $"{userCredential.Bili_Jct}" },
 						{ "csrf_token", $"{userCredential.Bili_Jct}" },
 						{ "version", $"{_livehimeVersion.version}" },
@@ -648,7 +612,7 @@ namespace BilibiliLive.Manager
 
 				//下方开启会话直播
 				var rtmp = startliveData?.Data.Rtmp.Addr + JsonConvert.DeserializeObject<string>($"\"{startliveData?.Data.Rtmp.Code}\"");
-				LiveStreamSession liveStreamSession = new(userCredential, platform, rtmp);
+				LiveStreamSession liveStreamSession = new(userCredential, rtmp, liveArea);
 
 				return liveStreamSession;
 			}
@@ -678,7 +642,7 @@ namespace BilibiliLive.Manager
 				var userData = await UserInteraction.GetUserInfo(userCredential);
 				var roomID = userData.Data.LiveRoom.RoomId;
 
-				var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={roomID}&csrf={userCredential.Bili_Jct}&platform={session.Platform}");
+				var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{Constants.BilibiliStopLiveApi}?room_id={roomID}&csrf={userCredential.Bili_Jct}&platform=pc_link");
 				httpRequestMessage.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata};bili_jct={userCredential.Bili_Jct}");
 				var response = await Tool.HttpClient.SendAsync(httpRequestMessage);
 

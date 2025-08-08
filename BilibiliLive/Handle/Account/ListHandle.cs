@@ -32,8 +32,14 @@ namespace BilibiliLive.Handle.Account
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
-			await AccountManager.ShowUserList(sendMessage);
+			var result = await AccountManager.ShowUserList();
+			result.Switch(async success =>
+			{
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("(●• ̀ω•́ )✧末酱为勾修金sama找到了的用户").Image($"base64://{success.Value}").Build());
+			}, async error =>
+			{
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
+			});
 		}
 	}
 }

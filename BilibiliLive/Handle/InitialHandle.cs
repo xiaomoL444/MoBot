@@ -58,28 +58,43 @@ namespace BilibiliLive.Handle
 
 			var scheduler = await _schedulerFactory.GetScheduler();
 			//注册领取事件
-			//看播奖励（00:30前触发）
-			var receiveViewAwardJobKey = new JobKey("receiveViewAward", Constants.JobGroup);
-			var receiveViewAwardJob = JobBuilder.Create<ReceiveViewAwardJob>()
-				//setData
-				.WithIdentity(receiveViewAwardJobKey)
-				.Build();
-			var receiveViewAwardTrigger = TriggerBuilder.Create()
-				.WithIdentity(new TriggerKey("receiveViewAwardTrigger", Constants.TriggerGroup))
-				//.WithCronSchedule("50 29 0 * * ?")
-				.WithCronSchedule("58 29 0 * * ?")
-				.Build();
-			await scheduler.ScheduleJob(receiveViewAwardJob, receiveViewAwardTrigger);
-
-			var receiveLiveAwardJobKey = new JobKey("receiveLiveAward", Constants.JobGroup);
-			var receiveLiveAwardJob = JobBuilder.Create<ReceiveLiveAwardJob>()
-				.WithIdentity(receiveLiveAwardJobKey)
+			var receiveLiveAwardJob = JobBuilder.Create<ReceiveFinallyAwardJob>()
+				.WithIdentity(new JobKey("receiveAward", Constants.JobGroup))
 				.Build();
 			var receiveLiveAwardTrigger = TriggerBuilder.Create()
 				.WithIdentity(new TriggerKey("receiveLiveAwardTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "genshin"), new KeyValuePair<string, object>("AwardName", "live") })
 				.WithCronSchedule("58 59 0 * * ?")
+				.Build();//领取原神直播奖励
+			var receiveViewAwardTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("receiveViewAwardTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "genshin"), new KeyValuePair<string, object>("AwardName", "view") })
+				.WithCronSchedule("58 29 0 * * ?")
+				.Build();//领取原神看播奖励
+			var receiveStarRailLiveTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("receiveStarRailLiveTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail"), new KeyValuePair<string, object>("AwardName", "live") })
+				.WithCronSchedule("58 29 0 * * ?")
+				.Build();//领取星铁直播奖励
+
+			await scheduler.ScheduleJob(receiveLiveAwardJob, new[] { receiveLiveAwardTrigger, receiveViewAwardTrigger, receiveStarRailLiveTrigger }, replace: true);
+
+			//自动直播
+			var autoLiveJob = JobBuilder.Create<AutoLiveJob>()
+				.WithIdentity(new JobKey("autoLive", Constants.JobGroup))
 				.Build();
-			await scheduler.ScheduleJob(receiveLiveAwardJob, receiveLiveAwardTrigger);
+			var autoGenshinLiveTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("autoGenshinLiveTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "genshin") })
+				.WithCronSchedule("0 30 6 * * ?")
+				.Build();//原神触发器
+			var autoStarRailLiveTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("autoStarRailLiveTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail") })
+				.WithCronSchedule("0 0 8 * * ?")
+				.Build();//星铁触发器
+			await scheduler.ScheduleJob(autoLiveJob, new[] { autoGenshinLiveTrigger, autoStarRailLiveTrigger
+	}, replace: true);
 
 			scheduler.ListenerManager.AddJobListener(_jobListener, GroupMatcher<JobKey>.GroupEquals(Constants.JobGroup));
 

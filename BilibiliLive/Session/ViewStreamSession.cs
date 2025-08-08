@@ -3,6 +3,7 @@ using BilibiliLive.Interaction;
 using BilibiliLive.Models;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
+using OpenBLive.Runtime.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,15 +23,19 @@ namespace BilibiliLive.Session
 		public string UserName { get; } = string.Empty;
 		public long TargetRoomID { get; } = 0;//目标观看的房间
 		public string TargetUserName { get; } = string.Empty;
+		public int LivePart { get; } = 0;//大分区
+		public int AreaV2 { get; } = 0;//小分区
 		public List<(int code, string msg)> HeartResult = new();//心跳结果
 
 		public bool IsView { get; private set; } = false;//是否正在观看直播，是开启和关停观看直播的关键
-		public ViewStreamSession(UserCredential userCredential, string userName, string targetUserName, long targetRoomID)
+		public ViewStreamSession(UserCredential userCredential, string userName, string targetUserName, long targetRoomID, int livePart, int areaV2)
 		{
 			UserCredential = userCredential;
 			TargetRoomID = targetRoomID;
 			UserName = userName;
 			TargetUserName = targetUserName;
+			LivePart = livePart;
+			AreaV2 = areaV2;
 		}
 
 		public void Start()
@@ -44,7 +49,7 @@ namespace BilibiliLive.Session
 					_logger.LogInformation("[{user}]观看直播间[{targetRoomID}]，EHeartBeat", UserCredential.DedeUserID, TargetRoomID);
 
 					//发送E消息
-					var Eresult = await UserInteraction.LiveEHeartBeat(UserCredential, 3, 321, TargetRoomID);
+					var Eresult = await UserInteraction.LiveEHeartBeat(UserCredential, LivePart, AreaV2, TargetRoomID);
 
 					AddResult(ref HeartResult, Eresult.code, Eresult.msg);
 					var timeInterval = Eresult.timeInterval;
@@ -57,7 +62,7 @@ namespace BilibiliLive.Session
 						index++;
 						_logger.LogDebug("[{user}]:[{targetRoomID}]看播等待{interval}s中", UserCredential.DedeUserID, TargetRoomID, timeInterval);
 						await Task.Delay(timeInterval * 1000);
-						var Xresult = await UserInteraction.LiveXHeratBeat(UserCredential, 3, 321, index, TargetRoomID, ts, secret_key, timeInterval);
+						var Xresult = await UserInteraction.LiveXHeratBeat(UserCredential, LivePart, AreaV2, index, TargetRoomID, ts, secret_key, timeInterval);
 
 						AddResult(ref HeartResult, Xresult.code, Xresult.msg);
 						timeInterval = Xresult.timeInterval;

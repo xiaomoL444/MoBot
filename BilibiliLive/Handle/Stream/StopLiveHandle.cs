@@ -21,7 +21,7 @@ namespace BilibiliLive.Handle.Stream
 
 		public string Description => "关闭推流";
 
-		public string Icon => "./Asserts/BilibiliLive/icon/live.png";
+		public string Icon => "./Assets/BilibiliLive/icon/live.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
@@ -33,7 +33,8 @@ namespace BilibiliLive.Handle.Stream
 		public async Task HandleAsync(Group message)
 		{
 			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
-			await LiveManager.StopLive(sendMessage);
+			var msg= await LiveManager.StopLive();
+			sendMessage(MessageChainBuilder.Create().Text(msg).Build());
 		}
 	}
 }
