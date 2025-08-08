@@ -18,7 +18,7 @@ namespace BilibiliLive.Session
 		private readonly ILogger _logger = GlobalSetting.CreateLogger(typeof(LiveStreamSession));
 
 		public UserCredential UserCredential { get; } = new();//这位B站用户的个人信息
-		public string Platform { get; } = string.Empty;
+		public string LiveArea { get; } = string.Empty;//直播的分区
 		public bool IsLive = false;//是否还在直播
 		public Action FailCallback = () => { };//异常退出时触发错误回调（通常是关闭直播链接）
 		public (string code, string msg) ExitState = new();
@@ -26,11 +26,11 @@ namespace BilibiliLive.Session
 		private Process _process = new();//直播的ffmpeg程序
 
 		private string _rtmp = string.Empty;//直播的远程推流连接
-		public LiveStreamSession(UserCredential userCredential, string platform, string rtmp)
+		public LiveStreamSession(UserCredential userCredential, string rtmp, string liveArea)
 		{
-			Platform = platform;
 			UserCredential = userCredential;
 			_rtmp = rtmp;
+			LiveArea = liveArea;
 			Start();
 		}
 		void Start()

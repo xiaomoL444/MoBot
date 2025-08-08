@@ -34,7 +34,7 @@ namespace BilibiliLive.Constant
 
 		public const string EHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/E";//直播心跳E回复
 		public const string XHeartBeat = "https://live-trace.bilibili.com/xlive/data-interface/v1/x25Kn/X";//直播心跳X回复
-		public const string LiveHeartGenerateSUrl = "http://bilivekeepheart:3788";// 生成直播的S加密的链接
+		public const string LiveHeartGenerateSUrl = "http://bilivekeepheart.lan:3788";// 生成直播的S加密的链接
 		#endregion
 
 		#region 用户API

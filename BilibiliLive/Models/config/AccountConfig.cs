@@ -26,35 +26,32 @@ namespace BilibiliLive.Models.Config
 			[JsonProperty("userCredential")]
 			public UserCredential UserCredential { get; set; } = new();
 
-			/// <summary>
-			/// 是否是要开播的账号
-			/// </summary>
-			[JsonProperty("is_start_live")]
-			public bool IsStartLive { get; set; } = false;
+			[JsonProperty("live_datas")]
+			public List<LiveData> LiveDatas { get; set; } = new();
 
-			/// <summary>
-			/// 是否是要查询激励计划
-			/// </summary>
-			[JsonProperty("is_query_task")]
-			public bool IsQureyTask { get; set; } = false;
+			public class LiveData
+			{
+				[JsonProperty("live_area")]
+				public string LiveArea { get; set; } = string.Empty;
 
-			/// <summary>
-			/// 发送给哪个用户的直播礼物
-			/// </summary>
-			[JsonProperty("gift_users")]
-			public List<string> GiftUsers { get; set; } = new();
+				/// <summary>
+				/// 哪个用户给这个直播间发送礼物,uid与次数
+				/// </summary>
+				[JsonProperty("gift_users")]
+				public Dictionary<string, int> GiftUsers { get; set; } = new();
 
-			/// <summary>
-			/// 看哪个用户的直播间
-			/// </summary>
-			[JsonProperty("view_live_users")]
-			public List<string> ViewLiveUsers { get; set; } = new();
+				/// <summary>
+				/// 哪个用户看这个直播间
+				/// </summary>
+				[JsonProperty("view_live_users")]
+				public List<string> ViewLiveUsers { get; set; } = new();
 
-			/// <summary>
-			/// 给哪些用户发送弹幕
-			/// </summary>
-			[JsonProperty("send_user_danmuku")]
-			public List<string> SendUserDanmuku { get; set; } = new();
+				/// <summary>
+				/// 哪些用户给这个直播间发送消息,uid与次数
+				/// </summary>
+				[JsonProperty("send_user_danmuku")]
+				public Dictionary<string, int> SendUserDanmuku { get; set; } = new();
+			}
 		}
 	}
 }
