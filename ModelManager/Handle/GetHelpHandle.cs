@@ -107,6 +107,7 @@ namespace ModelManager.Handle
 			if (!File.Exists(path) || debug)
 			{
 				_logger.LogDebug("不存在图片，创建图片");
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Text("插件信息有更新或是暂无缓存，请等待生成...").Build());
 				//给每个icon创建http连接
 				foreach (var model in helpList.ModelInfos)
 				{
@@ -127,7 +128,7 @@ namespace ModelManager.Handle
 				_webshotRequestStore.SetNewContent(uuid, MoBot.Infra.PuppeteerSharp.Models.HttpServerContentType.TextPlain, JsonConvert.SerializeObject(helpList));
 
 				var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/HelpList?id={uuid}", screenshotOptions: new() { FullPage = true });
-				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Image($"base64://{base64}").Build());
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Image($"base64://{base64}").Build());
 
 				byte[] imageBytes = Convert.FromBase64String(base64);
 				File.WriteAllBytes(path, imageBytes);
@@ -135,7 +136,7 @@ namespace ModelManager.Handle
 			else
 			{
 				_logger.LogDebug("{path}存在，直接发送图片", path);
-				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Image($"base64://{Convert.ToBase64String(File.ReadAllBytes(path))}").Build());
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Image($"base64://{Convert.ToBase64String(File.ReadAllBytes(path))}").Build());
 			}
 
 		}
