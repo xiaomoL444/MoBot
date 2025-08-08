@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -71,6 +72,24 @@ namespace MoBot.Core.Models.Message
 				Data = new
 				{
 					qq = uid
+				}
+			});
+			return this;
+		}
+
+		/// <summary>
+		/// 回复消息
+		/// </summary>
+		/// <param name="msgID">消息id</param>
+		/// <returns></returns>
+		public MessageChainBuilder Reply(string msgID)
+		{
+			_msgSegment.Enqueue(new()
+			{
+				Type = "reply",
+				Data = new
+				{
+					id = msgID
 				}
 			});
 			return this;
