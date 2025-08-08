@@ -369,7 +369,7 @@ namespace BilibiliLive.Manager
 		public static async Task ViewLiveState(Action<List<MessageSegment>> sendMessage)
 		{
 			var msgChain = MessageChainBuilder.Create();
-			msgChain.Text($"串流程序状态：{(_sourceStreamSession.IsStream ? "已退出或不存在（请及时关闭推流）" : "Alive! >w<")}\n");
+			msgChain.Text($"串流程序状态：{(_sourceStreamSession.IsStream ? "Alive! >w<" : "已退出或不存在（请及时关闭推流）")}\n");
 			foreach (var session in _sessions)
 			{
 				var userInfo = await UserInteraction.GetUserInfo(session.UserCredential);

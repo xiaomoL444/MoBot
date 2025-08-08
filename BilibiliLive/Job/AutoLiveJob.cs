@@ -18,13 +18,20 @@ namespace BilibiliLive.Job
 {
 	internal class AutoLiveJob : IJob
 	{
-		public string GameName{ private get; set; }
+		public string GameName { private get; set; }
 		private readonly ILogger _logger = GlobalSetting.CreateLogger<AutoLiveJob>();
 		private readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
 		public async Task Execute(IJobExecutionContext context)
 		{
 			_logger.LogInformation("正在执行{game}的直播任务", GameName);
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			var streamConfig = _dataStorage.Load<StreamConfig>(Constants.StreamFile);
+
+			if (!streamConfig.LiveAreas.FirstOrDefault(q => q.AreaName == GameName).AutoLive)
+			{
+				_logger.LogInformation("{area}分区未开启自动直播", GameName);
+				return;
+			}
 
 			var uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == GameName)).Select(s => s.Uid).ToList();
 

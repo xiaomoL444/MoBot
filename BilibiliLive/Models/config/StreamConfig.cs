@@ -29,6 +29,12 @@ namespace BilibiliLive.Models.Config
 
 	public class LiveAreaData
 	{
+		/// <summary>
+		/// 是否要开启自动直播
+		/// </summary>
+		[JsonProperty("auto_live")]
+		public bool AutoLive { get; set; } = false;
+
 		[JsonProperty("area_name")]
 		public string AreaName { get; set; } = string.Empty;
 

@@ -1,5 +1,6 @@
 ﻿using BilibiliLive.Constant;
 using BilibiliLive.Job;
+using BilibiliLive.Models.Config;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,7 @@ namespace BilibiliLive.Handle
 	public class InitialHandle : IInitializer
 	{
 		private readonly ILogger<InitialHandle> _logger;
+		private readonly IDataStorage _dataStorage;
 		private readonly ISchedulerFactory _schedulerFactory;
 		private readonly IJobListener _jobListener;
 
@@ -35,6 +37,7 @@ namespace BilibiliLive.Handle
 			IWebshotRequestStore webshotRequestStore)
 		{
 			_logger = logger;
+			_dataStorage = dataStorage;
 			GlobalSetting.LoggerFactory = loggerFactory;
 			GlobalSetting.DataStorage = dataStorage;
 			GlobalSetting.Webshot = webshot;
@@ -97,6 +100,14 @@ namespace BilibiliLive.Handle
 	}, replace: true);
 
 			scheduler.ListenerManager.AddJobListener(_jobListener, GroupMatcher<JobKey>.GroupEquals(Constants.JobGroup));
+
+			//检查数据完备性
+			var streamConfig = _dataStorage.Load<StreamConfig>(Constants.StreamFile);
+			if (!(streamConfig.LiveAreas.Any(q => q.AreaName == "genshin") ||
+				streamConfig.LiveAreas.Any(q => q.AreaName == "starrail")))
+			{
+				_logger.LogError("开播信息不完备！，缺少分区信息");
+			}
 
 			return;
 		}
