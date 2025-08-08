@@ -1,3 +1,4 @@
+@echo off
 docker build --platform linux/arm64 -t webshot .
 
 echo ÉÏ´«dockerÖĞ

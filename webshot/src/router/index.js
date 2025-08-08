@@ -32,6 +32,11 @@ const routes = [
     path: '/HelpList',
     name: 'HelpList',
     component: () => import('../views/HelpListView.vue')
+  },
+  {
+    path: '/AccountList',
+    name: 'AccountList',
+    component: () => import('../views/AccountList.vue')
   }
 ]
 

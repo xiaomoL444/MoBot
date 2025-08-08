@@ -1,16 +1,18 @@
 <template>
   <html>
   <meta name="referrer" content="no-referrer">
+
   </html>
-  <div :class="['contain', 'center-flex']">
+  <div :class="['contain']">
     <img class="background" :src="img_list.bg" @load="OnImageLoad">
-    <div :class="['glass-effect']">
-      <div :class="['task-status', 'center-flex']">
-        {{ task_info }}
-      </div>
-      <img class="icon" :src="img_list.face" @load="OnImageLoad">
-      <div :class="['tip', 'center']">
-        Create by Mobot at {{ create_time }}
+    <div :class="['main-content']">
+      <div :class="['glass-effect']">
+        <div :class="['task-status']" v-html="task_info">
+        </div>
+        <img class="icon" :src="img_list.face" @load="OnImageLoad">
+        <div :class="['tip', 'center']">
+          Create by Mobot at {{ create_time }}
+        </div>
       </div>
     </div>
   </div>
@@ -20,45 +22,47 @@
 /* .font-family{
   font-family: 'GothFont','SegUIVar','msyh';
 } */
+@import '../assets/css/glass-effect.css';
 
 img {
   width: 100%;
   height: auto;
 }
 
-.center-flex {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .contain {
-  height: 100vh;
+  position: relative;
+  height: 100%;
+  width: 100%;
   /* 使父容器的高度占满整个视口 */
 }
 
 .background {
-  position: absolute;
+  /* position: relative; */
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-.glass-effect {
+.main-content {
   position: absolute;
-  width: 95%;
-  height: 91.6%;
-  display: flex;
-  background-color: rgba(255, 255, 255, 0.3921);
-  /* 半透明白色背景 */
-  backdrop-filter: blur(10px);
-  /* 高斯模糊 */
-  border-radius: 35px;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  padding: 2.5vw;
+  /* 留白 */
+  box-sizing: border-box;
 }
 
 .task-status {
   position: relative;
+  display: flex;
+  flex-direction: column;
   padding-left: 2vw;
-  font-size: 2.35vw;
+  font-size: 1.9vw;
   /* 允许换行符生效 */
-  white-space: pre;
+  white-space: pre-wrap;
+  justify-content: center;
+  height: 100%;
 }
 
 .icon {
@@ -135,7 +139,7 @@ onMounted(() => {
 function showDefaultmsg() {
   img_list.value.bg = require("../assets/image/TaskStatus/background.png");
   img_list.value.face = require("../assets/image/TaskStatus/icon.png");
-  task_info.value = '读取中';
+  task_info.value = "测试";
 }
 
 async function OnImageLoad() {
