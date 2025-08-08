@@ -69,12 +69,27 @@ namespace BilibiliLive.Handle.Stream
 
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 
+			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+			_ = Task.Run(async () =>
+			{
+				//等待是否需要生成图片
+				try
+				{
+					await Task.Delay(1 * 1000, cancellationTokenSource.Token);
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Text("勾修金sama请稍等...").Build());
+				}
+				catch (OperationCanceledException)
+				{
+				}
+			});
+
 			var result = await LiveManager.StartLive(accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList(), liveArea);
 			result.Switch(success =>
 			{
 				messageChain.Text("直播开启中(＾ω＾)，直播状态").Image($"base64://{success.Value}");
 			}, error =>
 			{
+				cancellationTokenSource.Cancel();
 				messageChain.Text(error.Value);
 			});
 			await sendMessage(messageChain.Build());

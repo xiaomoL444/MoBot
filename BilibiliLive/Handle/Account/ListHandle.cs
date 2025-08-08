@@ -33,7 +33,6 @@ namespace BilibiliLive.Handle.Account
 
 		public async Task HandleAsync(Group message)
 		{
-			var result = await AccountManager.ShowUserList();
 			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 			_ = Task.Run(async () =>
 			{
@@ -48,6 +47,7 @@ namespace BilibiliLive.Handle.Account
 				}
 			});
 			var messageChain = MessageChainBuilder.Create().Reply(message);
+			var result = await AccountManager.ShowUserList();
 			result.Switch(success =>
 			{
 				cancellationTokenSource.Cancel();

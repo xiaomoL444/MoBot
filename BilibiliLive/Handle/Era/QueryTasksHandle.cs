@@ -100,7 +100,7 @@ namespace BilibiliLive.Handle.Era
 			});
 
 			int resultNum = 0;
-			var messageChain = MessageChainBuilder.Create().Reply(message).Text("查询的任务");
+			var messageChain = MessageChainBuilder.Create().Reply(message).Text("查询的任务：\n");
 			foreach (var uid in uidList)
 			{
 				_ = Task.Run(async () =>

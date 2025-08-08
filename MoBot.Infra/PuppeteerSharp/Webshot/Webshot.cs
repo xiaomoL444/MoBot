@@ -93,7 +93,7 @@ namespace MoBot.Infra.PuppeteerSharp.Webshot
   });
 }", List<CookieParam> cookieParam = null)
 		{
-			if (_browser is not { IsConnected:true})
+			if (_browser is not { IsConnected: true })
 			{
 				_logger.LogWarning("Chrome被意外关闭，重新启动");
 				StartNewChrome();
@@ -102,16 +102,18 @@ namespace MoBot.Infra.PuppeteerSharp.Webshot
 			try
 			{
 				await page.GoToAsync(url);
+				_logger.LogDebug("正在截图网页：{url}", url);
+				await page.WaitForFunctionAsync(waitForFunc);
 				await page.SetViewportAsync(viewPortOptions ?? new ViewPortOptions
 				{
 					Width = 1920,
 					Height = 1080
 				});
-				_logger.LogDebug("正在截图网页：{url}", url);
-				await page.WaitForFunctionAsync(waitForFunc);
 				var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
 #if DEBUG
-				await page.ScreenshotAsync(_dataStorage.GetDirectory(MoBot.Core.Models.DirectoryType.Cache) + "/" + DateTimeOffset.Now.ToUnixTimeMilliseconds() + ".png", screenshotOptions ?? new());
+				var path = _dataStorage.GetDirectory(MoBot.Core.Models.DirectoryType.Cache) + "/" + DateTimeOffset.Now.ToUnixTimeMilliseconds() + ".png";
+				await page.ScreenshotAsync(path, screenshotOptions ?? new());
+				//var base64 = Convert.ToBase64String(File.ReadAllBytes(path));
 #endif
 				_logger.LogDebug("截图完成");
 				return base64;
