@@ -41,7 +41,7 @@ namespace MoBot.Core.Models.Event.Message
 		/// 消息 ID
 		/// </summary>
 		[JsonProperty("message_id")]
-		public int MessageId { get; set; } = 0;
+		public long MessageId { get; set; } = 0;
 
 		/// <summary>
 		/// 发送者 QQ 号
