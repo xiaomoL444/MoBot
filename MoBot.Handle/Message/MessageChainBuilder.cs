@@ -1,5 +1,6 @@
 ﻿using MoBot.Core.Models.Event.Message;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,11 +11,11 @@ namespace MoBot.Core.Models.Message
 {
 	public class MessageChainBuilder
 	{
-		private List<MessageSegment> _msgSegment = [];
+		private ConcurrentQueue<MessageSegment> _msgSegment = [];
 
 		public static MessageChainBuilder Create() => new();
 
-		public List<MessageSegment> Build() => _msgSegment;
+		public List<MessageSegment> Build() => _msgSegment.ToList();
 
 		/// <summary>
 		/// 普通文本消息
@@ -23,7 +24,7 @@ namespace MoBot.Core.Models.Message
 		/// <returns></returns>
 		public MessageChainBuilder Text(string text)
 		{
-			_msgSegment.Add(new()
+			_msgSegment.Enqueue(new()
 			{
 				Type = "text",
 				Data = new
@@ -45,7 +46,7 @@ namespace MoBot.Core.Models.Message
 		/// <returns></returns>
 		public MessageChainBuilder Image(string content, ImageType imageType = ImageType.Image)
 		{
-			_msgSegment.Add(new()
+			_msgSegment.Enqueue(new()
 			{
 				Type = "image",
 				Data = new
@@ -64,7 +65,7 @@ namespace MoBot.Core.Models.Message
 		/// <returns></returns>
 		public MessageChainBuilder At(string uid)
 		{
-			_msgSegment.Add(new()
+			_msgSegment.Enqueue(new()
 			{
 				Type = "at",
 				Data = new
