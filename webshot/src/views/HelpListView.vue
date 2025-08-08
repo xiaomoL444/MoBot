@@ -82,30 +82,30 @@ img {
 
 .model-info {
     position: relative;
-    height: 11vw;
+    height: 10vw;
     /* background-color: #00000050; */
 }
 
 .model-info>.icon {
     position: absolute;
-    left: 2vw;
-    top: 2vw;
-    width: 8vw;
-    height: 8vw;
+    left: 1.5vw;
+    top: 1.5vw;
+    width: 7vw;
+    height: 7vw;
     border-radius: 2vw;
 }
 
 .model-info>.name {
     position: absolute;
-    left: 12vw;
-    top: 1.5vw;
-    font-size: 4vw;
+    left: 10vw;
+    top: 1vw;
+    font-size: 3.5vw;
 }
 
 .model-info>.description {
     position: absolute;
-    left: 12vw;
-    top: 7vw;
+    left: 10vw;
+    top: 5.5vw;
     font-size: 3vw;
 }
 
@@ -124,7 +124,7 @@ img {
     display: flex;
     align-items: center;
     /* 垂直居中 */
-    height: 8vw;
+    height: 6vw;
     flex: 0 33.333%;
     box-sizing: border-box;
 }
@@ -167,15 +167,15 @@ img {
 
 .plugin-info>.name {
     position: absolute;
-    font-size: 2.25vw;
-    left: 7.5vw;
-    bottom: 3.75vw;
+    font-size: 2vw;
+    left: 6.5vw;
+    bottom: 3vw;
 }
 
 .plugin-info>.description {
-    font-size: 2vw;
-    left: 8vw;
-    top: 4.5vw;
+    font-size: 1.75vw;
+    left: 6.5vw;
+    top: 3vw;
     position: absolute;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -185,8 +185,8 @@ img {
 .plugin-info>.icon {
     position: absolute;
     left: 1.5vw;
-    width: 5vw;
-    height: 5vw;
+    width: 4vw;
+    height: 4vw;
     border-radius: 1vw;
 }
 </style>
