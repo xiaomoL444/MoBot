@@ -5,6 +5,7 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using Newtonsoft.Json;
@@ -44,24 +45,25 @@ namespace BilibiliLive.Handle.Stream
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
+			Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage = async (chain) => { return await MessageSender.SendGroupMsg(message.GroupId, chain); };
 			var args = message.SplitMsg(" ");
 			var liveArea = string.Empty;
+			var messageChain = MessageChainBuilder.Create().Reply(message);
 			switch (args.Count)
 			{
 				case 1:
-					sendMessage(MessageChainBuilder.Create().Text("需要提供开播分区").Build());
+					await sendMessage(messageChain.Text("需要提供开播分区").Build());
 					return;
 				case 2:
 					liveArea = Tool.LiveAreaKeyWordMatch.Match(args[1]);
 					if (string.IsNullOrEmpty(liveArea))
 					{
-						sendMessage(MessageChainBuilder.Create().Text("提供的分区信息无效").Build());
+						await sendMessage(messageChain.Text("提供的分区信息无效").Build());
 						return;
 					}
 					break;
 				default:
-					sendMessage(MessageChainBuilder.Create().Text("参数无效").Build());
+					await sendMessage(messageChain.Text("参数无效").Build());
 					break;
 			}
 
@@ -70,11 +72,12 @@ namespace BilibiliLive.Handle.Stream
 			var result = await LiveManager.StartLive(accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList(), liveArea);
 			result.Switch(success =>
 			{
-				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("直播开启中(＾ω＾)，直播状态").Image($"base64://{success.Value}").Build());
+				messageChain.Text("直播开启中(＾ω＾)，直播状态").Image($"base64://{success.Value}");
 			}, error =>
 			{
-				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
+				messageChain.Text(error.Value);
 			});
+			await sendMessage(messageChain.Build());
 		}
 	}
 }

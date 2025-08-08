@@ -37,7 +37,7 @@ namespace BilibiliLive.Handle.Era
 
 		public async Task HandleAsync(Group message)
 		{
-			var messageChain = MessageChainBuilder.Create();
+			var messageChain = MessageChainBuilder.Create().Reply(message);
 
 			//获取原神的更新结果
 			var genshinResult = await EraLogicFactory.GetLogic("genshin").RefreshEraData();

@@ -3,6 +3,7 @@ using BilibiliLive.Manager;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using System;
@@ -32,7 +33,7 @@ namespace BilibiliLive.Handle.Account
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
+			Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage = async (chain) => { return await MessageSender.SendGroupMsg(message.GroupId, chain); };
 			await AccountManager.Sign(sendMessage);
 		}
 	}

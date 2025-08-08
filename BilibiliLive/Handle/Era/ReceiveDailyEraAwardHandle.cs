@@ -6,6 +6,7 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using System;
@@ -40,21 +41,22 @@ namespace BilibiliLive.Handle.Era
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
+			Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage = async (chain) => { return await MessageSender.SendGroupMsg(message.GroupId, chain); };
 
 			var args = message.SplitMsg(" ");
 			var liveArea = "";
 			var uidList = new List<string>();
 
+			var messageChain = MessageChainBuilder.Create().Reply(message);
 			//校验参数
 			if (args.Count <= 1)
 			{
-				sendMessage(MessageChainBuilder.Create().Text("需要提供开播分区").Build());
+				await sendMessage(messageChain.Text("需要提供开播分区").Build());
 				return;
 			}
 			if (args.Count >= 4)
 			{
-				sendMessage(MessageChainBuilder.Create().Text("参数数量错误").Build());
+				await sendMessage(messageChain.Text("参数数量错误").Build());
 				return;
 			}
 
@@ -62,7 +64,7 @@ namespace BilibiliLive.Handle.Era
 			liveArea = Tool.LiveAreaKeyWordMatch.Match(args[1]);
 			if (string.IsNullOrEmpty(liveArea))
 			{
-				sendMessage(MessageChainBuilder.Create().Text("提供的分区信息无效").Build());
+				await sendMessage(messageChain.Text("提供的分区信息无效").Build());
 				return;
 			}
 
@@ -79,19 +81,34 @@ namespace BilibiliLive.Handle.Era
 				}
 				else
 				{
-					sendMessage(MessageChainBuilder.Create().Text("提供的用户序号无效").Build());
+					await sendMessage(messageChain.Text("提供的用户序号无效").Build());
 					return;
 				}
 			}
 
-			var result = await EraLogicFactory.GetLogic(liveArea).ReceiveDailyEraAward(uidList);
-			result.Switch(success =>
+			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+			_ = Task.Run(async () =>
 			{
-				sendMessage(MessageChainBuilder.Create().Image($"base64://{success.Value}").Build());
-			}, error =>
-			{
-				sendMessage(MessageChainBuilder.Create().Text(error.Value).Build());
+				//等待是否需要生成图片
+				try
+				{
+					await Task.Delay(1 * 1000, cancellationTokenSource.Token);
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Text("勾修金sama请稍等...(预计等待一分钟...)").Build());
+				}
+				catch (OperationCanceledException)
+				{
+				}
 			});
+
+			var result = await EraLogicFactory.GetLogic(liveArea).ReceiveDailyEraAward(uidList);
+			await result.Match(async success =>
+						{
+							await MessageSender.SendGroupMsg(message.GroupId, messageChain.Image($"base64://{success.Value}").Build());
+						}, async error =>
+						{
+							cancellationTokenSource.Cancel();
+							await MessageSender.SendGroupMsg(message.GroupId, messageChain.Reply(message).Text(error.Value).Build());
+						});
 		}
 	}
 }

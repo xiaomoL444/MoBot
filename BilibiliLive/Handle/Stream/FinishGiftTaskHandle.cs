@@ -48,7 +48,7 @@ namespace BilibiliLive.Handle.Stream
 				try
 				{
 					await Task.Delay(1000, cancellationTokenSource.Token);
-					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("请等待...预计需要一分钟左右时间...").Build());
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("请稍等...预计需要一分钟左右时间...").Build());
 				}
 				catch (OperationCanceledException ex)
 				{
@@ -56,13 +56,13 @@ namespace BilibiliLive.Handle.Stream
 				}
 			});
 			var result = await LiveManager.FinishGiftTask();
-			result.Switch(success =>
+			await result.Match(async success =>
 			{
-				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("投喂礼物结果").Image($"base64://{success.Value}").Build());
-			}, error =>
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("投喂礼物结果").Image($"base64://{success.Value}").Build());
+			}, async error =>
 			{
 				cancellationTokenSource.Cancel();
-				MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
+				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
 			});
 		}
 	}

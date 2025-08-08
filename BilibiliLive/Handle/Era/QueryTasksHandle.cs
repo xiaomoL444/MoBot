@@ -6,6 +6,7 @@ using MoBot.Core.Interfaces;
 using MoBot.Core.Interfaces.MessageHandle;
 using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
+using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
 using System;
@@ -40,7 +41,7 @@ namespace BilibiliLive.Handle.Era
 
 		public async Task HandleAsync(Group message)
 		{
-			Action<List<MessageSegment>> sendMessage = async (chain) => { await MessageSender.SendGroupMsg(message.GroupId, chain); };
+			Func<List<MessageSegment>, Task<ActionPacketRsp>> sendMessage = async (chain) => { return await MessageSender.SendGroupMsg(message.GroupId, chain); };
 
 			var args = message.SplitMsg(" ");
 			var liveArea = "";
@@ -49,12 +50,12 @@ namespace BilibiliLive.Handle.Era
 			//校验参数
 			if (args.Count <= 1)
 			{
-				sendMessage(MessageChainBuilder.Create().Text("需要提供开播分区").Build());
+				await sendMessage(MessageChainBuilder.Create().Text("需要提供开播分区").Build());
 				return;
 			}
 			if (args.Count >= 4)
 			{
-				sendMessage(MessageChainBuilder.Create().Text("参数数量错误").Build());
+				await sendMessage(MessageChainBuilder.Create().Text("参数数量错误").Build());
 				return;
 			}
 
@@ -62,7 +63,7 @@ namespace BilibiliLive.Handle.Era
 			liveArea = Tool.LiveAreaKeyWordMatch.Match(args[1]);
 			if (string.IsNullOrEmpty(liveArea))
 			{
-				sendMessage(MessageChainBuilder.Create().Text("提供的分区信息无效").Build());
+				await sendMessage(MessageChainBuilder.Create().Text("提供的分区信息无效").Build());
 				return;
 			}
 
@@ -79,13 +80,27 @@ namespace BilibiliLive.Handle.Era
 				}
 				else
 				{
-					sendMessage(MessageChainBuilder.Create().Text("提供的用户序号无效").Build());
+					await sendMessage(MessageChainBuilder.Create().Text("提供的用户序号无效").Build());
 					return;
 				}
 			}
 
+			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+			_ = Task.Run(async () =>
+			{
+				//等待是否需要生成图片
+				try
+				{
+					await Task.Delay(1 * 1000, cancellationTokenSource.Token);
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Text("勾修金sama请稍等...").Build());
+				}
+				catch (OperationCanceledException)
+				{
+				}
+			});
+
 			int resultNum = 0;
-			var messageChain = MessageChainBuilder.Create().Text("查询的任务");
+			var messageChain = MessageChainBuilder.Create().Reply(message).Text("查询的任务");
 			foreach (var uid in uidList)
 			{
 				_ = Task.Run(async () =>
@@ -96,6 +111,7 @@ namespace BilibiliLive.Handle.Era
 						messageChain.Image($"base64://{success.Value}");
 					}, error =>
 					{
+						cancellationTokenSource.Cancel();
 						messageChain.Text(error.Value);
 					});
 					Interlocked.Increment(ref resultNum);
@@ -108,7 +124,7 @@ namespace BilibiliLive.Handle.Era
 				{
 					if (resultNum == uidList.Count)
 					{
-						sendMessage(messageChain.Build());
+						await sendMessage(messageChain.Build());
 						return;
 					}
 					await Task.Delay(1000);

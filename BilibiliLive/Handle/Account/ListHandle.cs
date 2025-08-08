@@ -5,6 +5,7 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
+using OneOf.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,13 +34,29 @@ namespace BilibiliLive.Handle.Account
 		public async Task HandleAsync(Group message)
 		{
 			var result = await AccountManager.ShowUserList();
-			result.Switch(async success =>
+			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+			_ = Task.Run(async () =>
 			{
-				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text("(●• ̀ω•́ )✧末酱为勾修金sama找到了的用户").Image($"base64://{success.Value}").Build());
-			}, async error =>
-			{
-				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Text(error.Value).Build());
+				//等待是否需要重新生成图片
+				try
+				{
+					await Task.Delay(2 * 1000, cancellationTokenSource.Token);
+					await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Text("不存在缓存或有信息更新...请勾修金sama稍等...OvO").Build());
+				}
+				catch (OperationCanceledException)
+				{
+				}
 			});
+			var messageChain = MessageChainBuilder.Create().Reply(message);
+			result.Switch(success =>
+			{
+				cancellationTokenSource.Cancel();
+				messageChain.Text("(●• ̀ω•́ )✧末酱为勾修金sama找到了的用户").Image($"base64://{success.Value}");
+			}, error =>
+			{
+				messageChain.Text(error.Value);
+			});
+			await MessageSender.SendGroupMsg(message.GroupId, messageChain.Build());
 		}
 	}
 }
