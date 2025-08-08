@@ -57,7 +57,7 @@ namespace BilibiliLive.Manager.Era.Logics
 				_logger.LogError("获取{user}看播任务信息错误CODE:{code}", userInfo.Data.Name, viewTask?.Code);
 			}
 
-			string GetStatusWithColor(TaskInfoRsp.TaskInfoData.TaskCompleteStatus status) => $"<span {(status == TaskInfoRsp.TaskInfoData.TaskCompleteStatus.已领取 ? "style='color:#D3BC8E'" : "")}>{status}</span>";
+			string GetStatusWithColor(TaskInfoRsp.TaskInfoData.TaskCompleteStatus status) => $"<span {(status == TaskInfoRsp.TaskInfoData.TaskCompleteStatus.已领取 ? "style='color:#FFD700;'" : "")}>{status}</span>";
 
 			//组装信息
 			var startChar = " ♪ ";
