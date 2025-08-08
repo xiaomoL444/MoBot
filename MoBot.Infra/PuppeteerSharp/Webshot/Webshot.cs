@@ -70,9 +70,30 @@ namespace MoBot.Infra.PuppeteerSharp.Webshot
 		/// <param name="waitForFunc">等待指令</param>
 		/// <param name="cookieParam">cookie(我自己一般用不到（）)</param>
 		/// <returns>图片base64</returns>
-		public async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = "() => window.appLoaded === true", List<CookieParam> cookieParam = null)
+		public async Task<string> ScreenShot(string url, ViewPortOptions viewPortOptions = null, ScreenshotOptions screenshotOptions = null, string waitForFunc = @"() => {
+  return new Promise(async resolve => {
+    // ✅ 先等待 Vue / DOM 渲染完成（等价于 Vue.nextTick）
+    await new Promise(requestAnimationFrame);
+
+    // ✅ 再等待所有图片加载完成
+    const imagePromises = Array.from(document.images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(res => {
+        img.onload = img.onerror = res;
+      });
+    });
+
+    // ✅ 等待所有字体加载完成（document.fonts.ready）
+    const fontPromise = document.fonts ? document.fonts.ready : Promise.resolve();
+
+    // ✅ 等全部加载完成
+    await Promise.all([...imagePromises, fontPromise]);
+
+    resolve();
+  });
+}", List<CookieParam> cookieParam = null)
 		{
-			if (!_browser.IsConnected)
+			if (_browser is not { IsConnected:true})
 			{
 				_logger.LogWarning("Chrome被意外关闭，重新启动");
 				StartNewChrome();
@@ -90,7 +111,7 @@ namespace MoBot.Infra.PuppeteerSharp.Webshot
 				await page.WaitForFunctionAsync(waitForFunc);
 				var base64 = await page.ScreenshotBase64Async(screenshotOptions ?? new());
 #if DEBUG
-				await page.ScreenshotAsync(_dataStorage.GetDirectory(MoBot.Core.Models.DirectoryType.Cache) + "/" + DateTimeOffset.Now.ToUnixTimeMilliseconds() + ".png");
+				await page.ScreenshotAsync(_dataStorage.GetDirectory(MoBot.Core.Models.DirectoryType.Cache) + "/" + DateTimeOffset.Now.ToUnixTimeMilliseconds() + ".png", screenshotOptions ?? new());
 #endif
 				_logger.LogDebug("截图完成");
 				return base64;
