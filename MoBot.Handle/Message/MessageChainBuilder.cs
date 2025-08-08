@@ -82,7 +82,7 @@ namespace MoBot.Core.Models.Message
 		/// </summary>
 		/// <param name="msgID">消息id</param>
 		/// <returns></returns>
-		public MessageChainBuilder Reply(string msgID)
+		public MessageChainBuilder Reply(long msgID)
 		{
 			_msgSegment.Enqueue(new()
 			{
@@ -93,6 +93,10 @@ namespace MoBot.Core.Models.Message
 				}
 			});
 			return this;
+		}
+		public MessageChainBuilder Reply(MessageBase message)
+		{
+			return Reply(message.MessageId);
 		}
 	}
 }

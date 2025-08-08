@@ -54,7 +54,7 @@ namespace MoBot.Handle.Net
 						var eventJson = JsonConvert.DeserializeObject<EventPacketBase>(e.Data, new JsonSerializerSettings() { Converters = new List<JsonConverter> { new EventPacketConverter() } })!;
 
 
-						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType,json);
+						_logger.LogInformation("收到事件：{PostType}->{@commond}", eventJson.PostType, json);
 
 						await _moBotClient.RouteAsync(eventJson);
 						return;
@@ -63,6 +63,7 @@ namespace MoBot.Handle.Net
 					if (json.TryGetValue("echo", StringComparison.CurrentCultureIgnoreCase, out _))
 					{
 						var actionJson = JsonConvert.DeserializeObject<ActionPacketRsp>(e.Data)!;
+						actionJson.RawMessage = e.Data;
 						_logger.LogInformation("收到api回复：{@commond}", json);
 						_echoResult[actionJson.Echo].SetResult(actionJson);
 						_echoResult.Remove(actionJson.Echo);
