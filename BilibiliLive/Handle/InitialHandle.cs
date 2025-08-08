@@ -77,7 +77,7 @@ namespace BilibiliLive.Handle
 			var receiveStarRailLiveTrigger = TriggerBuilder.Create()
 				.WithIdentity(new TriggerKey("receiveStarRailLiveTrigger", Constants.TriggerGroup))
 				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail"), new KeyValuePair<string, object>("AwardName", "live") })
-				.WithCronSchedule("58 29 0 * * ?")
+				.WithCronSchedule("58 59 0 * * ?")
 				.Build();//领取星铁直播奖励
 
 			await scheduler.ScheduleJob(receiveLiveAwardJob, new[] { receiveLiveAwardTrigger, receiveViewAwardTrigger, receiveStarRailLiveTrigger }, replace: true);

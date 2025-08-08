@@ -6,6 +6,8 @@ using BilibiliLive.Models.Config;
 using BilibiliLive.Tool;
 using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
+using MoBot.Core.Models.Message;
+using MoBot.Handle.Message;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -26,7 +28,24 @@ namespace BilibiliLive.Job
 			_logger.LogInformation("正在执行{game}的领取{awardType}任务", GameName, AwardName);
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			var uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == GameName)).Select(s => s.Uid).ToList();
-			await EraLogicFactory.GetLogic(GameName).ReceiveFinallylEraAward(uidList, AwardName);
+			var result = await EraLogicFactory.GetLogic(GameName).ReceiveFinallylEraAward(uidList, AwardName);
+			var messageChain = MessageChainBuilder.Create().Text($"{GameName}的领取{AwardName}任务情况");
+			bool isNeedSend = true;
+			result.Switch(success =>
+			{
+				messageChain.Image(success.Value);
+			}, error =>
+			{
+				messageChain.Text(error.Value);
+			},
+			none =>
+			{
+				isNeedSend = false;
+			});
+			if (isNeedSend)
+			{
+				await MessageSender.SendGroupMsg(Constants.OPGroupID, messageChain.Build());
+			}
 			return;
 		}
 	}
