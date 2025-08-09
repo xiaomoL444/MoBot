@@ -33,7 +33,7 @@ namespace BilibiliLive.Job
 			bool isNeedSend = true;
 			result.Switch(success =>
 			{
-				messageChain.Image(success.Value);
+				messageChain.Image($"base64://{success.Value}");
 			}, error =>
 			{
 				messageChain.Text(error.Value);
