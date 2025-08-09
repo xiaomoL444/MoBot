@@ -89,6 +89,9 @@ namespace MoBot.Infra.PuppeteerSharp.Webshot
     // ✅ 等全部加载完成
     await Promise.all([...imagePromises, fontPromise]);
 
+    // ✅ 最后再延迟 0.25 秒
+    await new Promise(res => setTimeout(res, 250));
+
     resolve();
   });
 }", List<CookieParam> cookieParam = null)
