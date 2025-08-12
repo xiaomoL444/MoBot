@@ -11,6 +11,7 @@ using MoBot.Handle.Message;
 using Newtonsoft.Json;
 using System;
 using System.Buffers.Text;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
@@ -49,25 +50,45 @@ namespace BilibiliLive.Handle.Stream
 			var args = message.SplitMsg(" ");
 			var liveArea = string.Empty;
 			var messageChain = MessageChainBuilder.Create().Reply(message);
-			switch (args.Count)
+			var uidList = new List<string>();
+
+			//校验参数
+			if (args.Count <= 1)
 			{
-				case 1:
-					await sendMessage(messageChain.Text("需要提供开播分区").Build());
-					return;
-				case 2:
-					liveArea = Tool.LiveAreaKeyWordMatch.Match(args[1]);
-					if (string.IsNullOrEmpty(liveArea))
-					{
-						await sendMessage(messageChain.Text("提供的分区信息无效").Build());
-						return;
-					}
-					break;
-				default:
-					await sendMessage(messageChain.Text("参数无效").Build());
-					break;
+				await sendMessage(MessageChainBuilder.Create().Text("需要提供开播分区").Build());
+				return;
+			}
+			if (args.Count >= 4)
+			{
+				await sendMessage(MessageChainBuilder.Create().Text("参数数量错误").Build());
+				return;
 			}
 
+			//校验第一个参数，应为开播分区
+			liveArea = Tool.LiveAreaKeyWordMatch.Match(args[1]);
+			if (string.IsNullOrEmpty(liveArea))
+			{
+				await sendMessage(MessageChainBuilder.Create().Text("提供的分区信息无效").Build());
+				return;
+			}
+
+			//先获取所有的用户
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
+			uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList();
+
+			//第二个参数是可选参数，代表指定的用户序号，若存在则覆盖前面的
+			if (args.Count == 3)
+			{
+				if (int.TryParse(args[2], out int num) && accountConfig.Users.Count >= num + 1)
+				{
+					uidList = new() { accountConfig.Users[num].Uid };
+				}
+				else
+				{
+					await sendMessage(MessageChainBuilder.Create().Text("提供的用户序号无效").Build());
+					return;
+				}
+			}
 
 			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 			_ = Task.Run(async () =>
@@ -83,7 +104,7 @@ namespace BilibiliLive.Handle.Stream
 				}
 			});
 
-			var result = await LiveManager.StartLive(accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList(), liveArea);
+			var result = await LiveManager.StartLive(uidList, liveArea);
 			result.Switch(success =>
 			{
 				messageChain.Text("直播开启中(＾ω＾)，直播状态").Image($"base64://{success.Value}");
