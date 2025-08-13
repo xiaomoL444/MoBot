@@ -274,7 +274,17 @@ namespace BilibiliLive.Manager.Era.Core
 			var eraTaskData = new EraTaskConfig.EraTaskData() { GameName = GameName };
 
 			//获取h5激励计划内容
-			var h5Content = await GetEraH5Content();
+			var h5Content = "";
+			try
+			{
+				h5Content = await GetEraH5Content();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "获取激励计划任务失败，可能是新活动暂无公布");
+				return new Error<string>("获取激励计划任务失败，可能是新活动暂无公布\n");
+			}
+
 
 			//设置基本信息，标题和activityID
 			SetBaseInfo(h5Content, ref eraTaskData);

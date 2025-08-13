@@ -157,7 +157,7 @@ namespace BilibiliLive.Manager
 			};
 		}
 
-		public static async Task<OneOf<Success<string>, Error<string>>> ShowUserList()
+		public static async Task<OneOf<Success<string>, Error<string>>> ShowUserList(long owner)
 		{
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 
@@ -166,7 +166,13 @@ namespace BilibiliLive.Manager
 			string insertImgInfo(string uid, string info) => $"<img src='{userInfoCache[uid].Data.Face}' style='padding-left:4vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>{info}</span>";
 
 			AccountList accountList = new() { ImageCount = accountConfig.Users.Count + 1 };
-			foreach (var user in accountConfig.Users)
+			var listUserList = owner == Constants.OPAdmin ? accountConfig.Users : accountConfig.Users.Where(q => q.Owner == owner);
+			if (listUserList.Count() == 0)
+			{
+				_logger.LogInformation("{user}该用户没有绑定的数据", owner);
+				return new Error<string>("抱歉...末酱没有查询到绑定的数据");
+			}
+			foreach (var user in listUserList)
 			{
 				var userCredential = user.UserCredential;
 				var userInfo = userInfoCache[user.Uid];

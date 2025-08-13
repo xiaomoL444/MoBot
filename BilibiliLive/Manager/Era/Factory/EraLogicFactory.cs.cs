@@ -14,7 +14,8 @@ namespace BilibiliLive.Manager.Era.Factory
 		private static readonly Dictionary<string, IEraLogic> _logicMap = new()
 		{
 			["genshin"] = new GenshinLogic(),
-			["starrail"] = new StarRailLogic()
+			["starrail"] = new StarRailLogic(),
+			["zzz"] = new ZZZLogic()
 			// 未来继续加
 		};
 
