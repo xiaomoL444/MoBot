@@ -68,8 +68,7 @@ try
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.QueryTasksHandle>();//B站查询激励计划任务
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.ReceiveDailyEraAwardHandle>();//B站领取每日任务
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Era.RefreshEraDataHandle>();//B站在版更时刷新任务
-			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Job.StarAutoLiveHandle>();//开启自动直播
-			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Job.StopAutoLiveHandle>();//关闭自动直播
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Job.ChangeAutoLiveHandle>();//开启自动直播
 
 			//关键词回复
 			//services.AddScoped<IMessageHandle<Group>, DailyChat.EchoHandle>();//自定义回复
