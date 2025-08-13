@@ -28,7 +28,7 @@ namespace ModelManager.Handle
 
 		public string Name => "/帮助";
 
-		public string Description => "获取帮助";
+		public string Description => "获取帮助(所有人可用)";
 
 		public string Icon => "./Assets/ModelManager/icon/UI_QuestMain_Finish.png";
 

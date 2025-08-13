@@ -20,13 +20,13 @@ namespace BilibiliLive.Handle.Account
 
 		public string Name => "/账号列表";
 
-		public string Description => "列出登录了的账户";
+		public string Description => "列出登录了的账户(所有人可用)";
 
 		public string Icon => "./Assets/BilibiliLive/icon/UI_Icon_Paimon.png";
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/账号列表"))
+			if (message.IsGroupID(Constants.OPGroupID) && message.IsMsg("/账号列表"))
 				return Task.FromResult(true);
 			return Task.FromResult(false);
 		}
@@ -47,13 +47,14 @@ namespace BilibiliLive.Handle.Account
 				}
 			});
 			var messageChain = MessageChainBuilder.Create().Reply(message);
-			var result = await AccountManager.ShowUserList();
+			var result = await AccountManager.ShowUserList(message.UserId);
 			result.Switch(success =>
 			{
 				cancellationTokenSource.Cancel();
 				messageChain.Text("(●• ̀ω•́ )✧末酱为勾修金sama找到了的用户").Image($"base64://{success.Value}");
 			}, error =>
 			{
+				cancellationTokenSource.Cancel();
 				messageChain.Text(error.Value);
 			});
 			await MessageSender.SendGroupMsg(message.GroupId, messageChain.Build());

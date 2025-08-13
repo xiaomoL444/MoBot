@@ -24,7 +24,7 @@ namespace BilibiliLive.Handle.Era
 
 		public string Name => "/查询任务 [游戏] <序号>";
 
-		public string Description => "查询任务";
+		public string Description => "查询任务(所有人可用)";
 
 		public string Icon => "./Assets/BilibiliLive/icon/live.png";
 
@@ -34,7 +34,7 @@ namespace BilibiliLive.Handle.Era
 		}
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.SplitMsg(" ")[0] == "/查询任务")
+			if (message.IsGroupID(Constants.OPGroupID)  && message.SplitMsg(" ")[0] == "/查询任务")
 				return Task.FromResult(true);
 			return Task.FromResult(false);
 		}
@@ -69,7 +69,7 @@ namespace BilibiliLive.Handle.Era
 
 			//先获取所有的用户
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
-			uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList();
+			uidList = accountConfig.Users.Where(q => ((q.Owner == message.UserId) || (message.UserId == Constants.OPAdmin)) && q.LiveDatas.Any(l => l.LiveArea == liveArea)).Select(s => s.Uid).ToList();
 
 			//第二个参数是可选参数，代表指定的用户序号，若存在则覆盖前面的
 			if (args.Count == 3)
@@ -116,6 +116,11 @@ namespace BilibiliLive.Handle.Era
 					});
 					Interlocked.Increment(ref resultNum);
 				});
+			}
+			if (uidList.Count <= 0)
+			{
+				cancellationTokenSource.Cancel();
+				messageChain.Text("无在此分区开播的用户");
 			}
 			//等待任务查询完毕
 			_ = Task.Run(async () =>
