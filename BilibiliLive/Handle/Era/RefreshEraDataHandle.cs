@@ -61,6 +61,7 @@ namespace BilibiliLive.Handle.Era
 			{
 				messageChain.Text(error.Value);
 			});
+			messageChain.Text("\n");
 
 			//获取绝区零的更新结果
 			var zzzResult = await EraLogicFactory.GetLogic("zzz").RefreshEraData();

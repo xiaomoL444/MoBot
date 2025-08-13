@@ -282,7 +282,7 @@ namespace BilibiliLive.Manager.Era.Core
 			catch (Exception ex)
 			{
 				_logger.LogWarning(ex, "获取激励计划任务失败，可能是新活动暂无公布");
-				return new Error<string>("获取激励计划任务失败，可能是新活动暂无公布\n");
+				return new Error<string>("获取激励计划任务失败，可能是新活动暂无公布");
 			}
 
 
