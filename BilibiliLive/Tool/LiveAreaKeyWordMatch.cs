@@ -16,7 +16,11 @@ namespace BilibiliLive.Tool
 			{ "starrail",[
 				"hsr",
 				"starrail",
-				"sr"]} };
+				"sr"]},
+			{ "zzz",[
+				"zzz",
+				"z",
+				"zz"]}};
 
 		public static string Match(string value)
 		{

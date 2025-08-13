@@ -79,8 +79,13 @@ namespace BilibiliLive.Handle
 				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail"), new KeyValuePair<string, object>("AwardName", "live") })
 				.WithCronSchedule("58 59 0 * * ?")
 				.Build();//领取星铁直播奖励
+			var receiveZZZTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("receiveZZZLiveTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "zzz"), new KeyValuePair<string, object>("AwardName", "live") })
+				.WithCronSchedule("58 59 0 * * ?")
+				.Build();//领取绝区零直播奖励
 
-			await scheduler.ScheduleJob(receiveLiveAwardJob, new[] { receiveLiveAwardTrigger, receiveViewAwardTrigger, receiveStarRailLiveTrigger }, replace: true);
+			await scheduler.ScheduleJob(receiveLiveAwardJob, new[] { receiveLiveAwardTrigger, receiveViewAwardTrigger, receiveStarRailLiveTrigger, receiveZZZTrigger }, replace: true);
 
 			//自动直播
 			var autoLiveJob = JobBuilder.Create<AutoLiveJob>()
@@ -96,7 +101,12 @@ namespace BilibiliLive.Handle
 				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail") })
 				.WithCronSchedule("0 0 8 * * ?")
 				.Build();//星铁触发器
-			await scheduler.ScheduleJob(autoLiveJob, new[] { autoGenshinLiveTrigger, autoStarRailLiveTrigger
+			var autoZZZLiveTrigger = TriggerBuilder.Create()
+				.WithIdentity(new TriggerKey("autoZZZLiveTrigger", Constants.TriggerGroup))
+				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "zzz") })
+				.WithCronSchedule("0 10 5 * * ?")
+				.Build();//绝区零触发器
+			await scheduler.ScheduleJob(autoLiveJob, new[] { autoGenshinLiveTrigger, autoStarRailLiveTrigger,autoZZZLiveTrigger
 	}, replace: true);
 
 			scheduler.ListenerManager.AddJobListener(_jobListener, GroupMatcher<JobKey>.GroupEquals(Constants.JobGroup));

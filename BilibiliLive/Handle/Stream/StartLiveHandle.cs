@@ -26,7 +26,7 @@ namespace BilibiliLive.Handle.Stream
 
 		public string Name => "/开始推流 <游戏>";
 
-		public string Description => "开始推流（仅GI,HSR）";
+		public string Description => "开始推流（GI,HSR,ZZZ）";
 
 		public string Icon => "./Assets/BilibiliLive/icon/live.png";
 
