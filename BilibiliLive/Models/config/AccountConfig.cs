@@ -21,6 +21,12 @@ namespace BilibiliLive.Models.Config
 			public string Uid { get; set; } = string.Empty;
 
 			/// <summary>
+			/// 拥有这个uid的qq用户
+			/// </summary>
+			[JsonProperty("owner")]
+			public long Owner { get; set; } = 0;
+
+			/// <summary>
 			/// 用户的凭证
 			/// </summary>
 			[JsonProperty("userCredential")]
@@ -31,6 +37,12 @@ namespace BilibiliLive.Models.Config
 
 			public class LiveData
 			{
+				/// <summary>
+				/// 是否要开启自动直播
+				/// </summary>
+				[JsonProperty("auto_live")]
+				public bool AutoLive { get; set; } = true;
+
 				[JsonProperty("live_area")]
 				public string LiveArea { get; set; } = string.Empty;
 

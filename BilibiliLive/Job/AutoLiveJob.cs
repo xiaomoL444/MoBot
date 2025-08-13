@@ -18,7 +18,7 @@ namespace BilibiliLive.Job
 {
 	internal class AutoLiveJob : IJob
 	{
-		public string GameName { private get; set; }
+		public required string GameName { private get; set; }
 		private readonly ILogger _logger = GlobalSetting.CreateLogger<AutoLiveJob>();
 		private readonly IDataStorage _dataStorage = GlobalSetting.DataStorage;
 		public async Task Execute(IJobExecutionContext context)
@@ -27,13 +27,13 @@ namespace BilibiliLive.Job
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
 			var streamConfig = _dataStorage.Load<StreamConfig>(Constants.StreamFile);
 
-			if (!streamConfig.LiveAreas.FirstOrDefault(q => q.AreaName == GameName).AutoLive)
+			var uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == GameName && l.AutoLive)).Select(s => s.Uid).ToList();
+
+			if (uidList.Count <= 0)
 			{
-				_logger.LogInformation("{area}分区未开启自动直播", GameName);
+				_logger.LogInformation("{area}分区没有人开启自动直播", GameName);
 				return;
 			}
-
-			var uidList = accountConfig.Users.Where(q => q.LiveDatas.Any(l => l.LiveArea == GameName)).Select(s => s.Uid).ToList();
 
 			var liveResult = await LiveManager.StartLive(uidList, GameName);
 			var messageChain = MessageChainBuilder.Create().Text($"{GameName}直播自动任务：\n");
