@@ -61,6 +61,18 @@ namespace BilibiliLive.Handle.Era
 			{
 				messageChain.Text(error.Value);
 			});
+
+			//获取绝区零的更新结果
+			var zzzResult = await EraLogicFactory.GetLogic("zzz").RefreshEraData();
+
+			zzzResult.Switch(success =>
+			{
+				messageChain.Text(success.Value);
+			}, error =>
+			{
+				messageChain.Text(error.Value);
+			});
+
 			await MessageSender.SendGroupMsg(message.GroupId, messageChain.Build());
 		}
 	}
