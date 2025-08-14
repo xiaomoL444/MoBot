@@ -754,7 +754,7 @@ namespace BilibiliLive.Manager
 					m_WebSocketBLiveClient.OnLiveStart += (liveStart) => { WriteLog($"直播间[{liveStart.room_id}]开始直播，分区ID：【{liveStart.area_id}】,标题为【{liveStart.title}】"); };//直播间开始直播事件
 					m_WebSocketBLiveClient.OnLiveEnd += (liveEnd) => { WriteLog($"直播间[{liveEnd.room_id}]直播结束，分区ID：【{liveEnd.area_id}】,标题为【{liveEnd.title}】"); };//直播间停止直播事件
 
-					m_WebSocketBLiveClient.Connect(new TimeSpan(0, 30, 0));
+					m_WebSocketBLiveClient.Connect();
 					return new None();
 				}
 				else
@@ -780,9 +780,20 @@ namespace BilibiliLive.Manager
 			try
 			{
 				var ret = await bApiClient.EndInteractivePlay(appId, gameId);
+
+				try
+				{
+					m_WebSocketBLiveClient.Dispose();
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "关闭消息通知失败");
+				}
+
 				if (m_PlayHeartBeat is not null)
 				{
 					m_PlayHeartBeat.Stop();
+					m_PlayHeartBeat.Dispose();
 					m_PlayHeartBeat = null;
 				}
 				_logger.LogInformation("关闭玩法:{@ret} ", ret);
