@@ -28,6 +28,8 @@ namespace BilibiliLive.Interaction
 			var wbi = UserInteraction.GetWbi(new());
 			using var request = new HttpRequestMessage(HttpMethod.Post, $"{Constants.ReceiveAward}?{wbi}");
 			request.Headers.Add("cookie", $"SESSDATA={userCredential.Sessdata}");
+			request.Headers.Add("user-agent", Constants.UserAgent);
+			request.Headers.Add("referer", $"https://www.bilibili.com/blackboard/era/award-exchange.html?task_id={taskID}");
 			request.Content = new FormUrlEncodedContent(body);
 
 			var response = await Tool.HttpClient.SendAsync(request);
