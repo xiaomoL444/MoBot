@@ -206,7 +206,7 @@ namespace BilibiliLive.Manager.Era.Core
 								await Task.Delay(Random.Shared.Next(250, 750));
 
 							}
-							var receiveMsg = $"任务名：{(string.IsNullOrEmpty(checkPoint.Alias) ? "（原神无法获取）" : checkPoint.Alias)}\n任务奖励：{checkPoint.AwardName}\n" + string.Join("", resultList.GroupBy(q => q).Select(s => $" ♪ {(s.Key.msg == "0" ? "领取成功" : s.Key.msg)}x{s.Count()}\n"));
+							var receiveMsg = $"任务奖励：{checkPoint.AwardName}\n" + string.Join("", resultList.GroupBy(q => q).Select(s => $" ♪ {(s.Key.msg == "0" ? "领取成功" : s.Key.msg)}x{s.Count()}\n"));
 							text += receiveMsg;
 							_logger.LogInformation("[{user}]领取情况{msg}", user.Uid, receiveMsg);
 						}
