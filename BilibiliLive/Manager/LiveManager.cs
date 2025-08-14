@@ -208,15 +208,25 @@ namespace BilibiliLive.Manager
 
 			//开启开发平台玩法：
 			string openLiveMsg = "开发平台玩法：";
-			if (_isGameStart)
+
+			do
 			{
-				openLiveMsg += "已开启，无需重复开启";
-			}
-			else
-			{
+				if (_isGameStart)
+				{
+					openLiveMsg += "已开启，无需重复开启";
+					break;
+				}
+				if (!_sessions.Any(q => q.UserCredential.DedeUserID == "609872107"))
+				{
+					openLiveMsg += "不需要开启";
+					break;
+				}
+
 				var startLiveEventResult = await StartOpenLive();
 				startLiveEventResult.Switch(none => { _isGameStart = true; openLiveMsg += "已开启"; }, error => { openLiveMsg += "开启失败！"; });
-			}
+
+			} while (false);
+
 			multiInfoView.ExtraInfos.Add(openLiveMsg);
 
 			//开启看播
