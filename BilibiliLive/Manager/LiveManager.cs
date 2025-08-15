@@ -396,11 +396,15 @@ namespace BilibiliLive.Manager
 		public static async Task<OneOf<Success<string>, Error<string>>> FinishGiftTask()
 		{
 			var accountConfig = _dataStorage.Load<AccountConfig>(Constants.AccountFile);
-			MultiInfoView multiInfoView = new();
+
+			var backgroundPath = RandomImage.GetImagePath();
+			var backgroundUuid = Guid.NewGuid().ToString();
+			_webshotRequestStore.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(backgroundPath));
+			var multiInfoView = new MultiInfoView() { Background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}" };
 #if DEBUG
 			multiInfoView = new()
 			{
-				Background = "",
+				Background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}",
 				ExtraInfos = ["测试"],
 				Data = [
 					new()

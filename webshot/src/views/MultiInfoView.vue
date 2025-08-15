@@ -5,7 +5,7 @@
     </html>
 
     <div :class="['contain']">
-        <img class="background" :src="bg" @load="OnImageLoad">
+        <img class="background" :src="bg">
         <div :class="['flex-contain']">
             <div v-for="extra_info in extra_infos" :key="extra_info">
                 <div :class="['glass-effect', 'extra-info']">
@@ -16,7 +16,7 @@
                 <div v-for="data in datas" :key="data" :class="['glass-effect', 'item']">
                     <div :class="['name']">{{ data.name }}</div>
                     <div v-html="data.info" :class="['task-status']"></div>
-                    <img class="icon" :src="data.face" @load="OnImageLoad">
+                    <img class="icon" :src="data.face">
 
                 </div>
             </div>
@@ -131,7 +131,6 @@ const route = useRoute()
 const bg = ref('');
 const datas = ref([{}]);
 const extra_infos = ref([]);
-var image_load_count = 0;
 
 onMounted(() => {
     window.appLoaded = false;
@@ -141,11 +140,15 @@ onMounted(() => {
     axios.get('http://mobot.lan:5416?id=' + id)
         .then(async response => {
             if (response == undefined) { return; }
-            // bg.value = response.data.background;
-            bg.value = require('../assets/image/MultiInfoView/background.jpg');
             console.log(response.data);
+            bg.value = response.data.background;
+            if ( bg.value == null) {
+                bg.value = require('../assets/image/MultiInfoView/background.jpg');
+            }
             extra_infos.value = response.data.extra_infos;
             datas.value = response.data.data;
+
+            await nextTick();
         })
         .catch(error => {
             showDefaultmsg();
@@ -161,16 +164,5 @@ function showDefaultmsg() {
         info: "<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABQUlEQVQYVwE2Acn+Af39/d+7+QchBgwW8+beD9HG5CY/EsHG9nFmFAAAAAHg2v7+/gD7APoFAAQLAwL+Bv9MYd5uWCQXE/LyBQIB29v17NHi/vEPHEEV8tX55svkHi0I+xsMzMDY3xM5AenQ5XqCkXtlgPn1/QABAiRBANW5AMG128YF1ngjCQGHSM1cei7s0gTc/Nagr75XMFsiO/3VxfDy8gQN+awBb1TX4d3jJjT7EDoqEtcF/gD/LScRxdPc29/gAx8GAP316ubg1EE5hP3r5/rv6cmtxkMmnKBq2ri3+8i43wC6r8/++Oz6xtP29Of+v7pKM6XRrPKLYuLOzPvMyO0EAxEw/gHrBDIZi3bu08vdc19Xxc3xKFQb893Q4dcHAUdjt599LdPJ6URMHca07AkKBfPy+fb0Avn3BLzcu3aeq9PM+GjnAAAAAElFTkSuQmCC' style='padding-left:2vw; vertical-align: middle; width: 3vw;'/><span style='vertical-align: middle;'>[长夜月_秋]正在观看直播</span>"
     }, {}];
     extra_infos.value = ["1", "2"];
-}
-
-async function OnImageLoad() {
-    image_load_count++;
-    console.log("image load:" + image_load_count);
-    if (image_load_count == Object.keys(datas.value).length + 1) {
-        console.log("load finished!");
-        nextTick();
-        console.log("Dom finished!")
-        window.appLoaded = true;
-    }
 }
 </script>

@@ -91,7 +91,10 @@ namespace BilibiliLive.Manager.Era.Core
 				return new Error<string>(eraErrorMsg);
 			}
 
-			var multiInfoView = new MultiInfoView() { Background = "" };
+			var backgroundPath = RandomImage.GetImagePath();
+			var backgroundUuid = Guid.NewGuid().ToString();
+			_webshotRequestStore.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(backgroundPath));
+			var multiInfoView = new MultiInfoView() { Background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}" };
 
 			//对每个uid进行领取奖励
 			foreach (var uid in uidLis)
@@ -240,7 +243,10 @@ namespace BilibiliLive.Manager.Era.Core
 
 					//编辑图片发送
 
-					var multiInfoView = new MultiInfoView();
+					var backgroundPath = RandomImage.GetImagePath();
+					var backgroundUuid = Guid.NewGuid().ToString();
+					_webshotRequestStore.SetNewContent(backgroundUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(backgroundPath));
+					var multiInfoView = new MultiInfoView() { Background = $"{_webshotRequestStore.GetIPAddress()}?id={backgroundUuid}" };
 					//组装消息
 					foreach (var result in resultDic)
 					{
