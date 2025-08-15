@@ -6,8 +6,8 @@ using MoBot.Core.Models.Event.Message;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
-using MoBot.Infra.PuppeteerSharp.Interface;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PlayWright.Interfaces;
+using MoBot.Infra.PlayWright.Model;
 using ModelManager.Constant;
 using ModelManager.Models.WebShot;
 using Newtonsoft.Json;
@@ -112,22 +112,22 @@ namespace ModelManager.Handle
 				foreach (var model in helpList.ModelInfos)
 				{
 					var modelUuid = Guid.NewGuid().ToString();
-					_webshotRequestStore.SetNewContent(modelUuid, MoBot.Infra.PuppeteerSharp.Models.HttpServerContentType.ImagePng, File.ReadAllBytes(model.Icon));
+					_webshotRequestStore.SetNewContent(modelUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(model.Icon));
 					model.Icon = $"{_webshotRequestStore.GetIPAddress()}?id={modelUuid}";
 
 					foreach (var plugin in model.PluginInfos)
 					{
 						var pluginUuid = Guid.NewGuid().ToString();
-						_webshotRequestStore.SetNewContent(pluginUuid, MoBot.Infra.PuppeteerSharp.Models.HttpServerContentType.ImagePng, File.ReadAllBytes(plugin.Icon));
+						_webshotRequestStore.SetNewContent(pluginUuid, HttpServerContentType.ImagePng, File.ReadAllBytes(plugin.Icon));
 						plugin.Icon = $"{_webshotRequestStore.GetIPAddress()}?id={pluginUuid}";
 					}
 				}
 				_logger.LogDebug("Http_List:{@input}", helpList);
 
 				var uuid = Guid.NewGuid().ToString();
-				_webshotRequestStore.SetNewContent(uuid, MoBot.Infra.PuppeteerSharp.Models.HttpServerContentType.TextPlain, JsonConvert.SerializeObject(helpList));
+				_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(helpList));
 
-				var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/HelpList?id={uuid}", screenshotOptions: new() { FullPage = true });
+				var base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/HelpList?id={uuid}");
 				await MessageSender.SendGroupMsg(message.GroupId, MessageChainBuilder.Create().Reply(message).Image($"base64://{base64}").Build());
 
 				byte[] imageBytes = Convert.FromBase64String(base64);

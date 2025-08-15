@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoBot.Handle.Extensions;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
-using MoBot.Infra.PuppeteerSharp.Models;
+using MoBot.Infra.PlayWright.Interfaces;
+using MoBot.Infra.PlayWright.Model;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using System.Web;
 using WebSocketSharp.Server;
 
-namespace MoBot.Infra.PuppeteerSharp.WebshotRequestStore
+namespace MoBot.Infra.PlayWright.WebshotRequestStore
 {
 	internal class WebshotRequestStore : IWebshotRequestStore
 	{
@@ -96,8 +96,8 @@ namespace MoBot.Infra.PuppeteerSharp.WebshotRequestStore
 				// 编写响应内容
 				buffer = (int)contentType switch
 				{
-					(>= 101 and <= 200) => Encoding.UTF8.GetBytes((string)message),
-					(>= 201 and <= 300) => (byte[])message
+					>= 101 and <= 200 => Encoding.UTF8.GetBytes((string)message),
+					>= 201 and <= 300 => (byte[])message
 				};
 
 
@@ -106,7 +106,7 @@ namespace MoBot.Infra.PuppeteerSharp.WebshotRequestStore
 				response.Headers.Add("Access-Control-Allow-Origin", "*");//允许跨域
 				response.OutputStream.Write(buffer, 0, buffer.Length);
 				response.OutputStream.Close();
-				_logger.LogDebug("已响应请应：{@result}", ((int)contentType >= 101 && (int)contentType <= 200) ? Encoding.UTF8.GetString(buffer).TryPraseToJson() : contentType);
+				_logger.LogDebug("已响应请应：{@result}", (int)contentType >= 101 && (int)contentType <= 200 ? Encoding.UTF8.GetString(buffer).TryPraseToJson() : contentType);
 			}
 			catch (Exception ex)
 			{

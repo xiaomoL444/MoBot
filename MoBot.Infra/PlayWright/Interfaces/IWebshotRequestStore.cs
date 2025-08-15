@@ -1,11 +1,11 @@
-﻿using MoBot.Infra.PuppeteerSharp.Models;
+﻿using MoBot.Infra.PlayWright.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoBot.Infra.PuppeteerSharp.Interfaces
+namespace MoBot.Infra.PlayWright.Interfaces
 {
 	public interface IWebshotRequestStore
 	{

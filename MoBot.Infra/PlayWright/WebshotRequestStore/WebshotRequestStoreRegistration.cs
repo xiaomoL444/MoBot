@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using MoBot.Infra.PuppeteerSharp.Interface;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PlayWright.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoBot.Infra.PuppeteerSharp.WebshotRequestStore
+namespace MoBot.Infra.PlayWright.WebshotRequestStore
 {
 	public static class WebshotRequestStoreRegistration
 	{

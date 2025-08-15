@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MoBot.Core.Interfaces;
-using MoBot.Infra.PuppeteerSharp.Interface;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
+using MoBot.Infra.PlayWright.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;

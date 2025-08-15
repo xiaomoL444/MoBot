@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MoBot.Core.Interfaces;
-using MoBot.Infra.PuppeteerSharp.Interface;
+using MoBot.Infra.PlayWright.Interfaces;
 using MoBot.Infra.Quartz.JobListener;
-using PuppeteerSharp;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoBot.Infra.PuppeteerSharp.Webshot
+namespace MoBot.Infra.PlayWright.Webshot
 {
 	public static class WebshotRegistration
 	{

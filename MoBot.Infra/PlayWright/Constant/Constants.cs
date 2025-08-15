@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoBot.Infra.PuppeteerSharp.Constant
+namespace MoBot.Infra.PlayWright.Constant
 {
 	public static class Constants
 	{

@@ -8,9 +8,8 @@ using Microsoft.Extensions.Logging;
 using MoBot.Core.Interfaces;
 using MoBot.Core.Models.Message;
 using MoBot.Handle.Message;
-using MoBot.Infra.PuppeteerSharp.Interface;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
-using MoBot.Infra.PuppeteerSharp.Models;
+using MoBot.Infra.PlayWright.Interfaces;
+using MoBot.Infra.PlayWright.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OneOf;
@@ -102,7 +101,7 @@ namespace BilibiliLive.Manager.Era.Core
 				if (!canQuery)
 				{
 					//添加错误信息
-					multiInfoView.Data.Add(new() { Name = uid, Face = MoBot.Infra.PuppeteerSharp.Constant.Constants.WhiteTransParentBase64, Info = msg });
+					multiInfoView.Data.Add(new() { Name = uid, Face = MoBot.Infra.PlayWright.Constant.Constants.WhiteTransParentBase64, Info = msg });
 					continue;
 				}
 

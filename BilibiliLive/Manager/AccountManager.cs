@@ -13,9 +13,8 @@ using MoBot.Core.Models.Message;
 using MoBot.Core.Models.Net;
 using MoBot.Handle.Extensions;
 using MoBot.Handle.Message;
-using MoBot.Infra.PuppeteerSharp.Interface;
-using MoBot.Infra.PuppeteerSharp.Interfaces;
-using MoBot.Infra.PuppeteerSharp.Models;
+using MoBot.Infra.PlayWright.Interfaces;
+using MoBot.Infra.PlayWright.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OneOf;
@@ -191,7 +190,7 @@ namespace BilibiliLive.Manager
 				}
 				catch (Exception ex)
 				{
-					accountList.AccountInfos.Add(new() { Name = user.Uid, Icon = MoBot.Infra.PuppeteerSharp.Constant.Constants.WhiteTransParentBase64, Info = "获取失败" });
+					accountList.AccountInfos.Add(new() { Name = user.Uid, Icon = MoBot.Infra.PlayWright.Constant.Constants.WhiteTransParentBase64, Info = "获取失败" });
 					accountList.ImageCount--;
 				}
 			}
@@ -226,7 +225,7 @@ namespace BilibiliLive.Manager
 				string uuid = Guid.NewGuid().ToString();
 				_webshotRequestStore.SetNewContent(uuid, HttpServerContentType.TextPlain, JsonConvert.SerializeObject(accountList));
 
-				base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/AccountList?id={uuid}", screenshotOptions: new() { FullPage = true });
+				base64 = await _webshot.ScreenShot($"{_webshot.GetIPAddress()}/AccountList?id={uuid}");
 				byte[] imageBytes = Convert.FromBase64String(base64);
 				File.WriteAllBytes(path, imageBytes);
 			}
