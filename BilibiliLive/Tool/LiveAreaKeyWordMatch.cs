@@ -20,7 +20,11 @@ namespace BilibiliLive.Tool
 			{ "zzz",[
 				"zzz",
 				"z",
-				"zz"]}};
+				"zz"]},
+			{ "azur lane",[
+				"al",
+				"azur lane",
+				"azurlane"]}};
 
 		public static string Match(string value)
 		{
