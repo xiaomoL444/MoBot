@@ -162,7 +162,7 @@ namespace BilibiliLive.Models
 				/// 公告 ID
 				/// </summary>
 				[JsonProperty("id")]
-				public int Id { get; set; } = 0;
+				public long Id { get; set; } = 0;
 
 				/// <summary>
 				/// 显示文案内容
@@ -627,7 +627,7 @@ namespace BilibiliLive.Models
 				/// 头像框ID
 				/// </summary>
 				[JsonProperty("pid")]
-				public int Pid { get; set; } = 0;
+				public long Pid { get; set; } = 0;
 
 				/// <summary>
 				/// 头像框名称
@@ -663,7 +663,7 @@ namespace BilibiliLive.Models
 				/// 新版头像框ID
 				/// </summary>
 				[JsonProperty("n_pid")]
-				public int NPid { get; set; } = 0;
+				public long NPid { get; set; } = 0;
 			}
 
 			/// <summary>
@@ -678,7 +678,7 @@ namespace BilibiliLive.Models
 				/// 勋章ID
 				/// </summary>
 				[JsonProperty("nid")]
-				public int Nid { get; set; } = 0;
+				public long Nid { get; set; } = 0;
 
 				/// <summary>
 				/// 勋章名称
@@ -720,7 +720,7 @@ namespace BilibiliLive.Models
 			public class UserHonourInfoData
 			{
 				[JsonProperty("mid")]
-				public int Mid { get; set; } = 0;
+				public long Mid { get; set; } = 0;
 
 				[JsonProperty("colour")]
 				public string Colour { get; set; } = string.Empty;
@@ -803,7 +803,7 @@ namespace BilibiliLive.Models
 					/// 总观看人数
 					/// </summary>
 					[JsonProperty("num")]
-					public int Num { get; set; } = 0;
+					public long Num { get; set; } = 0;
 
 					[JsonProperty("text_small")]
 					public string TextSmall { get; set; } = string.Empty;
