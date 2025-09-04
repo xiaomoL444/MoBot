@@ -36,7 +36,7 @@ namespace BilibiliLive.Handle.Account
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/删除用户"))
+			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.SplitMsg(" ")[0] == "/删除用户")
 				return Task.FromResult(true);
 			return Task.FromResult(false);
 		}

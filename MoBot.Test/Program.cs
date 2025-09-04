@@ -59,6 +59,8 @@ try
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.SignHandle>();//B站登录
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.ListHandle>();//B站列出登录了的用户
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.DeleteUserHandle>();//B站删除用户
+			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Account.QueryBattery>();//查询电池数量
+
 
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.StartLiveHandle>();//B站开始直播
 			services.AddScoped<IMessageHandle<Group>, BilibiliLive.Handle.Stream.StopLiveHandle>();//B站关闭直播

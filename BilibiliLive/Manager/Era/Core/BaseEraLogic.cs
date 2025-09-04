@@ -199,9 +199,9 @@ namespace BilibiliLive.Manager.Era.Core
 								_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
 								var result = await UserInteraction.ReceiveAward(user.UserCredential, checkPoint.Sid, eraTaskData.ActivityID, eraTaskData.TaskTitle, checkPoint.Alias, checkPoint.AwardName);
 								resultList.Add(result);
-								if (result.code == 0 || result.code == 75255)
+								if (result.code == 0 || result.code == 75255 || result.code == 202129)
 								{
-									_logger.LogDebug("退出领取，已领取或库存使用完");
+									_logger.LogDebug("退出领取，已领取或库存使用完，或奖励已结束");
 									break;
 								}
 

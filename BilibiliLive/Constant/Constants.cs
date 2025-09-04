@@ -26,6 +26,8 @@ namespace BilibiliLive.Constant
 		#endregion
 
 		#region 直播间API
+		public const string GetGlodWallet = "https://api.live.bilibili.com/xlive/revenue/v1/wallet/myGoldWallet";//B站直播间的获取个人信息
+
 		public const string BilibiliStartLiveAPI = "https://api.live.bilibili.com/room/v1/Room/startLive";//B站的开播连接
 		public const string BilibiliStopLiveApi = "https://api.live.bilibili.com/room/v1/Room/stopLive";//B站的关播连接
 		public const string BilibiliGetRoomInfoOld = "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld";//获取用户对应的直播间状态（主要是为了获取roomID）
