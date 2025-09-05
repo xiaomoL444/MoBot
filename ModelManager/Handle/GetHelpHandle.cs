@@ -55,7 +55,7 @@ namespace ModelManager.Handle
 
 		public Task<bool> CanHandleAsync(Group message)
 		{
-			if (message.IsGroupID(Constants.OPGroupID) && message.IsUserID(Constants.OPAdmin) && message.IsMsg("/帮助"))
+			if (message.IsGroupID(Constants.OPGroupID) && message.IsMsg("/帮助"))
 			{
 				return Task.FromResult(true);
 			}

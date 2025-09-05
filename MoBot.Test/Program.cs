@@ -80,7 +80,9 @@ try
 			services.AddScoped<IMessageHandle<Group>, DailyTask.DailyTaskHandle>();//每日定时任务（古文和夸夸）
 
 			//帮助列表
-			services.AddScoped<IMessageHandle<Group>, ModelManager.Handle.GetHelpHandle>();//每日定时任务（古文和夸夸）
+			services.AddScoped<IInitializer, ModelManager.Handle.InitialHandle>();//Bot模块管理器初始化
+			services.AddScoped<IMessageHandle<Group>, ModelManager.Handle.GetHelpHandle>();//帮助列表
+			services.AddScoped<IMessageHandle<Group>, ModelManager.Handle.GetSystemStatusHandle>();//获得系统运行状态
 
 			services.AddQuartz();
 			services.AddQuartzHostedService(option => { option.WaitForJobsToComplete = true; });
