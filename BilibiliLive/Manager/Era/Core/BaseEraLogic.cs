@@ -194,19 +194,29 @@ namespace BilibiliLive.Manager.Era.Core
 						foreach (var checkPoint in targetCheckPoints)
 						{
 							List<(int code, string msg)> resultList = new();
-							for (int i = 0; i < 50; i++)
+
+							if (eraConfig.ExcludeAwardSid.Contains(checkPoint.AwardSid))
 							{
-								_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
-								var result = await UserInteraction.ReceiveAward(user.UserCredential, checkPoint.Sid, eraTaskData.ActivityID, eraTaskData.TaskTitle, checkPoint.Alias, checkPoint.AwardName);
-								resultList.Add(result);
-								if (result.code == 0 || result.code == 75255 || result.code == 202129)
+								_logger.LogInformation("被排除，跳过");
+								resultList.Add(new(-999999, "被排除，跳过领取"));
+							}
+							else
+							{
+
+								for (int i = 0; i < 50; i++)
 								{
-									_logger.LogDebug("退出领取，已领取或库存使用完，或奖励已结束");
-									break;
+									_logger.LogInformation("[{user}]尝试抢中...{index}", user.Uid, i);
+									var result = await UserInteraction.ReceiveAward(user.UserCredential, checkPoint.Sid, eraTaskData.ActivityID, eraTaskData.TaskTitle, checkPoint.Alias, checkPoint.AwardName);
+									resultList.Add(result);
+									if (result.code == 0 || result.code == 75255 || result.code == 202129)
+									{
+										_logger.LogDebug("退出领取，已领取或库存使用完，或奖励已结束");
+										break;
+									}
+
+									await Task.Delay(Random.Shared.Next(250, 750));
+
 								}
-
-								await Task.Delay(Random.Shared.Next(250, 750));
-
 							}
 							var receiveMsg = $"任务奖励：{checkPoint.AwardName}\n" + string.Join("", resultList.GroupBy(q => q).Select(s => $" ♪ {(s.Key.msg == "0" ? "领取成功" : s.Key.msg)}x{s.Count()}\n"));
 							text += receiveMsg;

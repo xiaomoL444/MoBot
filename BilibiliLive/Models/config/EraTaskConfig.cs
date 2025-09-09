@@ -25,5 +25,7 @@ namespace BilibiliLive.Models.Config
 			[JsonProperty("activity_id")]
 			public string ActivityID { get; set; } = string.Empty;//活动id
 		}
+		[JsonProperty("exclude_award_sid")]
+		public List<string> ExcludeAwardSid { get; set; } = new();//排除的奖励sid	
 	}
 }
