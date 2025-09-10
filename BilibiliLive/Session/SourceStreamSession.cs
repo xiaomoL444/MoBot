@@ -68,6 +68,8 @@ namespace BilibiliLive.Session
 				{
 					try
 					{
+						await Task.Delay(500);//防止过快循环
+
 						CancellationTokenSource videoCts = new CancellationTokenSource();//要是中途出错了直接打断这个等待的Task并退出循环
 
 						//设置播放的次序
