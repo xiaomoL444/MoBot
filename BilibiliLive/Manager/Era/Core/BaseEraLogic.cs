@@ -195,7 +195,7 @@ namespace BilibiliLive.Manager.Era.Core
 						{
 							List<(int code, string msg)> resultList = new();
 
-							if (eraConfig.ExcludeAwardSid.Contains(checkPoint.AwardSid))
+							if (eraConfig.ExcludeSid.Contains(checkPoint.Sid))
 							{
 								_logger.LogInformation("被排除，跳过");
 								resultList.Add(new(-999999, "被排除，跳过领取"));
