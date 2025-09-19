@@ -27,7 +27,9 @@ namespace BilibiliLive.Session
 		public int AreaV2 { get; } = 0;//小分区
 		public List<(int code, string msg)> HeartResult = new();//心跳结果
 
-		public bool IsView { get; private set; } = false;//是否正在观看直播，是开启和关停观看直播的关键
+		private int RetryTimes = 0;//重试次数
+
+        public bool IsView { get; private set; } = false;//是否正在观看直播，是开启和关停观看直播的关键
 		public ViewStreamSession(UserCredential userCredential, string userName, string targetUserName, long targetRoomID, int livePart, int areaV2)
 		{
 			UserCredential = userCredential;
@@ -74,8 +76,17 @@ namespace BilibiliLive.Session
 				{
 					AddResult(ref HeartResult, -1, $"[{DateTimeOffset.Now.ToUnixTimeSeconds()}]遇到错误，请前往控制台查看");
 					IsView = false;
-					_logger.LogError(ex, "[{user}]:[{targetRoomID}]看播出现错误", UserCredential.DedeUserID, TargetRoomID);
-				}
+					_logger.LogError(ex, "[{user}]:[{targetRoomID}]看播出现错误，重试次数：{retryTime}", UserCredential.DedeUserID, TargetRoomID,RetryTimes);
+
+					if (RetryTimes < 3)
+					{
+						RetryTimes++;
+                        Start();
+					}
+					else { 
+						Stop();
+                    }
+                }
 			});
 		}
 		public void Stop()
