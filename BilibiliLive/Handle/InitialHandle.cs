@@ -98,7 +98,7 @@ namespace BilibiliLive.Handle
 			var autoStarRailLiveTrigger = TriggerBuilder.Create()
 				.WithIdentity(new TriggerKey("autoStarRailLiveTrigger", Constants.TriggerGroup))
 				.UsingJobData(new JobDataMap() { new KeyValuePair<string, object>("GameName", "starrail") })
-				.WithCronSchedule("0 0 8 * * ?")
+				.WithCronSchedule("0 30 2 * * ?")
 				.Build();//星铁触发器
 			var autoZZZLiveTrigger = TriggerBuilder.Create()
 				.WithIdentity(new TriggerKey("autoZZZLiveTrigger", Constants.TriggerGroup))

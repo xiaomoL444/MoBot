@@ -40,16 +40,16 @@ namespace BilibiliLive.Handle.Era
 			var messageChain = MessageChainBuilder.Create().Reply(message);
 
 			//获取原神的更新结果
-			var genshinResult = await EraLogicFactory.GetLogic("genshin").RefreshEraData();
+			//var genshinResult = await EraLogicFactory.GetLogic("genshin").RefreshEraData();
 
-			genshinResult.Switch(success =>
-			{
-				messageChain.Text(success.Value);
-			}, error =>
-			{
-				messageChain.Text(error.Value);
-			});
-			messageChain.Text("\n");
+			//genshinResult.Switch(success =>
+			//{
+			//	messageChain.Text(success.Value);
+			//}, error =>
+			//{
+			//	messageChain.Text(error.Value);
+			//});
+			//messageChain.Text("\n");
 
 			//获取星铁的更新结果
 			var starrailResult = await EraLogicFactory.GetLogic("starrail").RefreshEraData();

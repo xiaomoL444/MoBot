@@ -77,7 +77,7 @@ namespace BilibiliLive.Manager
             new(LiveDanmukuType.Emotion,"upower_[崩坏：星穹铁道_心]")
         ];
 
-        private static bool isViewLive = false;//是否在看直播
+        private static Dictionary<string, int> _userRetryTime = new();//用户重试直播次数
 
         //开放平台参数
         static IBApiClient bApiClient = new BApiClient();
@@ -189,6 +189,7 @@ namespace BilibiliLive.Manager
                 }
 
                 //开启直播会话
+                _userRetryTime[userCredential.DedeUserID] = 0; //设置重试次数为0
                 var result = await CreateLiveSession(userCredential, streamConfig.LiveAreas.FirstOrDefault(q => q.AreaName == liveArea)!.Area, liveArea);
                 result.Switch(session =>
                 {
@@ -630,6 +631,19 @@ namespace BilibiliLive.Manager
                 //下方开启会话直播
                 var rtmp = startliveData?.Data.Rtmp.Addr + JsonConvert.DeserializeObject<string>($"\"{startliveData?.Data.Rtmp.Code}\"");
                 LiveStreamSession liveStreamSession = new(userCredential, rtmp, liveArea);
+                liveStreamSession.FailCallback = async () =>
+                {
+                    _userRetryTime[userCredential.DedeUserID]++;
+                    if (_userRetryTime[userCredential.DedeUserID] > 5)
+                    {
+                        _logger.LogWarning("用户重试直播超过五次！");
+                    }
+                    else
+                    {
+                        var result = await CreateLiveSession(userCredential, areaV2, liveArea);
+                        result.Switch(success => { _logger.LogInformation("{uid}重新开播成功", userCredential.DedeUserID); }, error => { _logger.LogError("{uid}重新开播失败", userCredential.DedeUserID); });
+                    }
+                };
 
                 return liveStreamSession;
             }
