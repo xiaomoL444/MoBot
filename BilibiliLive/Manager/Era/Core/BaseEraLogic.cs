@@ -293,27 +293,26 @@ namespace BilibiliLive.Manager.Era.Core
 			try
 			{
 				h5Content = await GetEraH5Content();
+
+				//设置基本信息，标题和activityID
+				SetBaseInfo(h5Content, ref eraTaskData);
+				//设置活动id
+				var eraPageDataString = ExtractJsonAfter(h5Content, "window.__BILIACT_EVAPAGEDATA__ = ");
+				_logger.LogDebug("获取到的活动Data:{@data}", eraPageDataString);
+				eraTaskData = await SetTaskIDs(eraPageDataString, eraTaskData);
+
+				//获取完毕后先移除再复制
+				eraTaskConfig.EraTaskDatas.Remove(eraTaskConfig.EraTaskDatas.FirstOrDefault(q => q.GameName == GameName));
+				eraTaskConfig.EraTaskDatas.Add(eraTaskData);
+				_dataStorage.Save(Constants.EraFile, eraTaskConfig);
+
+				return new Success<string>($"{GameName}激励计划更新成功啦~");
 			}
 			catch (Exception ex)
 			{
 				_logger.LogWarning(ex, "获取激励计划任务失败，可能是新活动暂无公布");
 				return new Error<string>("获取激励计划任务失败，可能是新活动暂无公布");
 			}
-
-
-			//设置基本信息，标题和activityID
-			SetBaseInfo(h5Content, ref eraTaskData);
-			//设置活动id
-			var eraPageDataString = ExtractJsonAfter(h5Content, "window.__BILIACT_EVAPAGEDATA__ = ");
-			_logger.LogDebug("获取到的活动Data:{@data}", eraPageDataString);
-			eraTaskData = await SetTaskIDs(eraPageDataString, eraTaskData);
-
-			//获取完毕后先移除再复制
-			eraTaskConfig.EraTaskDatas.Remove(eraTaskConfig.EraTaskDatas.FirstOrDefault(q => q.GameName == GameName));
-			eraTaskConfig.EraTaskDatas.Add(eraTaskData);
-			_dataStorage.Save(Constants.EraFile, eraTaskConfig);
-
-			return new Success<string>($"{GameName}激励计划更新成功啦~");
 		}
 		/// <summary>
 		/// 下载html内容
